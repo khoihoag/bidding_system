@@ -1,0 +1,51 @@
+public class Electronics extends Item {
+
+    private String brand;
+    private String model;
+    private int warrantyMonths;
+    private int powerWatts;
+
+    public Electronics() {
+        super();
+    }
+
+    public Electronics(String id, String name, String description, double startingPrice, List<String> images, User seller, ItemCondition condition, String brand, String model, int warrantyMonths, int powerWatts) {
+        super(id, name, description, startingPrice, images, seller, condition);
+        this.brand = brand;
+        this.model = model;
+        this.warrantyMonths = warrantyMonths;
+        this.powerWatts = powerWatts;
+    }
+
+
+    public void setBrand(String brand) {
+        this.brand = brand;
+    }
+
+    public void setModel(String model) {
+        this.model = model;
+    }
+
+    public void setWarrantyMonths(int warrantyMonths) {
+        this.warrantyMonths = warrantyMonths;
+    }
+
+    public void setPowerWatts(int powerWatts) {
+        this.powerWatts = powerWatts;
+    }
+    
+    @Override
+    public String getCategory() {
+        return "Electronics";
+    }
+    
+    @Override
+    public Map<String, String> getSpecifications() {
+        Map<String, String> specifications = super.getSpecifications();
+        specifications.put("Brand", brand);
+        specifications.put("Model", model);
+        specifications.put("Warranty Months", String.valueOf(warrantyMonths));
+        specifications.put("Power Watts", String.valueOf(powerWatts));
+        return specifications;
+    }
+}
