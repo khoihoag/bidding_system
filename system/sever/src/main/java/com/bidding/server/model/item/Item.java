@@ -1,9 +1,12 @@
-package com.bidding.sever.model.Item;
+package com.bidding.server.model.item;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-import com.bidding.sever.model.Entity;
-import com.bidding.sever.model.User.User;
+import com.bidding.server.model.user.User;
+import com.bidding.server.model.entity.Entity;
+
 
 public abstract class Item extends Entity {
 
@@ -26,8 +29,29 @@ public abstract class Item extends Entity {
         this.images = images;
         this.seller = seller;
         this.condition = condition;
-    }   
+    }
+    //getter
+    public User getSeller() {
+        return seller;
+    }
 
+    public List<String> getImages() {
+        return images;
+    }
+
+    public double getStartingPrice() {
+        return startingPrice;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    //setter
     public void setDescription(String description) {
         this.description = description;
     }
@@ -51,6 +75,7 @@ public abstract class Item extends Entity {
     public void setCondition(ItemCondition condition) {
         this.condition = condition;
     }
+
 
     public abstract String getCategory();
     

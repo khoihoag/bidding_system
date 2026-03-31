@@ -1,4 +1,5 @@
-package com.bidding.sever.model.Item;
+package com.bidding.server.model.item;
+
 
 public enum ItemCondition {
     NEW,

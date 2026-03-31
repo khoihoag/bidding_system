@@ -1,3 +1,13 @@
+package com.bidding.server.model.item;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.bidding.server.model.user.User;
+
+
+
 public class Vehicle extends Item {
     private String make;
     private String model;
@@ -18,6 +28,28 @@ public class Vehicle extends Item {
         this.fuelType = fuelType;
     }
 
+    //getter
+    public String getMake() {
+        return make;
+    }
+
+    public String getModel() {
+        return model;
+    }
+
+    public int getYear() {
+        return year;
+    }
+
+    public int getMileage() {
+        return mileage;
+    }
+
+    public String getFuelType() {
+        return fuelType;
+    }
+
+    //setter
     public void setMake(String make) {
         this.make = make;
     }
@@ -43,13 +75,18 @@ public class Vehicle extends Item {
     }
 
     public Map<String, String> getSpecifications() {
-        Map<String, String> specifications = super.getSpecifications();
+        Map<String, String> specifications = new HashMap<>();
         specifications.put("Make", make);
         specifications.put("Model", model);
         specifications.put("Year", String.valueOf(year));
         specifications.put("Mileage", String.valueOf(mileage));
         specifications.put("Fuel Type", fuelType);
         return specifications;
+    }
+
+    @Override
+    public void validate() {
+
     }
 }
     

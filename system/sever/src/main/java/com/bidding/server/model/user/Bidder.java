@@ -1,6 +1,7 @@
+package com.bidding.server.model.user;
+
 public class Bidder extends User {
 
-    
 
     public Bidder() {
         super();
@@ -15,10 +16,14 @@ public class Bidder extends User {
         return UserRole.BIDDER;
     }
 
-    
 
     @Override
     public void printInfo() {
         super.printInfo();
+    }
+
+    @Override
+    public void validate() {
+
     }
 }

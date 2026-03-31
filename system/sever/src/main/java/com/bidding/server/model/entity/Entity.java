@@ -1,12 +1,12 @@
-package com.bidding.sever.model;
+package com.bidding.server.model.entity;
 
 import java.time.LocalDateTime;
 
 public abstract class Entity {
 
-    private String id;
+    private final String id;
 
-    private LocalDateTime createdAt;
+    private final LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
 
@@ -15,13 +15,21 @@ public abstract class Entity {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }   
-
+    //getter
     public String getId() {
         return id;
     }
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+    public LocalDateTime getUpdatedAt(){
+        return updatedAt;
+    }
+
+    //setter
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
     public abstract void validate();

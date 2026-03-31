@@ -1,3 +1,11 @@
+package com.bidding.server.model.item;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import com.bidding.server.model.user.User;
+
 public class Art extends Item {
 
     private String artist;
@@ -16,7 +24,25 @@ public class Art extends Item {
         this.yearCreated = yearCreated;
         this.dimensions = dimensions;
     }
+    //getter
 
+    public String getMedium() {
+        return medium;
+    }
+
+    public String getDimensions() {
+        return dimensions;
+    }
+
+    public String getArtist() {
+        return artist;
+    }
+
+    public int getYearCreated() {
+        return yearCreated;
+    }
+
+    //setter
     public void setArtist(String artist) {
         this.artist = artist;
     }
@@ -41,11 +67,16 @@ public class Art extends Item {
     
     @Override
     public Map<String, String> getSpecifications() {
-        Map<String, String> specifications = super.getSpecifications();
+        Map<String, String> specifications = new HashMap<>();
         specifications.put("Artist", artist);
         specifications.put("Medium", medium);
         specifications.put("Year Created", String.valueOf(yearCreated));
         specifications.put("Dimensions", dimensions);
         return specifications;
+    }
+
+    @Override
+    public void validate() {
+
     }
 }
