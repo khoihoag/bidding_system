@@ -1,6 +1,7 @@
 package com.bidding.server.model.user;
 
 import com.bidding.server.model.entity.Entity;
+import com.bidding.server.model.enums.UserRole;
 
 public abstract class User extends Entity {
 
@@ -28,6 +29,44 @@ public abstract class User extends Entity {
         this.fullName = fullName;
         this.role = role;
         this.isActive = true;
+    }
+
+    // --- Getters ---
+    public String getUsername() {
+        return username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    // --- Setters ---
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
+    public void setRole(UserRole role) {
+        this.role = role;
     }
     // thay đổi thông tin cá nhân
     public void changePassword(String newPassword) {
@@ -60,6 +99,11 @@ public abstract class User extends Entity {
     //Trả về trạng thái hoạt động
     public boolean isActive() {
         return isActive;
+    }
+
+    //Cập nhật trạng thái hoạt động (dùng cho ban/unban)
+    public void setActive(boolean active) {
+        this.isActive = active;
     }
 
     @Override

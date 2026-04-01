@@ -1,9 +1,10 @@
 package com.bidding.server.model.item;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.bidding.server.model.enums.ItemCondition;
 import com.bidding.server.model.user.User;
 
 public class Art extends Item {

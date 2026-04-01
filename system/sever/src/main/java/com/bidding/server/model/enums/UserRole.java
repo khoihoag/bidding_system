@@ -1,4 +1,4 @@
-package com.bidding.server.model.user;
+package com.bidding.server.model.enums;
 
 public enum UserRole {
     BIDDER,
