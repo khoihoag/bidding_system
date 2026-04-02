@@ -1,5 +1,6 @@
 package com.bidding.server.model.user;
 
+import com.bidding.server.exception.ItemAlreadyInAuctionException;
 import com.bidding.server.model.auction.Auction;
 import com.bidding.server.model.enums.UserRole;
 import com.bidding.server.model.item.Item;
@@ -65,17 +66,16 @@ public class Seller extends User {
     }
 
     // Xóa sản phẩm
-    public boolean deleteItem(String id) {
+    public boolean deleteItem(String id) throws ItemAlreadyInAuctionException {
         // Kiểm tra sản phẩm có tồn tại
         if (!this.listedItems.containsKey(id)) {
             return false;
         }
-        /*
         if (this.activeAuctions.containsKey(id)) {
             throw new ItemAlreadyInAuctionException(
                     "Không thể xóa sản phẩm! Sản phẩm ID [" + id + "] đang nằm trong một phiên đấu giá."
             );
-        }*/
+        }
         this.listedItems.remove(id);
         return true;
     }

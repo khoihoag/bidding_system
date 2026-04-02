@@ -3,18 +3,15 @@ package com.bidding.server.model.user;
 import com.bidding.server.model.entity.Entity;
 import com.bidding.server.model.enums.UserRole;
 
+import java.time.LocalDateTime;
+
 public abstract class User extends Entity {
 
     private String username;
-
     private String email;
-
     private String passwordHash;
-
     private String fullName;
-
     protected UserRole role;
-
     private boolean isActive;
 
     public User() {
@@ -68,22 +65,7 @@ public abstract class User extends Entity {
     public void setRole(UserRole role) {
         this.role = role;
     }
-    // thay đổi thông tin cá nhân
-    public void changePassword(String newPassword) {
-        this.passwordHash = newPassword;
-    }
 
-    public void changeEmail(String newEmail) {
-        this.email = newEmail;
-    }
-
-    public void changeFullName(String newFullName) {
-        this.fullName = newFullName;
-    }
-    
-    public void changeUsername(String newUsername) {
-        this.username = newUsername;
-    }
 
     //Xác thực đăng nhập
     public boolean login(String pwd) {
@@ -92,9 +74,18 @@ public abstract class User extends Entity {
 
     //Xử lý đăng xuất
     public void logout() {
-    }
+        // TODO: Implement logout logic
+        // Cập nhật thời điểm thao tác cuối cùng của tài khoản thông qua method của Entity cha
+        this.setUpdatedAt(LocalDateTime.now());
 
-    public abstract UserRole getRole();
+        // (Tùy chọn) Ghi log nghiệp vụ ở mức độ đối tượng
+        // Trong hệ thống thực tế, thông tin này có thể được đẩy vào một Message Queue
+        // hoặc bắt bởi Observer để Admin có thể xem qua getAuditLog()
+        System.out.println(String.format("[AUDIT] User '%s' (Role: %s) initiated logout sequence at %s",
+                this.username, this.role, this.getUpdatedAt()));
+
+        // Trạng thái isActive được giữ nguyên vì nó đại diện cho Account Status, không phải Session Status
+    }
 
     //Trả về trạng thái hoạt động
     public boolean isActive() {
@@ -105,6 +96,8 @@ public abstract class User extends Entity {
     public void setActive(boolean active) {
         this.isActive = active;
     }
+
+    public abstract UserRole getRole();
 
     @Override
     public void printInfo() {

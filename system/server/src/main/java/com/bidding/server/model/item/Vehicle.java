@@ -87,7 +87,7 @@ public class Vehicle extends Item {
 
     @Override
     public void validate() {
-
+        // TODO: Implement validate logic
     }
 }
     

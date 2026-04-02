@@ -33,23 +33,23 @@ public class Admin extends User {
 
     // Mở khóa một người dùng
     public boolean unbanUser(String userId) {
-
+        // TODO: Implement unbanUser logic
         return false;
     }
 
     // Buộc đóng một phiên đấu giá
     public void forceCloseAuction(String id) {
-
+        // TODO: Implement forceCloseAuction logic
     }
 
     // Lấy thống kê hệ thống
     public SystemStats getSystemStats() {
-
+        // TODO: Implement getSystemStats logic
         return new SystemStats();
     }
     
     public List<String> getAuditLog() {
-
+        // TODO: Implement getAuditLog logic
         return new ArrayList<>();
     }
 
