@@ -1,5 +1,6 @@
 package com.bidding.server.model.user;
 
+import com.bidding.server.exception.AuctionException;
 import com.bidding.server.model.auction.Auction;
 import com.bidding.server.model.bid.BidTransaction;
 import com.bidding.server.model.enums.UserRole;
@@ -66,6 +67,9 @@ public class Bidder extends User {
     }
 
     // --- Các phương thức chức năng cốt lõi ---
+    /**
+     * Đấu giá thủ công
+     */
     public BidTransaction placeBid(Auction auction, double amount) {
         // Đặt giá thủ công: Cần kiểm tra logic số dư, auction status, v.v.
         BidTransaction transaction = new BidTransaction(this, auction, amount);
@@ -73,16 +77,25 @@ public class Bidder extends User {
         return transaction;
     }
 
+    /**
+     * Đấu giá tự động
+     */
     public void setAutoBid(Auction auction, Object config) {
         if (auction != null && auction.getId() != null) {
             this.autoBidConfigs.put(auction.getId(), config);
         }
     }
 
+    /**
+     * Hủy cấu hình đấu giá tự động.
+     */
     public void cancelAutoBid(String auctionId) {
         this.autoBidConfigs.remove(auctionId);
     }
 
+    /**
+     * Thêm phiên đấu giá vào danh sách theo dõi.
+     */
     public void watchAuction(Auction auction) {
         if (auction != null && !this.watchList.contains(auction)) {
             this.watchList.add(auction);
@@ -102,14 +115,25 @@ public class Bidder extends User {
 
     @Override
     public void printInfo() {
-        super.printInfo();
+        System.out.println("ID: " + this.getId());
+        System.out.println("Username: " + this.getUsername());
+        System.out.println("Balance: $" + this.balance);
+        System.out.println("Active AutoBids: " + this.autoBidConfigs.size());
     }
 
     @Override
     public void validate() {
-        // Validation logic for Bidder
-        if (balance < 0) {
-            throw new IllegalArgumentException("Balance cannot be negative");
+        // 1. Validate dữ liệu kế thừa từ User (Nên đưa vào User.validate() và gọi super.validate())
+        if (this.getUsername() == null || this.getUsername().trim().isEmpty()) {
+            throw new AuctionException("Username không được để trống.");
+        }
+        if (this.getEmail() == null || !this.getEmail().contains("@")) {
+            throw new AuctionException("Định dạng Email không hợp lệ.");
+        }
+
+        // 2. Validate dữ liệu riêng của Bidder
+        if (this.balance < 0) {
+            throw new AuctionException("Số dư tài khoản (balance) không được âm.");
         }
     }
 }
