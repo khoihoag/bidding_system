@@ -137,10 +137,55 @@ public class Auction extends Entity {
     }
     // chuyển trạng thái phiên giao dịch
     public void start() {
-        // TODO: Implement start logic
+        // 1. Kiểm tra tính hợp lệ của State Machine (Chỉ cho phép start khi đang OPEN)
+        if (this.status != AuctionStatus.OPEN) {
+            throw new IllegalStateException("Lỗi logic: Chỉ có thể bắt đầu phiên đấu giá đang ở trạng thái OPEN.");
+        }
+
+        // 2. Chuyển trạng thái và thiết lập thời gian
+        this.status = AuctionStatus.RUNNING;
+        this.startTime = LocalDateTime.now();
+
+        // 3. Ghi log hệ thống (Audit)
+        // Lưu ý: Thực tế sẽ dùng Logger thay vì System.out.println
+        System.out.println("[AUDIT] Phiên đấu giá [" + this.getId() + "] đã CHÍNH THỨC BẮT ĐẦU lúc " + this.startTime);
+
+        // 4. Phát sự kiện cho các Observer (Client/Biểu đồ) biết phiên đã bắt đầu
+        // Sử dụng EventType.AUCTION_STARTED đã định nghĩa trong tài liệu
+        AuctionEvent event = new AuctionEvent(EventType.AUCTION_STARTED, this, null, LocalDateTime.now(), "Phiên đấu giá bắt đầu");
+        //notifyObservers(event); observer pattern
     }
     public void end() {
-        // TODO: Implement end logic
+        AuctionEvent closeEvent = null;
+
+        // 1. Vùng Critical Section: Sử dụng khối synchronized hoặc ReentrantLock (this.lock)
+        // để đảm bảo không có 2 luồng cùng chốt Winner.
+        synchronized (this) {
+            // Double-check: Đảm bảo phiên chưa bị đóng bởi một luồng (thread) khác chui vào trước đó
+            if (this.status != AuctionStatus.RUNNING) {
+                return; // Nếu không phải RUNNING thì bỏ qua (hoặc ném Exception tùy nghiệp vụ)
+            }
+
+            // Chuyển trạng thái và chốt thời gian
+            this.status = AuctionStatus.FINISHED;
+            this.endTime = LocalDateTime.now();
+
+            // Lúc này block synchronized đảm bảo không ai có thể gọi placeBid() thành công nữa
+            // currentWinner hiện tại chính là người thắng cuộc hợp lệ cuối cùng
+
+            System.out.println("[AUDIT] Phiên đấu giá [" + this.getId() + "] ĐÃ ĐÓNG lúc " + this.endTime);
+            if (this.currentWinner != null) {
+                System.out.println(">>> Người chiến thắng: " + this.currentWinner.getUsername());
+            }
+
+            // Chuẩn bị Event (nhưng chưa phát đi vội)
+            closeEvent = new AuctionEvent(EventType.AUCTION_CLOSED, this, null, LocalDateTime.now(), "Phiên đấu giá kết thúc");
+        }
+
+        // 2. Phát sự kiện (Gọi notifyObservers() ở ngoài khối lock)
+        if (closeEvent != null) {
+            //notifyObservers(closeEvent); observer pattern
+        }
     }
 
     // Gia hạn phiên
