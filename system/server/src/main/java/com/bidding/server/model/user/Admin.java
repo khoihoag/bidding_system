@@ -1,9 +1,9 @@
 package com.bidding.server.model.user;
 
-import com.bidding.server.managers.SystemManager;
 import com.bidding.server.model.SystemStats;
-import com.bidding.server.model.enums.UserRole;
+import com.bidding.server.enums.UserRole;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,28 +33,39 @@ public class Admin extends User {
 
     // Mở khóa một người dùng
     public boolean unbanUser(String userId) {
-        // TODO: Implement unbanUser logic
-        return false;
+        // chỉ để test sua ghi vào log
+        System.out.println(String.format("[AUDIT] Admin '%s' requested to UNBAN user ID: %s at %s",
+                this.getUsername(), userId, LocalDateTime.now()));
+
+        // TODO: Thực tế cần gọi tầng Service/DAO.
+        // Ví dụ: return UserService.getInstance().unbanUser(userId);
+        return true;
     }
 
     // Buộc đóng một phiên đấu giá
     public void forceCloseAuction(String id) {
-        // TODO: Implement forceCloseAuction logic
+        // chỉ để test sua ghi vào log
+        System.out.println(String.format("[AUDIT] Admin '%s' FORCE CLOSED auction ID: %s at %s",
+                this.getUsername(), id, LocalDateTime.now()));
+
+        // Theo tài liệu[cite: 41], chúng ta ủy quyền cho AuctionManager xử lý thread-safe
+        // AuctionManager.getInstance().forceCloseAuction(id);
+
     }
 
     // Lấy thống kê hệ thống
     public SystemStats getSystemStats() {
-        // TODO: Implement getSystemStats logic
+        // TODO: Gọi SystemMonitorService hoặc tổng hợp từ các DAO
         return new SystemStats();
     }
-    
+
     public List<String> getAuditLog() {
-        // TODO: Implement getAuditLog logic
+        // TODO: Đọc từ file log hoặc bảng Audit trong Database
         return new ArrayList<>();
     }
 
     @Override
     public void validate() {
-        // Validation logic for Admin
+        super.validate();
     }
 }

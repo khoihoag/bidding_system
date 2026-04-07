@@ -1,8 +1,8 @@
 package com.bidding.server.events;
 
 import com.bidding.server.model.auction.Auction;
-import com.bidding.server.model.enums.EventType;
-import com.bidding.server.model.bid.BidTransaction;
+import com.bidding.server.enums.EventType;
+import com.bidding.server.model.auction.BidTransaction;
 import java.time.LocalDateTime;
 
 public class AuctionEvent {
@@ -23,28 +23,12 @@ public class AuctionEvent {
         this.message = message;
     }
 
-    public EventType getEventType() {
-        return eventType;
+    public String getMessage() {
+        return message;
     }
 
-    public void setEventType(EventType eventType) {
-        this.eventType = eventType;
-    }
-
-    public Auction getAuction() {
-        return auction;
-    }
-
-    public void setAuction(Auction auction) {
-        this.auction = auction;
-    }
-
-    public BidTransaction getBidTransaction() {
-        return bidTransaction;
-    }
-
-    public void setBidTransaction(BidTransaction bidTransaction) {
-        this.bidTransaction = bidTransaction;
+    public void setMessage(String message) {
+        this.message = message;
     }
 
     public LocalDateTime getTimestamp() {
@@ -55,11 +39,28 @@ public class AuctionEvent {
         this.timestamp = timestamp;
     }
 
-    public String getMessage() {
-        return message;
+    public BidTransaction getBidTransaction() {
+        return bidTransaction;
     }
 
-    public void setMessage(String message) {
-        this.message = message;
+    public void setBidTransaction(BidTransaction bidTransaction) {
+        this.bidTransaction = bidTransaction;
     }
+
+    public Auction getAuction() {
+        return auction;
+    }
+
+    public void setAuction(Auction auction) {
+        this.auction = auction;
+    }
+
+    public EventType getEventType() {
+        return eventType;
+    }
+
+    public void setEventType(EventType eventType) {
+        this.eventType = eventType;
+    }
+
 }

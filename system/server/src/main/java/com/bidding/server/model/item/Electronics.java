@@ -1,6 +1,6 @@
 package com.bidding.server.model.item;
 
-import com.bidding.server.model.enums.ItemCondition;
+import com.bidding.server.enums.ItemCondition;
 import com.bidding.server.model.user.User;
 
 import java.util.HashMap;

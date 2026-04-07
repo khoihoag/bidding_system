@@ -1,4 +1,4 @@
-package com.bidding.server.model.enums;
+package com.bidding.server.enums;
 
 
 public enum ItemCondition {

@@ -1,4 +1,4 @@
-package com.bidding.server.model.entity;
+package com.bidding.server.model.core;
 
 import java.time.LocalDateTime;
 

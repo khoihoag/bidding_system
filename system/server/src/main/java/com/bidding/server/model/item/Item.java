@@ -3,9 +3,9 @@ package com.bidding.server.model.item;
 import java.util.List;
 import java.util.Map;
 
-import com.bidding.server.model.enums.ItemCondition;
+import com.bidding.server.enums.ItemCondition;
 import com.bidding.server.model.user.User;
-import com.bidding.server.model.entity.Entity;
+import com.bidding.server.model.core.Entity;
 
 
 public abstract class Item extends Entity {

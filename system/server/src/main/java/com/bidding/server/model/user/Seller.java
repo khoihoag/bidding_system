@@ -2,9 +2,9 @@ package com.bidding.server.model.user;
 
 import com.bidding.server.exception.ItemAlreadyInAuctionException;
 import com.bidding.server.model.auction.Auction;
-import com.bidding.server.model.enums.UserRole;
+import com.bidding.server.enums.UserRole;
 import com.bidding.server.model.item.Item;
-import com.bidding.server.model.enums.AuctionStatus;
+import com.bidding.server.enums.AuctionStatus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -114,7 +114,7 @@ public class Seller extends User {
             return false;
         }
         
-        auction.setStatus(com.bidding.server.model.enums.AuctionStatus.CANCELED);
+        auction.setStatus(com.bidding.server.enums.AuctionStatus.CANCELED);
 
         // Hủy thành công: xóa khỏi activeAuctions map
         this.activeAuctions.remove(auctionId);
@@ -133,6 +133,25 @@ public class Seller extends User {
 
     @Override
     public void validate() {
-        // Validation logic for Seller
+        // 1. Validate dữ liệu kế thừa từ Entity (Mã định danh)
+        if (getId() == null || getId().trim().isEmpty()) {
+            throw new IllegalArgumentException("Lỗi dữ liệu: ID định danh của Seller không được để trống.");
+        }
+
+        // 2. Validate dữ liệu kế thừa từ User (Thông tin tài khoản)
+        super.validate();
+
+        // 3. Validate dữ liệu đặc thù của Seller
+        if (this.totalRevenue < 0) {
+            throw new IllegalArgumentException("Lỗi nghiệp vụ: Tổng doanh thu (totalRevenue) không được là số âm.");
+        }
+
+        // Đảm bảo tính toàn vẹn của các Collection (tránh NullPointerException khi thao tác)
+        if (this.listedItems == null) {
+            throw new IllegalStateException("Lỗi hệ thống: Map 'listedItems' chưa được khởi tạo.");
+        }
+        if (this.activeAuctions == null) {
+            throw new IllegalStateException("Lỗi hệ thống: Map 'activeAuctions' chưa được khởi tạo.");
+        }
     }
 }

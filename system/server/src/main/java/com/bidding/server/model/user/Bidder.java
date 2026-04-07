@@ -1,9 +1,10 @@
 package com.bidding.server.model.user;
 
 import com.bidding.server.exception.AuctionException;
+import com.bidding.server.exception.InvalidBidAmountException;
 import com.bidding.server.model.auction.Auction;
-import com.bidding.server.model.bid.BidTransaction;
-import com.bidding.server.model.enums.UserRole;
+import com.bidding.server.model.auction.BidTransaction;
+import com.bidding.server.enums.UserRole;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -72,19 +73,22 @@ public class Bidder extends User {
      */
     public BidTransaction placeBid(Auction auction, double amount) {
         // Đặt giá thủ công: Cần kiểm tra logic số dư, auction status, v.v.
-        BidTransaction transaction = new BidTransaction(this, auction, amount);
-        this.bidHistory.add(transaction);
-        return transaction;
+        if (amount > this.balance) {
+            throw new InvalidBidAmountException("Số dư không đủ để thực hiện giao dịch.");
+        }
+        // Gọi hàm thread-safe placeBid từ class Auction
+        return auction.placeBid(this, amount);
     }
 
     /**
      * Đấu giá tự động
-     */
-    public void setAutoBid(Auction auction, Object config) {
-        if (auction != null && auction.getId() != null) {
-            this.autoBidConfigs.put(auction.getId(), config);
+
+    public void setAutoBid(Auction auction, AutoBidConfig config) {
+        if (config == null || config.getMaxBid() <= 0) {
+            throw new AuctionException("Cấu hình AutoBid không hợp lệ.");
         }
-    }
+        this.autoBidConfigs.put(auction.getId(), config);
+    }*/
 
     /**
      * Hủy cấu hình đấu giá tự động.
@@ -97,15 +101,19 @@ public class Bidder extends User {
      * Thêm phiên đấu giá vào danh sách theo dõi.
      */
     public void watchAuction(Auction auction) {
-        if (auction != null && !this.watchList.contains(auction)) {
+        if (!this.watchList.contains(auction)) {
             this.watchList.add(auction);
         }
     }
 
     public List<BidTransaction> getActiveBids() {
-        // TODO: Logic lấy danh sách các bid đang dẫn đầu
-        // Hiện tại trả về toàn bộ bidHistory như placeholder
-        return new ArrayList<>(this.bidHistory);
+        List<BidTransaction> activeWinningBids = new ArrayList<>();
+        for (BidTransaction tx : bidHistory) {
+            if (tx.isWinning()) {
+                activeWinningBids.add(tx);
+            }
+        }
+        return activeWinningBids;
     }
 
     @Override
@@ -123,17 +131,20 @@ public class Bidder extends User {
 
     @Override
     public void validate() {
-        // 1. Validate dữ liệu kế thừa từ User (Nên đưa vào User.validate() và gọi super.validate())
-        if (this.getUsername() == null || this.getUsername().trim().isEmpty()) {
-            throw new AuctionException("Username không được để trống.");
-        }
-        if (this.getEmail() == null || !this.getEmail().contains("@")) {
-            throw new AuctionException("Định dạng Email không hợp lệ.");
+        // 1. Gọi logic kiểm tra của lớp cha (username, email...)
+        super.validate();
+
+        // 2. Validate dữ liệu đặc thù của Bidder
+        if (this.balance < 0) {
+            throw new IllegalArgumentException("Lỗi dữ liệu: Số dư tài khoản (balance) không được âm.");
         }
 
-        // 2. Validate dữ liệu riêng của Bidder
-        if (this.balance < 0) {
-            throw new AuctionException("Số dư tài khoản (balance) không được âm.");
+        // Đảm bảo các Collection không bị null
+        if (this.bidHistory == null) {
+            throw new IllegalStateException("Lỗi hệ thống: Danh sách bidHistory chưa được khởi tạo.");
+        }
+        if (this.watchList == null) {
+            throw new IllegalStateException("Lỗi hệ thống: Danh sách watchList chưa được khởi tạo.");
         }
     }
 }

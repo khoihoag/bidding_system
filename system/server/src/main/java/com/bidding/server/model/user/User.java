@@ -1,7 +1,7 @@
 package com.bidding.server.model.user;
 
-import com.bidding.server.model.entity.Entity;
-import com.bidding.server.model.enums.UserRole;
+import com.bidding.server.model.core.Entity;
+import com.bidding.server.enums.UserRole;
 
 import java.time.LocalDateTime;
 
@@ -74,7 +74,6 @@ public abstract class User extends Entity {
 
     //Xử lý đăng xuất
     public void logout() {
-        // TODO: Implement logout logic
         // Cập nhật thời điểm thao tác cuối cùng của tài khoản thông qua method của Entity cha
         this.setUpdatedAt(LocalDateTime.now());
 
@@ -102,5 +101,25 @@ public abstract class User extends Entity {
     @Override
     public void printInfo() {
         System.out.println("User: " + username + " - Email: " + email);
+    }
+
+    @Override
+    public void validate() {
+        // 1. Validate Username
+        if (this.username == null || this.username.trim().isEmpty()) {
+            throw new IllegalArgumentException("Lỗi dữ liệu: Username không được để trống.");
+        }
+        // 2. Validate Email
+        if (this.email == null || !this.email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            throw new IllegalArgumentException("Lỗi dữ liệu: Định dạng Email không hợp lệ.");
+        }
+        // 3. Validate FullName
+        if (this.fullName == null || this.fullName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Lỗi dữ liệu: Họ và tên không được để trống.");
+        }
+        // 4. Validate PasswordHash
+        if (this.passwordHash == null || this.passwordHash.trim().isEmpty()) {
+            throw new IllegalArgumentException("Lỗi dữ liệu: Mật khẩu (passwordHash) không được để trống.");
+        }
     }
 }

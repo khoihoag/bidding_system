@@ -2,8 +2,12 @@ package com.bidding.server.model.auction;
 
 import com.bidding.server.events.AuctionEvent;
 import com.bidding.server.events.AuctionObserver;
-import com.bidding.server.model.entity.Entity;
-import com.bidding.server.model.enums.AuctionStatus;
+import com.bidding.server.exception.AuctionClosedException;
+import com.bidding.server.exception.InvalidBidAmountException;
+import com.bidding.server.model.core.Entity;
+import com.bidding.server.enums.AuctionStatus;
+import com.bidding.server.enums.BidStatus;
+import com.bidding.server.enums.EventType;
 import com.bidding.server.model.item.Item;
 import com.bidding.server.model.user.Bidder;
 
@@ -19,7 +23,7 @@ public class Auction extends Entity {
     private volatile LocalDateTime endTime;
     private AtomicReference<Double> currentPrice;
     private Bidder currentWinner;
-    private CopyOnWriteArrayList<LocalDateTime> bidHistory;
+    private CopyOnWriteArrayList<BidTransaction> bidHistory;
     private CopyOnWriteArrayList<AuctionObserver> observers;
     private int antiSnipingSeconds;
     private int ectensionSeconds;
@@ -74,8 +78,62 @@ public class Auction extends Entity {
     }
 
     //đặt giá
-    public synchronized void placeBid(Bidder bidder, double amount) {
+    public synchronized BidTransaction placeBid(Bidder bidder, double amount) {
         // TODO: Implement placeBid logic
+        // 1. Kiểm tra trạng thái phiên (Fail-fast validation)
+        if (this.status != AuctionStatus.RUNNING) {
+            throw new AuctionClosedException("Phiên đấu giá đã đóng hoặc chưa bắt đầu."); //
+        }
+
+        BidTransaction newTransaction = null;
+        AuctionEvent eventToNotify = null;
+
+        // 2. Bắt đầu vùng găng (Critical Section) bằng ReentrantLock
+        lock.lock(); // Mỗi lần đặt giá đều phải acquire lock trước
+        try {
+            // Đọc giá trị hiện tại
+            Double expectedPrice = currentPrice.get();
+
+            // Kiểm tra giá đặt có hợp lệ không (phải lớn hơn giá hiện tại)
+            if (!isValidBid(amount)) {
+                throw new InvalidBidAmountException("Giá đặt thấp hơn hoặc bằng giá hiện tại."); //
+            }
+
+            // 3. Ngăn chặn Lost Update bằng AtomicReference.compareAndSet
+            // Chỉ cập nhật nếu currentPrice chưa bị luồng khác thay đổi
+            if (currentPrice.compareAndSet(expectedPrice, amount)) { //
+
+                // Cập nhật người thắng tạm thời
+                this.currentWinner = bidder; // [cite: 32]
+
+                // Tạo giao dịch và lưu vào lịch sử
+                // bidHistory sử dụng CopyOnWriteArrayList để đảm bảo nhất quán khi đọc/ghi đồng thời
+                newTransaction = new BidTransaction(bidder, this, amount, LocalDateTime.now(), BidStatus.ACCEPTED, false);
+                this.bidHistory.add(newTransaction);
+
+                // Kiểm tra và kích hoạt Anti-sniping (gia hạn thời gian nếu cần)
+                checkAntiSnipe(); // [cite: 32]
+
+                // Tạo sự kiện để thông báo, nhưng CHƯA gọi notify ngay lập tức
+                eventToNotify = new AuctionEvent(EventType.BID_PLACED, this, newTransaction, LocalDateTime.now(), "Có lượt đặt giá mới: $" + amount); // [cite: 48, 62]
+            } else {
+                // Nếu compareAndSet trả về false, nghĩa là có thread khác đã chèn vào và đổi giá thành công
+                throw new InvalidBidAmountException("Giá đã bị thay đổi bởi luồng khác. Vui lòng tải lại và thử lại.");
+            }
+        } finally {
+            // 4. Luôn luôn giải phóng khóa trong khối finally
+            lock.unlock();
+        }
+
+        /**
+         * // TODO: Fix
+        // 5. Notify Observers NGOÀI khối lock để tránh Deadlock
+        if (eventToNotify != null) {
+            notifyObservers(eventToNotify); //
+        }*/
+
+        return newTransaction; // [cite: 32]
+
     }
     // chuyển trạng thái phiên giao dịch
     public void start() {
@@ -109,8 +167,8 @@ public class Auction extends Entity {
     }
 
     // Kiểm rta giá đặt hợp lệ
-    private void isValidBid(double amount) {
-        // TODO: Implement isValidBid logic
+    private boolean isValidBid(double amount) {
+        return amount > currentPrice.get();
     }
 
     private void checkAntiSnipe() {
