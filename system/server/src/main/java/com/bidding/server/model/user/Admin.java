@@ -1,6 +1,6 @@
 package com.bidding.server.model.user;
 
-import com.bidding.server.model.SystemStats;
+//import com.bidding.server.model.SystemStats;
 import com.bidding.server.enums.UserRole;
 
 import java.time.LocalDateTime;
@@ -54,10 +54,11 @@ public class Admin extends User {
     }
 
     // Lấy thống kê hệ thống
+    /* //TODO: Đang cấn SystemStats
     public SystemStats getSystemStats() {
         // TODO: Gọi SystemMonitorService hoặc tổng hợp từ các DAO
         return new SystemStats();
-    }
+    }*/
 
     public List<String> getAuditLog() {
         // TODO: Đọc từ file log hoặc bảng Audit trong Database

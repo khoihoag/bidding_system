@@ -6,8 +6,12 @@ import java.util.Map;
 import com.bidding.server.enums.ItemCondition;
 import com.bidding.server.model.user.User;
 import com.bidding.server.model.core.Entity;
+import lombok.Getter;
+import lombok.Setter;
 
 
+@Getter
+@Setter
 public abstract class Item extends Entity {
 
     private String name;
@@ -30,22 +34,7 @@ public abstract class Item extends Entity {
         this.seller = seller;
         this.condition = condition;
     }
-    //getter
-    public User getSeller() {
-        return seller;
-    }
-    public List<String> getImages() {
-        return images;
-    }
-    public double getStartingPrice() {
-        return startingPrice;
-    }
-    public String getDescription() {
-        return description;
-    }
-    public String getName() {
-        return name;
-    }
+
 
     //setter
     public void setDescription(String description) {
