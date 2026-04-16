@@ -26,8 +26,8 @@ public class Bidder extends User {
         this.autoBidConfigs = new HashMap<>();
     }
 
-    public Bidder(String id, String username, String email, String passwordHash, String fullName) {
-        super(id, username, email, passwordHash, fullName, UserRole.BIDDER);
+    public Bidder(String username, String email, String passwordHash, String fullName) {
+        super(username, email, passwordHash, fullName, UserRole.BIDDER);
         this.balance = 0.0;
         this.bidHistory = new ArrayList<>();
         this.watchList = new ArrayList<>();
@@ -35,6 +35,7 @@ public class Bidder extends User {
     }
 
     // --- Getters & Setters ---
+
     public double getBalance() {
         return balance;
     }
@@ -66,6 +67,7 @@ public class Bidder extends User {
     public void setAutoBidConfigs(Map<String, Object> autoBidConfigs) {
         this.autoBidConfigs = autoBidConfigs;
     }
+
 
     // --- Các phương thức chức năng cốt lõi ---
     /**

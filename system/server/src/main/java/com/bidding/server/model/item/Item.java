@@ -35,27 +35,6 @@ public abstract class Item extends Entity {
         this.condition = condition;
     }
 
-
-    //setter
-    public void setDescription(String description) {
-        this.description = description;
-    }
-    public void setName(String name) {
-        this.name = name;
-    }
-    public void setStartingPrice(double startingPrice) {
-        this.startingPrice = startingPrice;
-    }
-    public void setImages(List<String> images) {
-        this.images = images;
-    }
-    public void setSeller(User seller) {
-        this.seller = seller;
-    }
-    public void setCondition(ItemCondition condition) {
-        this.condition = condition;
-    }
-
     public abstract String getCategory();
     
     public abstract Map<String, String> getSpecifications();

@@ -24,8 +24,8 @@ public class Seller extends User {
         this.totalRevenue = 0.0;
     }
 
-    public Seller(String id, String username, String email, String passwordHash, String fullName) {
-        super(id, username, email, passwordHash, fullName, UserRole.SELLER);
+    public Seller( String username, String email, String passwordHash, String fullName) {
+        super(username, email, passwordHash, fullName, UserRole.SELLER);
         this.listedItems = new HashMap<>();
         this.activeAuctions = new HashMap<>();
         this.totalRevenue = 0.0;

@@ -12,6 +12,7 @@ import com.bidding.server.model.item.Item;
 import com.bidding.server.model.user.Bidder;
 
 import java.time.LocalDateTime;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
@@ -23,36 +24,46 @@ public class Auction extends Entity {
     private volatile LocalDateTime endTime;
     private AtomicReference<Double> currentPrice;
     private Bidder currentWinner;
-    private CopyOnWriteArrayList<BidTransaction> bidHistory;
-    private CopyOnWriteArrayList<AuctionObserver> observers;
+    private ConcurrentLinkedDeque<BidTransaction> bidHistory;// có thể trực tiếp dưới db
+    private ConcurrentLinkedDeque<AuctionObserver> observers;
     private int antiSnipingSeconds;
-    private int ectensionSeconds;
+    private int extensionSeconds;
     private ReentrantLock lock;
+    private volatile BidTransaction currentWinningTransaction;
 
     public Auction() {
         super();
         this.status = AuctionStatus.OPEN;
         this.currentPrice = new AtomicReference<>(0.0);
-        this.bidHistory = new CopyOnWriteArrayList<>();
-        this.observers = new CopyOnWriteArrayList<>();
+        this.bidHistory = new ConcurrentLinkedDeque<>();
+        this.observers = new ConcurrentLinkedDeque<>();
         this.lock = new ReentrantLock();
+        this.currentWinningTransaction = null;
     }
 
-    public Auction(Item item, LocalDateTime startTime, LocalDateTime endTime, int antiSnipingSeconds, int ectensionSeconds) {
+    public Auction(Item item, LocalDateTime startTime, LocalDateTime endTime,
+                   int antiSnipingSeconds, int extensionSeconds) {
         super();
         this.item = item;
         this.startTime = startTime;
         this.endTime = endTime;
         this.status = AuctionStatus.OPEN;
         this.currentPrice = new AtomicReference<>(item != null ? item.getStartingPrice() : 0.0);
-        this.bidHistory = new CopyOnWriteArrayList<>();
-        this.observers = new CopyOnWriteArrayList<>();
+        this.bidHistory = new ConcurrentLinkedDeque<>();
+        this.observers = new ConcurrentLinkedDeque<>();
         this.lock = new ReentrantLock();
         this.antiSnipingSeconds = antiSnipingSeconds;
-        this.ectensionSeconds = ectensionSeconds;
+        this.extensionSeconds = extensionSeconds;
+        this.currentWinningTransaction = null;
     }
 
+
+
     // --- Getter, Setter & Utility Methods ---
+    public BidTransaction getCurrentWinningTransaction() {return this.currentWinningTransaction;}
+
+    public LocalDateTime getEndTime() {return endTime;}
+
     public Item getItem() {
         return item;
     }
@@ -78,119 +89,139 @@ public class Auction extends Entity {
     }
 
     //đặt giá
-    public synchronized BidTransaction placeBid(Bidder bidder, double amount) {
-        // TODO: Implement placeBid logic
-        // 1. Kiểm tra trạng thái phiên (Fail-fast validation)
+    public BidTransaction placeBid(Bidder bidder, double amount) {
+        // 2. Fail-fast validation (Kiểm tra ngoài lock để tiết kiệm tài nguyên)
         if (this.status != AuctionStatus.RUNNING) {
-            throw new AuctionClosedException("Phiên đấu giá đã đóng hoặc chưa bắt đầu."); //
+            throw new AuctionClosedException("Phiên đấu giá đã đóng hoặc chưa bắt đầu.");
         }
 
         BidTransaction newTransaction = null;
         AuctionEvent eventToNotify = null;
 
-        // 2. Bắt đầu vùng găng (Critical Section) bằng ReentrantLock
-        lock.lock(); // Mỗi lần đặt giá đều phải acquire lock trước
+        // 3. Bắt đầu vùng găng (Critical Section)
+        lock.lock();
         try {
-            // Đọc giá trị hiện tại
-            Double expectedPrice = currentPrice.get();
-
-            // Kiểm tra giá đặt có hợp lệ không (phải lớn hơn giá hiện tại)
-            if (!isValidBid(amount)) {
-                throw new InvalidBidAmountException("Giá đặt thấp hơn hoặc bằng giá hiện tại."); //
+            // 4. Double-check trạng thái: Bắt buộc phải kiểm tra lại bên trong Lock
+            // để đề phòng trường hợp hàm end() vừa chạy xong ở luồng khác.
+            if (this.status != AuctionStatus.RUNNING) {
+                throw new AuctionClosedException("Phiên đấu giá vừa bị chốt đóng. Vui lòng tham gia phiên khác.");
             }
 
-            // 3. Ngăn chặn Lost Update bằng AtomicReference.compareAndSet
-            // Chỉ cập nhật nếu currentPrice chưa bị luồng khác thay đổi
-            if (currentPrice.compareAndSet(expectedPrice, amount)) { //
+            BidTransaction previousWinningBid = this.getCurrentWinningTransaction();
 
-                // Cập nhật người thắng tạm thời
-                this.currentWinner = bidder; // [cite: 32]
-
-                // Tạo giao dịch và lưu vào lịch sử
-                // bidHistory sử dụng CopyOnWriteArrayList để đảm bảo nhất quán khi đọc/ghi đồng thời
-                newTransaction = new BidTransaction(bidder, this, amount, LocalDateTime.now(), BidStatus.ACCEPTED, false);
-                this.bidHistory.add(newTransaction);
-
-                // Kiểm tra và kích hoạt Anti-sniping (gia hạn thời gian nếu cần)
-                checkAntiSnipe(); // [cite: 32]
-
-                // Tạo sự kiện để thông báo, nhưng CHƯA gọi notify ngay lập tức
-                eventToNotify = new AuctionEvent(EventType.BID_PLACED, this, newTransaction, LocalDateTime.now(), "Có lượt đặt giá mới: $" + amount); // [cite: 48, 62]
-            } else {
-                // Nếu compareAndSet trả về false, nghĩa là có thread khác đã chèn vào và đổi giá thành công
-                throw new InvalidBidAmountException("Giá đã bị thay đổi bởi luồng khác. Vui lòng tải lại và thử lại.");
+            // 5. Kiểm tra giá đặt
+            if (!isValidBid(amount)) { // Đã an toàn vì bên trong lock
+                throw new InvalidBidAmountException("Giá đặt $" + amount + " thấp hơn hoặc bằng giá hiện tại: $" + currentPrice.get());
             }
+
+            // 6. Cập nhật dữ liệu (Dùng .set() thông thường vì đã có Lock bảo vệ độc quyền)
+            currentPrice.set(amount);
+
+            if (previousWinningBid != null) {
+                previousWinningBid.markOutbid();
+            }
+
+
+
+            // Cập nhật người thắng tạm thời
+            this.currentWinner = bidder;
+
+            // Tạo giao dịch và lưu vào lịch sử (CopyOnWriteArrayList)
+            newTransaction = new BidTransaction(bidder, this, amount, LocalDateTime.now(), BidStatus.ACCEPTED, false);
+            this.currentWinningTransaction = newTransaction;
+            this.bidHistory.addLast(newTransaction);
+
+            // Kiểm tra và kích hoạt Anti-sniping
+            checkAntiSnipe();
+
+            // Chuẩn bị sự kiện
+            eventToNotify = new AuctionEvent(EventType.BID_PLACED, this, newTransaction, LocalDateTime.now(), "Có lượt đặt giá mới: $" + amount);
+
         } finally {
-            // 4. Luôn luôn giải phóng khóa trong khối finally
+            // 7. LUÔN LUÔN giải phóng khóa trong khối finally
             lock.unlock();
         }
 
-        /**
-         * // TODO: Fix
-        // 5. Notify Observers NGOÀI khối lock để tránh Deadlock
+        // 8. Notify Observers NGOÀI khối lock để tránh Deadlock (Ví dụ: Observer lại gọi ngược API vào Auction)
         if (eventToNotify != null) {
-            notifyObservers(eventToNotify); //
-        }*/
-
-        return newTransaction; // [cite: 32]
-
-    }
-    // chuyển trạng thái phiên giao dịch
-    public void start() {
-        // 1. Kiểm tra tính hợp lệ của State Machine (Chỉ cho phép start khi đang OPEN)
-        if (this.status != AuctionStatus.OPEN) {
-            throw new IllegalStateException("Lỗi logic: Chỉ có thể bắt đầu phiên đấu giá đang ở trạng thái OPEN.");
+            //notifyObservers(eventToNotify); // Bỏ comment khi bạn đã implement hàm này
         }
 
-        // 2. Chuyển trạng thái và thiết lập thời gian
-        this.status = AuctionStatus.RUNNING;
-        this.startTime = LocalDateTime.now();
-
-        // 3. Ghi log hệ thống (Audit)
-        // Lưu ý: Thực tế sẽ dùng Logger thay vì System.out.println
-        System.out.println("[AUDIT] Phiên đấu giá [" + this.getId() + "] đã CHÍNH THỨC BẮT ĐẦU lúc " + this.startTime);
-
-        // 4. Phát sự kiện cho các Observer (Client/Biểu đồ) biết phiên đã bắt đầu
-        // Sử dụng EventType.AUCTION_STARTED đã định nghĩa trong tài liệu
-        AuctionEvent event = new AuctionEvent(EventType.AUCTION_STARTED, this, null, LocalDateTime.now(), "Phiên đấu giá bắt đầu");
-        //notifyObservers(event); observer pattern
+        return newTransaction;
     }
-    public void end() {
-        AuctionEvent closeEvent = null;
+    // chuyển trạng thái phiên giao dịch
+    // 1. Phương thức start(): Đã bổ sung Lock để ngăn chặn 2 luồng cùng lúc "khởi động" phiên
+    public void start() {
+        AuctionEvent startEvent = null;
 
-        // 1. Vùng Critical Section: Sử dụng khối synchronized hoặc ReentrantLock (this.lock)
-        // để đảm bảo không có 2 luồng cùng chốt Winner.
-        synchronized (this) {
-            // Double-check: Đảm bảo phiên chưa bị đóng bởi một luồng (thread) khác chui vào trước đó
-            if (this.status != AuctionStatus.RUNNING) {
-                return; // Nếu không phải RUNNING thì bỏ qua (hoặc ném Exception tùy nghiệp vụ)
+        lock.lock(); // Dùng chung ReentrantLock với placeBid và end
+        try {
+            // Kiểm tra tính hợp lệ bên trong Lock
+            if (this.status != AuctionStatus.OPEN) {
+                throw new IllegalStateException("Hành động từ chối: Chỉ có thể bắt đầu phiên đấu giá đang ở trạng thái OPEN.");
             }
 
-            // Chuyển trạng thái và chốt thời gian
+            // Cập nhật trạng thái
+            this.status = AuctionStatus.RUNNING;
+            this.startTime = LocalDateTime.now();
+
+            System.out.println("[AUDIT] Phiên đấu giá [" + this.getId() + "] đã CHÍNH THỨC BẮT ĐẦU lúc " + this.startTime);
+
+            // Chuẩn bị Event
+            startEvent = new AuctionEvent(EventType.AUCTION_STARTED, this, null, LocalDateTime.now(), "Phiên đấu giá bắt đầu");
+        } finally {
+            // Đảm bảo luôn nhả khóa
+            lock.unlock();
+        }
+
+        // Bắn Event ra bên ngoài để tránh Deadlock với Observer
+        if (startEvent != null) {
+            // notifyObservers(startEvent);
+        }
+    }
+
+    // 2. Phương thức end(): Loại bỏ 'synchronized(this)', dùng 'lock' để đồng bộ hóa với placeBid
+    public void close() {
+        AuctionEvent closeEvent = null;
+
+        lock.lock(); // Bước ngoặt: Giờ thì end() và placeBid() đã "nhìn thấy" nhau
+        try {
+            // Double-check: Nếu không phải RUNNING thì không làm gì cả
+            if (this.status != AuctionStatus.RUNNING) {
+                return;
+            }
+
+            // Chốt trạng thái FINISHED [cite: 73]
             this.status = AuctionStatus.FINISHED;
             this.endTime = LocalDateTime.now();
 
-            // Lúc này block synchronized đảm bảo không ai có thể gọi placeBid() thành công nữa
-            // currentWinner hiện tại chính là người thắng cuộc hợp lệ cuối cùng
-
             System.out.println("[AUDIT] Phiên đấu giá [" + this.getId() + "] ĐÃ ĐÓNG lúc " + this.endTime);
-            if (this.currentWinner != null) {
-                System.out.println(">>> Người chiến thắng: " + this.currentWinner.getUsername());
-            }
 
-            // Chuẩn bị Event (nhưng chưa phát đi vội)
-            closeEvent = new AuctionEvent(EventType.AUCTION_CLOSED, this, null, LocalDateTime.now(), "Phiên đấu giá kết thúc");
+            // Xử lý Business Logic: Có người thắng hay không?
+            if (this.currentWinner != null) {
+                System.out.println(">>> Người chiến thắng: " + this.currentWinner.getUsername() + " với giá $" + this.currentPrice.get());
+                closeEvent = new AuctionEvent(EventType.AUCTION_CLOSED, this, null, LocalDateTime.now(), "Phiên kết thúc. Đang chờ thanh toán.");
+
+                // TODO (Tương lai): Gọi Job kích hoạt luồng thanh toán -> PAID [cite: 73]
+            } else {
+                System.out.println(">>> Không có ai đặt giá. Sản phẩm không bán được.");
+                closeEvent = new AuctionEvent(EventType.AUCTION_CLOSED, this, null, LocalDateTime.now(), "Phiên kết thúc: Không có người mua.");
+
+                // Tùy chọn: Bạn có thể cập nhật trạng thái thành CANCELED ngay tại đây nếu logic business yêu cầu [cite: 73]
+            }
+        } finally {
+            lock.unlock();
         }
 
-        // 2. Phát sự kiện (Gọi notifyObservers() ở ngoài khối lock)
+        // Phát sự kiện an toàn ngoài vùng khóa
         if (closeEvent != null) {
-            //notifyObservers(closeEvent); observer pattern
+            // notifyObservers(closeEvent);
         }
     }
 
     // Gia hạn phiên
-    public void extendTimt(int second) {
-        // TODO: Implement extendTimt logic
+    public void extendTime(int second) {
+        // TODO: Implement extendTimelogic
     }
 
     // Quản lý các observer
@@ -222,12 +253,47 @@ public class Auction extends Entity {
 
     @Override
     public void validate() {
-        // TODO: Implement validate logic
+        // 1. Kiểm tra ID kế thừa từ Entity
+        if (this.getId() == null || this.getId().trim().isEmpty()) {
+            throw new IllegalArgumentException("Validation failed: ID phiên đấu giá không được để trống.");
+        }
+
+        // 2. Kiểm tra quan hệ với Item
+        if (this.item == null) {
+            throw new IllegalArgumentException("Validation failed: Phiên đấu giá phải gắn với một sản phẩm (Item).");
+        }
+
+        // 3. Kiểm tra tính hợp lệ của thời gian
+        if (this.startTime == null || this.endTime == null) {
+            throw new IllegalArgumentException("Validation failed: Thời gian bắt đầu và kết thúc không được null.");
+        }
+        if (this.startTime.isAfter(this.endTime)) {
+            throw new IllegalArgumentException("Validation failed: Thời gian bắt đầu không thể diễn ra sau thời gian kết thúc.");
+        }
+
+        // 4. Kiểm tra dữ liệu an toàn luồng (Thread-safe)
+        if (this.currentPrice == null || this.currentPrice.get() < 0) {
+            throw new IllegalArgumentException("Validation failed: Giá hiện tại (AtomicReference) không hợp lệ.");
+        }
     }
 
     @Override
     public void printInfo() {
-        // TODO: Implement printInfo logic
+
+        // Xây dựng chuỗi thông tin thay vì in lắt nhắt
+        StringBuilder infoBuilder = new StringBuilder();
+        infoBuilder.append("=== THÔNG TIN PHIÊN ĐẤU GIÁ ===\n");
+        infoBuilder.append("ID Phiên: ").append(this.getId()).append("\n");
+        infoBuilder.append("Ngày tạo: ").append(this.getCreatedAt()).append("\n");
+        infoBuilder.append("Trạng thái hiện tại: ").append(this.status).append("\n");
+
+        // Đảm bảo lấy giá trị an toàn từ AtomicReference
+        if (this.currentPrice != null) {
+            infoBuilder.append("Giá đang dẫn đầu: ").append(this.currentPrice.get()).append("\n");
+        }
+
+        // TODO:Trong thực tế hãy dùng logger.info(infoBuilder.toString());
+        System.out.println(infoBuilder.toString());
     }
 
     // Kiểm tra xem phiên đã có người đặt giá hay chưa

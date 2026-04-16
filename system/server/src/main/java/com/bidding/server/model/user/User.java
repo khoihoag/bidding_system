@@ -18,7 +18,7 @@ public abstract class User extends Entity {
         super();
     }   
 
-    public User(String id, String username, String email, String passwordHash, String fullName, UserRole role) {
+    public User(String username, String email, String passwordHash, String fullName, UserRole role) {
         super();
         this.username = username;
         this.email = email;
