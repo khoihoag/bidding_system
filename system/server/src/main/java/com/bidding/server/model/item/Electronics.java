@@ -2,11 +2,11 @@ package com.bidding.server.model.item;
 
 import com.bidding.server.enums.ItemCondition;
 import com.bidding.server.model.user.User;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+import jakarta.persistence.Entity;
+@Entity
 public class Electronics extends Item {
 
     private String brand;
@@ -59,12 +59,12 @@ public class Electronics extends Item {
         this.powerWatts = powerWatts;
     }
     
-    @Override
+
     public String getCategory() {
         return "Electronics";
     }
     
-    @Override
+
     public Map<String, String> getSpecifications() {
         Map<String, String> specifications = new HashMap<>();
         specifications.put("Brand", brand);
@@ -74,8 +74,6 @@ public class Electronics extends Item {
         return specifications;
     }
 
-    @Override
-    public void validate() {
-        // TODO: Implement validate logic
-    }
+
+
 }

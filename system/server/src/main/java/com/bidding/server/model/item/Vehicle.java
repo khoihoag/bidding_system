@@ -1,14 +1,11 @@
 package com.bidding.server.model.item;
-
+import com.bidding.server.model.user.User;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import com.bidding.server.enums.ItemCondition;
-import com.bidding.server.model.user.User;
-
-
-
+import jakarta.persistence.Entity;
+@Entity
 public class Vehicle extends Item {
     private String make;
     private String model;
@@ -70,7 +67,7 @@ public class Vehicle extends Item {
     public void setFuelType(String fuelType) {
         this.fuelType = fuelType;
     }
-    
+
     public String getCategory() {
         return "Vehicle";
     }
@@ -85,9 +82,7 @@ public class Vehicle extends Item {
         return specifications;
     }
 
-    @Override
-    public void validate() {
-        // TODO: Implement validate logic
-    }
+
 }
+
     
