@@ -1,12 +1,11 @@
 package com.bidding.server.model.item;
-
 import java.util.HashMap;
+import com.bidding.server.model.user.User;
 import java.util.List;
 import java.util.Map;
-
 import com.bidding.server.enums.ItemCondition;
-import com.bidding.server.model.user.User;
-
+import jakarta.persistence.Entity;
+@Entity
 public class Art extends Item {
 
     private String artist;
@@ -19,6 +18,7 @@ public class Art extends Item {
     }
 
     public Art(String id, String name, String description, double startingPrice, List<String> images, User seller, ItemCondition condition, String artist, String medium, int yearCreated, String dimensions) {
+        // Truyền id và User seller lên cho Item xử lý
         super(id, name, description, startingPrice, images, seller, condition);
         this.artist = artist;
         this.medium = medium;
@@ -76,8 +76,6 @@ public class Art extends Item {
         return specifications;
     }
 
-    @Override
-    public void validate() {
-        // TODO: Implement validate logic
+
     }
-}
+
