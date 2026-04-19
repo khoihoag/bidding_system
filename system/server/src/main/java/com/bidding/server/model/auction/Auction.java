@@ -4,92 +4,85 @@ import com.bidding.server.events.AuctionEvent;
 import com.bidding.server.events.AuctionObserver;
 import com.bidding.server.exception.AuctionClosedException;
 import com.bidding.server.exception.InvalidBidAmountException;
+import com.bidding.server.exception.UserNotAuthorizedException;
 import com.bidding.server.model.core.Entity;
 import com.bidding.server.enums.AuctionStatus;
 import com.bidding.server.enums.BidStatus;
 import com.bidding.server.enums.EventType;
 import com.bidding.server.model.item.Item;
-import com.bidding.server.model.user.Bidder;
+import com.bidding.server.model.transaction.BidTransaction;
+import com.bidding.server.model.user.User;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
-
+@Getter
+@Setter
 public class Auction extends Entity {
+    private User seller;
     private Item item;
     private AuctionStatus status;
     private volatile LocalDateTime startTime;
     private volatile LocalDateTime endTime;
     private AtomicReference<Double> currentPrice;
-    private Bidder currentWinner;
+    private User currentWinner;
     private ConcurrentLinkedDeque<BidTransaction> bidHistory;// có thể trực tiếp dưới db
-    private ConcurrentLinkedDeque<AuctionObserver> observers;
+    private CopyOnWriteArrayList<AuctionObserver> observers;
     private int antiSnipingSeconds;
     private int extensionSeconds;
     private ReentrantLock lock;
     private volatile BidTransaction currentWinningTransaction;
 
-    public Auction() {
+    private final ExecutorService notificationExecutor = Executors.newCachedThreadPool();
+
+
+    public Auction(User seller) {
         super();
+        this.seller = seller;
         this.status = AuctionStatus.OPEN;
         this.currentPrice = new AtomicReference<>(0.0);
         this.bidHistory = new ConcurrentLinkedDeque<>();
-        this.observers = new ConcurrentLinkedDeque<>();
+        this.observers = new CopyOnWriteArrayList<>();
         this.lock = new ReentrantLock();
         this.currentWinningTransaction = null;
     }
 
-    public Auction(Item item, LocalDateTime startTime, LocalDateTime endTime,
+    public Auction(User seller, Item item, LocalDateTime startTime, LocalDateTime endTime,
                    int antiSnipingSeconds, int extensionSeconds) {
         super();
+        this.seller = seller;
         this.item = item;
         this.startTime = startTime;
         this.endTime = endTime;
         this.status = AuctionStatus.OPEN;
         this.currentPrice = new AtomicReference<>(item != null ? item.getStartingPrice() : 0.0);
         this.bidHistory = new ConcurrentLinkedDeque<>();
-        this.observers = new ConcurrentLinkedDeque<>();
+        this.observers = new CopyOnWriteArrayList<>();
         this.lock = new ReentrantLock();
         this.antiSnipingSeconds = antiSnipingSeconds;
         this.extensionSeconds = extensionSeconds;
         this.currentWinningTransaction = null;
     }
 
-
-
-    // --- Getter, Setter & Utility Methods ---
-    public BidTransaction getCurrentWinningTransaction() {return this.currentWinningTransaction;}
-
-    public LocalDateTime getEndTime() {return endTime;}
-
-    public Item getItem() {
-        return item;
+    public Auction(User seller, Item item, int antiSnipingSeconds, int extensionSeconds) {
+        // Áp dụng DRY: Chaining về constructor gốc
+        // Để trống (null) startTime và endTime. Lớp Service sẽ chịu trách nhiệm inject thời gian sau.
+        this(seller, item, null, null, antiSnipingSeconds, extensionSeconds);
     }
 
-    public void setItem(Item item) {
-        this.item = item;
-    }
 
-    public AuctionStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(AuctionStatus status) {
-        this.status = status;
-    }
-
-    public Bidder getCurrentWinner() {
-        return currentWinner;
-    }
-
-    public AtomicReference<Double> getCurrentPrice() {
-        return currentPrice;
-    }
 
     //đặt giá
-    public BidTransaction placeBid(Bidder bidder, double amount) {
+    public BidTransaction placeBid(User bidder, double amount) {
+        if (this.seller != null && bidder.getId().equals(this.seller.getId())) {
+            throw new UserNotAuthorizedException("Người bán không thể tự đặt giá.");
+        }
         // 2. Fail-fast validation (Kiểm tra ngoài lock để tiết kiệm tài nguyên)
         if (this.status != AuctionStatus.RUNNING) {
             throw new AuctionClosedException("Phiên đấu giá đã đóng hoặc chưa bắt đầu.");
@@ -121,8 +114,6 @@ public class Auction extends Entity {
                 previousWinningBid.markOutbid();
             }
 
-
-
             // Cập nhật người thắng tạm thời
             this.currentWinner = bidder;
 
@@ -144,7 +135,7 @@ public class Auction extends Entity {
 
         // 8. Notify Observers NGOÀI khối lock để tránh Deadlock (Ví dụ: Observer lại gọi ngược API vào Auction)
         if (eventToNotify != null) {
-            //notifyObservers(eventToNotify); // Bỏ comment khi bạn đã implement hàm này
+            notifyObservers(eventToNotify);
         }
 
         return newTransaction;
@@ -176,7 +167,7 @@ public class Auction extends Entity {
 
         // Bắn Event ra bên ngoài để tránh Deadlock với Observer
         if (startEvent != null) {
-            // notifyObservers(startEvent);
+            notifyObservers(startEvent);
         }
     }
 
@@ -215,16 +206,53 @@ public class Auction extends Entity {
 
         // Phát sự kiện an toàn ngoài vùng khóa
         if (closeEvent != null) {
-            // notifyObservers(closeEvent);
+            notifyObservers(closeEvent);
         }
     }
 
     // Gia hạn phiên
-    public void extendTime(int second) {
-        // TODO: Implement extendTimelogic
+    public void extendTime(int seconds) {
+        // 1. Fail-fast validation (Ngoài lock để tối ưu)
+        if (seconds <= 0) {
+            throw new IllegalArgumentException("Thời gian gia hạn phải lớn hơn 0.");
+        }
+
+        AuctionEvent extendEvent = null;
+
+        // 2. Bắt đầu vùng găng an toàn luồng
+        lock.lock();
+        try {
+            // 3. Double-check trạng thái: Bắt buộc chỉ gia hạn khi phiên đang chạy
+            if (this.status != AuctionStatus.RUNNING) {
+                throw new IllegalStateException("Từ chối gia hạn: Phiên đấu giá không ở trạng thái RUNNING.");
+            }
+
+            // 4. Cập nhật thời gian
+            this.endTime = this.endTime.plusSeconds(seconds);
+            System.out.println("[AUDIT] Phiên [" + this.getId() + "] được gia hạn thêm " + seconds + "s. EndTime mới: " + this.endTime);
+
+            // 5. Chuẩn bị sự kiện để push qua Socket cho Client cập nhật đồng hồ
+            // Lưu ý: Tạm dùng PRICE_UPDATED hoặc định nghĩa thêm TIME_EXTENDED trong EventType
+            extendEvent = new AuctionEvent(
+                    EventType.PRICE_UPDATED,
+                    this,
+                    null,
+                    LocalDateTime.now(),
+                    "Đồng hồ được gia hạn thêm " + seconds + " giây!"
+            );
+
+        } finally {
+            // 6. Luôn nhả khóa
+            lock.unlock();
+        }
+
+        // 7. Thông báo cho Observers (WebSocket) ở ngoài vùng găng
+        if (extendEvent != null) {
+            notifyObservers(extendEvent);
+        }
     }
 
-    // Quản lý các observer
+    //  ================= Quản lý Observer =================
     public void addObserver(AuctionObserver observer) {
         if (observer != null && !this.observers.contains(observer)) {
             this.observers.add(observer);
@@ -238,17 +266,46 @@ public class Auction extends Entity {
     }
 
     // Thông báo AutionEvent đến tất cả observer
-    private void notifyObserver(AuctionEvent event) {
-        // TODO: Implement notifyObserver logic
+    private void notifyObservers(AuctionEvent event) {
+        // Tự động dọn dẹp các "xác sống" (Lapsed Listener Problem)
+        // Nếu client rớt mạng (isAlive = false), gỡ ngay khỏi danh sách để giải phóng RAM
+        observers.removeIf(observer -> !observer.isAlive());
+
+        // Lặp qua các observer CÒN SỐNG
+        for (AuctionObserver observer : observers) {
+            // Đẩy tác vụ push data sang một Thread khác
+            // Nhờ đó, hàm placeBid() kết thúc ngay lập tức, user không bị lag
+            notificationExecutor.submit(() -> {
+                try {
+                    observer.onBidPlaced(event);
+                } catch (Exception e) {
+                    // Log lỗi (ví dụ: Timeout khi gửi qua Socket).
+                    // Tùy nghiệp vụ có thể ép remove observer nếu lỗi liên tục.
+                    System.err.println("Lỗi khi push event cho observer: " + observer.getObserverId());
+                }
+            });
+        }
     }
+    //  ===================================================
 
     // Kiểm rta giá đặt hợp lệ
     private boolean isValidBid(double amount) {
         return amount > currentPrice.get();
     }
 
-    private void checkAntiSnipe() {
-        // TODO: Implement checkAntiSnipe logic
+    private boolean checkAntiSnipe() {
+        if (this.antiSnipingSeconds <= 0 || this.extensionSeconds <= 0) return false;
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime snipeThreshold = this.endTime.minusSeconds(this.antiSnipingSeconds);
+
+        if (now.isAfter(snipeThreshold) && now.isBefore(this.endTime)) {
+            this.endTime = this.endTime.plusSeconds(this.extensionSeconds);
+            System.out.println("[ANTI-SNIPE] Đã kích hoạt! Thời gian kết thúc mới: " + this.endTime);
+            return true; // Trả về true báo hiệu đã gia hạn
+        }// TODO: cần
+
+        return false;
     }
 
     @Override

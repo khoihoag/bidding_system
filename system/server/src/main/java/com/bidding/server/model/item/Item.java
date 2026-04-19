@@ -18,20 +18,20 @@ public abstract class Item extends Entity {
     private String description;
     private double startingPrice;
     private List<String> images;
-    private User seller;
+    private String sellerId;
     private ItemCondition condition;
 
     public Item() {
         super();
     }
 
-    public Item(String id, String name, String description, double startingPrice, List<String> images, User seller, ItemCondition condition) {
+    public Item(String name, String description, double startingPrice, List<String> images, String sellerId, ItemCondition condition) {
         super();
         this.name = name;
         this.description = description;
         this.startingPrice = startingPrice;
         this.images = images;
-        this.seller = seller;
+        this.sellerId = sellerId;
         this.condition = condition;
     }
 

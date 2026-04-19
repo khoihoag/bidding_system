@@ -1,5 +1,6 @@
 package com.bidding.server.model.item;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,8 +19,8 @@ public class Art extends Item {
         super();
     }
 
-    public Art(String id, String name, String description, double startingPrice, List<String> images, User seller, ItemCondition condition, String artist, String medium, int yearCreated, String dimensions) {
-        super(id, name, description, startingPrice, images, seller, condition);
+    public Art(String name, String description, double startingPrice, List<String> images, User seller, ItemCondition condition, String artist, String medium, int yearCreated, String dimensions) {
+        super(name, description, startingPrice, images, seller.getId(), condition);
         this.artist = artist;
         this.medium = medium;
         this.yearCreated = yearCreated;
@@ -78,6 +79,15 @@ public class Art extends Item {
 
     @Override
     public void validate() {
-        // TODO: Implement validate logic
+        if (this.artist == null || this.artist.trim().isEmpty()) {
+            throw new IllegalArgumentException("Tên tác giả/Nghệ sĩ không được để trống.");
+        }
+        if (this.yearCreated > LocalDateTime.now().getYear()) {
+            throw new IllegalArgumentException("Năm sáng tác không thể nằm trong tương lai.");
+        }
+        if (this.dimensions == null || !this.dimensions.matches("\\d+x\\d+(x\\d+)?.*")) {
+            // Validate định dạng kích thước cơ bản (VD: 100x200 hoặc 100x200x50 cm)
+            throw new IllegalArgumentException("Kích thước (Dimensions) sai định dạng.");
+        }
     }
 }

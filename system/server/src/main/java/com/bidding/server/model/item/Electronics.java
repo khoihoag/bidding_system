@@ -18,8 +18,8 @@ public class Electronics extends Item {
         super();
     }
 
-    public Electronics(String id, String name, String description, double startingPrice, List<String> images, User seller, ItemCondition condition, String brand, String model, int warrantyMonths, int powerWatts) {
-        super(id, name, description, startingPrice, images, seller, condition);
+    public Electronics(String name, String description, double startingPrice, List<String> images, User seller, ItemCondition condition, String brand, String model, int warrantyMonths, int powerWatts) {
+        super(name, description, startingPrice, images, seller.getId(), condition);
         this.brand = brand;
         this.model = model;
         this.warrantyMonths = warrantyMonths;
@@ -76,6 +76,14 @@ public class Electronics extends Item {
 
     @Override
     public void validate() {
-        // TODO: Implement validate logic
+        if (this.brand == null || this.brand.trim().isEmpty()) {
+            throw new IllegalArgumentException("Thương hiệu (Brand) không được để trống.");
+        }
+        if (this.warrantyMonths < 0) {
+            throw new IllegalArgumentException("Số tháng bảo hành không thể là số âm.");
+        }
+        if (this.powerWatts < 0) {
+            throw new IllegalArgumentException("Công suất (Watts) không hợp lệ.");
+        }
     }
 }

@@ -1,6 +1,6 @@
 package com.bidding.server.model.auction;
 
-import com.bidding.server.model.user.Bidder; // Giả định package
+import com.bidding.server.model.user.User;
 import lombok.Getter;
 import java.time.LocalDateTime;
 
@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 public class AutoBidConfig implements Comparable<AutoBidConfig> {
 
     private final String auctionId;      // Bắt buộc: Cấu hình này thuộc về phiên nào?
-    private final Bidder bidder;         // Bắt buộc: Ai là người cài đặt cấu hình này?
+    private final User bidder;         // Bắt buộc: Ai là người cài đặt cấu hình này?
     private final double maxBid;
     private final double increment;
     private final LocalDateTime registeredAt;
@@ -20,7 +20,7 @@ public class AutoBidConfig implements Comparable<AutoBidConfig> {
     // ==========================================
     // CONSTRUCTOR
     // ==========================================
-    public AutoBidConfig(String auctionId, Bidder bidder, double maxBid, double increment) {
+    public AutoBidConfig(String auctionId, User bidder, double maxBid, double increment) {
         if (auctionId == null || bidder == null) {
             throw new IllegalArgumentException("Auction ID và Bidder không được để trống.");
         }

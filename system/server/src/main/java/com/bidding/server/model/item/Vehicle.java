@@ -1,5 +1,6 @@
 package com.bidding.server.model.item;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,8 +21,8 @@ public class Vehicle extends Item {
         super();
     }
 
-    public Vehicle(String id, String name, String description, double startingPrice, List<String> images, User seller, ItemCondition condition, String make, String model, int year, int mileage, String fuelType) {
-        super(id, name, description, startingPrice, images, seller, condition);
+    public Vehicle(String name, String description, double startingPrice, List<String> images, User seller, ItemCondition condition, String make, String model, int year, int mileage, String fuelType) {
+        super(name, description, startingPrice, images, seller.getId(), condition);
         this.make = make;
         this.model = model;
         this.year = year;
@@ -87,7 +88,17 @@ public class Vehicle extends Item {
 
     @Override
     public void validate() {
-        // TODO: Implement validate logic
+        // Validate cấu trúc nội tại của Vehicle
+        if (this.make == null || this.make.trim().isEmpty()) {
+            throw new IllegalArgumentException("Hãng xe (Make) không được để trống.");
+        }
+        if (this.year < 1886 || this.year > LocalDateTime.now().getYear() + 1) {
+            // Xe ô tô đầu tiên ra đời năm 1886
+            throw new IllegalArgumentException("Năm sản xuất không hợp lệ: " + this.year);
+        }
+        if (this.mileage < 0) {
+            throw new IllegalArgumentException("Số KM đã đi không thể là số âm.");
+        }
     }
 }
     
