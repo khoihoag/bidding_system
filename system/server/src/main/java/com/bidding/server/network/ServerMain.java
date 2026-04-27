@@ -36,7 +36,7 @@ public class ServerMain {
         // BƯỚC 2: MỞ CỬA ĐÓN KHÁCH (Dùng ThreadPool xịn của ông)
         // =======================================================
         ExecutorService pool = Executors.newCachedThreadPool();
-
+        tongQuan.setUserService(baoVe);
         try (ServerSocket serverSocket = new ServerSocket(8080)) {
             System.out.println("✅ Server đấu giá đã mở cửa ở port 8080. Đang đợi khách...");
 

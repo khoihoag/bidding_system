@@ -44,6 +44,27 @@ public class UserService {
         }
         return repository.getBidHistoryByUserId(userId);
     }
+    // ================= XỬ LÝ VÍ TIỀN (BALANCE) =================
+    public void deductBalance(User user, double amount) {
+        if (user.getBalance() < amount) {
+            throw new RuntimeException("Ví của bạn không đủ tiền! Vui lòng nạp thêm.");
+        }
+        // Trừ tiền trên RAM
+        user.setBalance(user.getBalance() - amount);
+
+        // Lưu ngay lập tức xuống Database
+        repository.saveOrUpdate(user);
+        System.out.println("[Ví Tiền] Đã trừ " + amount + " từ tài khoản " + user.getUsername());
+    }
+
+    public void addBalance(User user, double amount) {
+        // Cộng tiền trên RAM
+        user.setBalance(user.getBalance() + amount);
+
+        // Lưu DB
+        repository.saveOrUpdate(user);
+        System.out.println("[Ví Tiền] Đã hoàn/cộng " + amount + " vào tài khoản " + user.getUsername());
+    }
 
     // Sau này ông có thể thêm các hàm như: register(User user), changePassword()... vào đây
 }

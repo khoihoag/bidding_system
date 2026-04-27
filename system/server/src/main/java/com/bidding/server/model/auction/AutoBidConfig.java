@@ -1,5 +1,5 @@
 package com.bidding.server.model.auction;
-
+import com.bidding.server.model.user.User;
 import java.time.LocalDateTime;
 
 /**
@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
  */
 public class AutoBidConfig implements Comparable<AutoBidConfig> {
 
-
+    private User bidder;
     private double maxBid;           // Giá tối đa cho phép đặt tự động
     private double increment;        // Bước giá mỗi lần tự động đặt
     private LocalDateTime registeredAt; // Thời điểm đăng ký
@@ -17,10 +17,11 @@ public class AutoBidConfig implements Comparable<AutoBidConfig> {
     // ==========================================
     // CONSTRUCTOR
     // ==========================================
-    public AutoBidConfig(double maxBid, double increment) {
+    public AutoBidConfig(User bidder,double maxBid, double increment) {
         if (maxBid <= 0 || increment <= 0) {
             throw new IllegalArgumentException("Giá tối đa và bước giá phải lớn hơn 0.");
         }
+        this.bidder = bidder;
         this.maxBid = maxBid;
         this.increment = increment;
         this.registeredAt = LocalDateTime.now(); // Ghi nhận ngay thời điểm tạo
@@ -70,6 +71,7 @@ public class AutoBidConfig implements Comparable<AutoBidConfig> {
     // ==========================================
     // GETTERS
     // ==========================================
+    public User getBidder() { return bidder; }
     public double getMaxBid() { return maxBid; }
     public double getIncrement() { return increment; }
     public LocalDateTime getRegisteredAt() { return registeredAt; }

@@ -81,8 +81,6 @@ public class Vehicle extends Item {
         specifications.put("Fuel Type", fuelType);
         return specifications;
     }
-
-
 }
 
     

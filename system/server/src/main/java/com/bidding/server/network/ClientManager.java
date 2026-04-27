@@ -1,5 +1,4 @@
 package com.bidding.server.network;
-
 import com.bidding.server.events.AuctionEvent;
 import com.bidding.server.events.AuctionObserver;
 import java.util.List;

@@ -39,7 +39,8 @@ public class BiddingTransactionEntity {
 
     @Column(name = "is_auto_bid", nullable = false)
     private boolean isAutoBid;
-
+    @Column(name = "is_extended", nullable = false)
+    private boolean isExtended;
     public BiddingTransactionEntity() {
     }
 }

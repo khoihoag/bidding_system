@@ -6,7 +6,6 @@ import com.bidding.server.model.transaction.BiddingTransaction;
 import java.time.LocalDateTime;
 import lombok.Setter;
 import lombok.Getter;
-
 @Getter
 @Setter
 public class AuctionEvent {
