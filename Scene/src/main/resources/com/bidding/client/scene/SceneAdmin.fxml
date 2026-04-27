@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.BarChart?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.chart.PieChart?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane prefHeight="820.0" prefWidth="1280.0" style="-fx-background-color: linear-gradient(to bottom, #f8fafc, #eef2ff);" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.bidding.client.scene.SceneAdmin">
+    <top>
+        <VBox spacing="10.0" style="-fx-background-color: white; -fx-border-color: #dbe4f0; -fx-border-width: 0 0 1 0;">
+            <padding><Insets bottom="18.0" left="24.0" right="24.0" top="20.0" /></padding>
+            <children>
+                <HBox alignment="CENTER_LEFT" spacing="16.0">
+                    <children>
+                        <VBox spacing="4.0">
+                            <children>
+                                <Label text="MAN HINH QUAN TRI HE THONG" textFill="#1d4f91">
+                                    <font><Font name="System Bold" size="28.0" /></font>
+                                </Label>
+                                <Label fx:id="welcomeLabel" textFill="#0f172a">
+                                    <font><Font name="System Bold" size="18.0" /></font>
+                                </Label>
+                                <Label fx:id="headerSummaryLabel" textFill="#475569" wrapText="true" />
+                            </children>
+                        </VBox>
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Button mnemonicParsing="false" onAction="#handleLogout" prefHeight="42.0" prefWidth="120.0" style="-fx-background-color: #0f172a; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 12;" text="Dang xuat" />
+                    </children>
+                </HBox>
+                <Label fx:id="dbSummaryLabel" style="-fx-background-color: #eff6ff; -fx-border-color: #bfdbfe; -fx-border-radius: 10; -fx-background-radius: 10; -fx-padding: 10 14; -fx-text-fill: #1d4ed8;" text="Thong bao ket noi database" wrapText="true" />
+            </children>
+        </VBox>
+    </top>
+    <center>
+        <TabPane tabClosingPolicy="UNAVAILABLE" style="-fx-padding: 18;">
+            <tabs>
+                <Tab text="Dashboard">
+                    <ScrollPane fitToWidth="true">
+                        <content>
+                            <VBox spacing="18.0" style="-fx-padding: 20;">
+                                <children>
+                                    <GridPane hgap="16.0" vgap="16.0">
+                                        <children>
+                                            <VBox GridPane.columnIndex="0" style="-fx-background-color: white; -fx-background-radius: 16; -fx-padding: 18; -fx-border-color: #dbeafe; -fx-border-radius: 16;" spacing="8.0">
+                                                <children>
+                                                    <Label text="Tong so nguoi dung" textFill="#64748b" />
+                                                    <Label fx:id="totalUsersLabel" text="0" textFill="#0f172a"><font><Font name="System Bold" size="28.0" /></font></Label>
+                                                    <Label text="Du lieu tong hop cho quan ly user" textFill="#2563eb" wrapText="true" />
+                                                </children>
+                                            </VBox>
+                                            <VBox GridPane.columnIndex="1" style="-fx-background-color: white; -fx-background-radius: 16; -fx-padding: 18; -fx-border-color: #dbeafe; -fx-border-radius: 16;" spacing="8.0">
+                                                <children>
+                                                    <Label text="Phien dang chay" textFill="#64748b" />
+                                                    <Label fx:id="runningAuctionsLabel" text="0" textFill="#0f172a"><font><Font name="System Bold" size="28.0" /></font></Label>
+                                                    <Label text="So phien dang dien ra tren san" textFill="#ea580c" wrapText="true" />
+                                                </children>
+                                            </VBox>
+                                            <VBox GridPane.columnIndex="2" style="-fx-background-color: white; -fx-background-radius: 16; -fx-padding: 18; -fx-border-color: #dbeafe; -fx-border-radius: 16;" spacing="8.0">
+                                                <children>
+                                                    <Label text="Tong giao dich" textFill="#64748b" />
+                                                    <Label fx:id="totalTransactionsLabel" text="0" textFill="#0f172a"><font><Font name="System Bold" size="28.0" /></font></Label>
+                                                    <Label text="Tong so giao dich duoc ghi nhan" textFill="#0f766e" wrapText="true" />
+                                                </children>
+                                            </VBox>
+                                            <VBox GridPane.columnIndex="3" style="-fx-background-color: white; -fx-background-radius: 16; -fx-padding: 18; -fx-border-color: #dbeafe; -fx-border-radius: 16;" spacing="8.0">
+                                                <children>
+                                                    <Label text="Doanh thu he thong" textFill="#64748b" />
+                                                    <Label fx:id="revenueLabel" text="0" textFill="#0f172a"><font><Font name="System Bold" size="28.0" /></font></Label>
+                                                    <Label text="Can bind vao truy van thanh toan / hoa hong" textFill="#16a34a" wrapText="true" />
+                                                </children>
+                                            </VBox>
+                                        </children>
+                                    </GridPane>
+                                    <Label fx:id="dashboardNoticeLabel" style="-fx-background-color: #fefce8; -fx-border-color: #fde68a; -fx-border-radius: 10; -fx-background-radius: 10; -fx-padding: 10 14; -fx-text-fill: #92400e;" text="Thong bao dashboard" wrapText="true" />
+                                    <HBox spacing="16.0">
+                                        <children>
+                                            <VBox spacing="12.0" style="-fx-background-color: white; -fx-background-radius: 16; -fx-padding: 18; -fx-border-color: #e2e8f0; -fx-border-radius: 16;" HBox.hgrow="ALWAYS">
+                                                <children>
+                                                    <Label text="Bieu do cot so bid theo ngay" textFill="#0f172a"><font><Font name="System Bold" size="18.0" /></font></Label>
+                                                    <BarChart fx:id="bidsChart" categoryGap="20.0" legendVisible="false" prefHeight="320.0">
+                                                        <xAxis><CategoryAxis /></xAxis>
+                                                        <yAxis><NumberAxis /></yAxis>
+                                                    </BarChart>
+                                                </children>
+                                            </VBox>
+                                            <VBox prefWidth="360.0" spacing="12.0" style="-fx-background-color: white; -fx-background-radius: 16; -fx-padding: 18; -fx-border-color: #e2e8f0; -fx-border-radius: 16;">
+                                                <children>
+                                                    <Label text="Ti le danh muc san pham" textFill="#0f172a"><font><Font name="System Bold" size="18.0" /></font></Label>
+                                                    <PieChart fx:id="categoryChart" labelsVisible="true" legendVisible="true" prefHeight="320.0" />
+                                                </children>
+                                            </VBox>
+                                        </children>
+                                    </HBox>
+                                </children>
+                            </VBox>
+                        </content>
+                    </ScrollPane>
+                </Tab>
+                <Tab text="Quan ly nguoi dung">
+                    <BorderPane style="-fx-padding: 18;">
+                        <top>
+                            <VBox spacing="12.0">
+                                <children>
+                                    <HBox alignment="CENTER_LEFT" spacing="12.0">
+                                        <children>
+                                            <TextField fx:id="userSearchField" promptText="Tim theo ten hoac email" prefWidth="320.0" />
+                                            <ComboBox fx:id="userRoleFilter" prefWidth="180.0" />
+                                            <Region HBox.hgrow="ALWAYS" />
+                                            <Button mnemonicParsing="false" onAction="#handleUserPrevPage" text="Trang truoc" />
+                                            <Label fx:id="userPageLabel" text="Trang 1 / 1" />
+                                            <Button mnemonicParsing="false" onAction="#handleUserNextPage" text="Trang tiep" />
+                                        </children>
+                                    </HBox>
+                                    <Label fx:id="userSectionNoticeLabel" style="-fx-background-color: #eff6ff; -fx-background-radius: 10; -fx-padding: 10 12; -fx-text-fill: #1d4ed8;" text="Thong bao user section" wrapText="true" />
+                                </children>
+                            </VBox>
+                        </top>
+                        <center>
+                            <HBox spacing="16.0">
+                                <children>
+                                    <VBox spacing="10.0" HBox.hgrow="ALWAYS">
+                                        <children>
+                                            <TableView fx:id="userTable" prefHeight="520.0">
+                                                <columns>
+                                                    <TableColumn fx:id="userNameCol" prefWidth="180.0" text="Ten" />
+                                                    <TableColumn fx:id="userEmailCol" prefWidth="220.0" text="Email" />
+                                                    <TableColumn fx:id="userRoleCol" prefWidth="90.0" text="Role" />
+                                                    <TableColumn fx:id="userStatusCol" prefWidth="120.0" text="Trang thai" />
+                                                    <TableColumn fx:id="userCreatedCol" prefWidth="140.0" text="Ngay tao" />
+                                                    <TableColumn fx:id="userActionCol" prefWidth="110.0" text="Khoa / Mo khoa" />
+                                                </columns>
+                                            </TableView>
+                                        </children>
+                                    </VBox>
+                                    <VBox prefWidth="360.0" spacing="12.0" style="-fx-background-color: white; -fx-background-radius: 16; -fx-padding: 16; -fx-border-color: #e2e8f0; -fx-border-radius: 16;">
+                                        <children>
+                                            <Label text="Chi tiet nguoi dung" textFill="#0f172a"><font><Font name="System Bold" size="18.0" /></font></Label>
+                                            <Label fx:id="userDetailNameLabel" text="Chua chon nguoi dung" />
+                                            <Label fx:id="userDetailRoleLabel" text="-" />
+                                            <Label fx:id="userDetailStatusLabel" text="-" />
+                                            <Label fx:id="userDetailCreatedLabel" text="-" />
+                                            <Label fx:id="userDetailDbLabel" style="-fx-background-color: #f8fafc; -fx-padding: 8 10; -fx-background-radius: 8; -fx-text-fill: #475569;" text="Thong bao ket noi DB cho user detail" wrapText="true" />
+                                            <Separator />
+                                            <Label text="Lich su dang nhap" textFill="#1e293b"><font><Font name="System Bold" size="14.0" /></font></Label>
+                                            <TableView fx:id="userLoginTable" prefHeight="150.0">
+                                                <columns>
+                                                    <TableColumn fx:id="userLoginTimeCol" prefWidth="120.0" text="Thoi gian" />
+                                                    <TableColumn fx:id="userLoginIpCol" prefWidth="90.0" text="IP" />
+                                                    <TableColumn fx:id="userLoginDeviceCol" prefWidth="130.0" text="Thiet bi" />
+                                                </columns>
+                                            </TableView>
+                                            <Label text="Lich su bid / san pham" textFill="#1e293b"><font><Font name="System Bold" size="14.0" /></font></Label>
+                                            <TableView fx:id="userActivityTable" prefHeight="170.0">
+                                                <columns>
+                                                    <TableColumn fx:id="userActivityTimeCol" prefWidth="100.0" text="Thoi gian" />
+                                                    <TableColumn fx:id="userActivityTypeCol" prefWidth="90.0" text="Loai" />
+                                                    <TableColumn fx:id="userActivityItemCol" prefWidth="150.0" text="Noi dung" />
+                                                </columns>
+                                            </TableView>
+                                        </children>
+                                    </VBox>
+                                </children>
+                            </HBox>
+                        </center>
+                    </BorderPane>
+                </Tab>
+                <Tab text="Quan ly phien dau gia">
+                    <BorderPane style="-fx-padding: 18;">
+                        <top>
+                            <VBox spacing="12.0">
+                                <children>
+                                    <HBox alignment="CENTER_LEFT" spacing="12.0">
+                                        <children>
+                                            <TextField fx:id="auctionSearchField" promptText="Tim theo ten phien hoac seller" prefWidth="320.0" />
+                                            <ComboBox fx:id="auctionStatusFilter" prefWidth="180.0" />
+                                            <Region HBox.hgrow="ALWAYS" />
+                                            <Button mnemonicParsing="false" onAction="#handleAuctionPrevPage" text="Trang truoc" />
+                                            <Label fx:id="auctionPageLabel" text="Trang 1 / 1" />
+                                            <Button mnemonicParsing="false" onAction="#handleAuctionNextPage" text="Trang tiep" />
+                                        </children>
+                                    </HBox>
+                                    <Label fx:id="auctionSectionNoticeLabel" style="-fx-background-color: #eff6ff; -fx-background-radius: 10; -fx-padding: 10 12; -fx-text-fill: #1d4ed8;" text="Thong bao auction section" wrapText="true" />
+                                </children>
+                            </VBox>
+                        </top>
+                        <center>
+                            <HBox spacing="16.0">
+                                <children>
+                                    <VBox spacing="10.0" HBox.hgrow="ALWAYS">
+                                        <children>
+                                            <TableView fx:id="auctionTable" prefHeight="520.0">
+                                                <columns>
+                                                    <TableColumn fx:id="auctionIdCol" prefWidth="90.0" text="Ma phien" />
+                                                    <TableColumn fx:id="auctionTitleCol" prefWidth="220.0" text="Ten phien" />
+                                                    <TableColumn fx:id="auctionSellerCol" prefWidth="160.0" text="Seller" />
+                                                    <TableColumn fx:id="auctionStatusCol" prefWidth="120.0" text="Trang thai" />
+                                                    <TableColumn fx:id="auctionPriceCol" prefWidth="120.0" text="Gia hien tai" />
+                                                    <TableColumn fx:id="auctionBidCountCol" prefWidth="90.0" text="So bid" />
+                                                    <TableColumn fx:id="auctionEndTimeCol" prefWidth="140.0" text="Ket thuc" />
+                                                    <TableColumn fx:id="auctionActionCol" prefWidth="130.0" text="Dong khan cap" />
+                                                </columns>
+                                            </TableView>
+                                        </children>
+                                    </VBox>
+                                    <VBox prefWidth="360.0" spacing="12.0" style="-fx-background-color: white; -fx-background-radius: 16; -fx-padding: 16; -fx-border-color: #e2e8f0; -fx-border-radius: 16;">
+                                        <children>
+                                            <Label text="Dieu khien phien dau gia" textFill="#0f172a"><font><Font name="System Bold" size="18.0" /></font></Label>
+                                            <Label fx:id="auctionDetailTitleLabel" text="Chua chon phien dau gia" wrapText="true" />
+                                            <Label fx:id="auctionDetailSellerLabel" text="-" />
+                                            <Label fx:id="auctionDetailStatusLabel" text="-" />
+                                            <Label fx:id="auctionDetailPriceLabel" text="-" />
+                                            <Label text="Ly do dong phien khan cap" />
+                                            <TextArea fx:id="forceCloseReasonArea" prefHeight="150.0" promptText="Nhap ly do, vi du: phat hien gian lan, sai thong tin san pham..." wrapText="true" />
+                                            <Button mnemonicParsing="false" onAction="#forceCloseAuction" text="Dong phien khan cap theo phien dang chon" />
+                                            <Label fx:id="forceCloseStatusLabel" style="-fx-background-color: #fefce8; -fx-background-radius: 10; -fx-padding: 10 12; -fx-text-fill: #92400e;" text="Trang thai force close" wrapText="true" />
+                                        </children>
+                                    </VBox>
+                                </children>
+                            </HBox>
+                        </center>
+                    </BorderPane>
+                </Tab>
+                <Tab text="Audit log">
+                    <BorderPane style="-fx-padding: 18;">
+                        <top>
+                            <HBox alignment="CENTER_LEFT" spacing="12.0">
+                                <children>
+                                    <Label text="Loc theo ngay" />
+                                    <DatePicker fx:id="auditDateFilter" onAction="#handleAuditFilter" />
+                                    <Region HBox.hgrow="ALWAYS" />
+                                    <Label fx:id="auditNoticeLabel" style="-fx-background-color: #eff6ff; -fx-background-radius: 10; -fx-padding: 10 12; -fx-text-fill: #1d4ed8;" text="Thong bao audit section" wrapText="true" />
+                                </children>
+                            </HBox>
+                        </top>
+                        <center>
+                            <TableView fx:id="auditTable" prefHeight="580.0">
+                                <columns>
+                                    <TableColumn fx:id="auditTimeCol" prefWidth="160.0" text="Thoi gian" />
+                                    <TableColumn fx:id="auditActorCol" prefWidth="120.0" text="Ai thuc hien" />
+                                    <TableColumn fx:id="auditActionCol" prefWidth="180.0" text="Hanh dong" />
+                                    <TableColumn fx:id="auditTargetCol" prefWidth="170.0" text="Doi tuong" />
+                                    <TableColumn fx:id="auditDetailCol" prefWidth="520.0" text="Chi tiet" />
+                                </columns>
+                            </TableView>
+                        </center>
+                    </BorderPane>
+                </Tab>
+            </tabs>
+        </TabPane>
+    </center>
+</BorderPane>

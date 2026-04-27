@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane fx:id="detailPage" styleClass="dashboard-root" stylesheets="@theme.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.bidding.client.scene.AuctionDetailController">
+    <top>
+        <HBox alignment="CENTER_LEFT" styleClass="topbar">
+            <children>
+                <Button onAction="#goBackToMain" styleClass="btn-back" text="Quay lại" />
+                <VBox spacing="4.0">
+                    <children>
+                        <Label fx:id="detailLblBreadcrumb" styleClass="page-title" text="Chi tiết phiên đấu giá" />
+                        <Label styleClass="page-subtitle" text="Thông tin hiển thị đồng bộ từ sản phẩm đang chọn." />
+                    </children>
+                </VBox>
+                <Region HBox.hgrow="ALWAYS" />
+                <Label fx:id="lblClockDetail" styleClass="toolbar-clock" text="00:00:00" />
+            </children>
+        </HBox>
+    </top>
+    <center>
+        <ScrollPane fitToWidth="true" styleClass="page-surface">
+            <content>
+                <VBox spacing="24.0" style="-fx-padding: 24;">
+                    <children>
+                        <HBox alignment="TOP_LEFT" spacing="24.0">
+                            <children>
+                                <VBox prefWidth="380.0" spacing="14.0" styleClass="dashboard-section">
+                                    <children>
+                                        <StackPane minHeight="320.0" styleClass="panel-soft">
+                                            <children>
+                                                <ImageView fx:id="detailImgMain" fitHeight="280.0" fitWidth="340.0" preserveRatio="true" />
+                                                <Label fx:id="detailLblNoImg" styleClass="section-caption" text="Không có ảnh" />
+                                            </children>
+                                        </StackPane>
+                                        <HBox alignment="CENTER" spacing="10.0">
+                                            <children>
+                                                <Button fx:id="btnImgPrev" onAction="#handleImgPrev" styleClass="btn-back" text="Ảnh trước" />
+                                                <Button fx:id="btnImgNext" onAction="#handleImgNext" styleClass="btn-back" text="Ảnh tiếp" />
+                                            </children>
+                                        </HBox>
+                                        <ScrollPane hbarPolicy="AS_NEEDED" styleClass="panel-soft" vbarPolicy="NEVER">
+                                            <content>
+                                                <HBox fx:id="detailImageThumbs" spacing="8.0">
+                                                    <padding>
+                                                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                                                    </padding>
+                                                </HBox>
+                                            </content>
+                                        </ScrollPane>
+                                    </children>
+                                </VBox>
+
+                                <VBox spacing="18.0" styleClass="dashboard-section" HBox.hgrow="ALWAYS">
+                                    <children>
+                                        <HBox alignment="CENTER_LEFT" spacing="10.0">
+                                            <children>
+                                                <Label fx:id="detailLblStatus" styleClass="role-badge" text="ĐANG DIỄN RA" />
+                                                <Label fx:id="detailLblCategory" styleClass="section-caption" text="Danh mục" />
+                                            </children>
+                                        </HBox>
+                                        <Label fx:id="detailLblName" styleClass="page-title" text="Tên sản phẩm" wrapText="true" />
+                                        <Separator />
+                                        
+                                        <HBox spacing="16.0">
+                                            <children>
+                                                <VBox spacing="4.0" styleClass="panel-soft">
+                                                    <padding><Insets bottom="14.0" left="16.0" right="16.0" top="14.0" /></padding>
+                                                    <children>
+                                                        <Label styleClass="field-label" text="Giá khởi điểm" />
+                                                        <Label fx:id="detailLblStartPrice" styleClass="section-title" text="0 đ" />
+                                                    </children>
+                                                </VBox>
+                                                <VBox spacing="4.0" styleClass="panel-soft">
+                                                    <padding><Insets bottom="14.0" left="16.0" right="16.0" top="14.0" /></padding>
+                                                    <children>
+                                                        <Label styleClass="field-label" text="Giá hiện tại" />
+                                                        <Label fx:id="detailLblCurrentPrice" styleClass="section-title" text="0 đ" />
+                                                    </children>
+                                                </VBox>
+                                            </children>
+                                        </HBox>
+
+                                        <VBox spacing="8.0" styleClass="panel-soft">
+                                            <padding><Insets bottom="14.0" left="16.0" right="16.0" top="14.0" /></padding>
+                                            <children>
+                                                <Label styleClass="field-label" text="Thời gian còn lại" />
+                                                <Label fx:id="detailLblCountdown" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #17324d;" text="00:00:00" />
+                                                <HBox spacing="18.0">
+                                                    <children>
+                                                        <Label fx:id="detailLblStartTime" styleClass="section-caption" text="Bắt đầu: -" />
+                                                        <Label fx:id="detailLblEndTime" styleClass="section-caption" text="Kết thúc: -" />
+                                                    </children>
+                                                </HBox>
+                                            </children>
+                                        </VBox>
+
+                                        <HBox spacing="14.0">
+                                            <children>
+                                                <VBox spacing="4.0" styleClass="panel-soft">
+                                                    <padding><Insets bottom="12.0" left="16.0" right="16.0" top="12.0" /></padding>
+                                                    <children>
+                                                        <Label styleClass="field-label" text="Lượt đặt giá" />
+                                                        <Label fx:id="detailLblBidCount" styleClass="section-title" text="0" />
+                                                    </children>
+                                                </VBox>
+                                                <VBox spacing="4.0" styleClass="panel-soft">
+                                                    <padding><Insets bottom="12.0" left="16.0" right="16.0" top="12.0" /></padding>
+                                                    <children>
+                                                        <Label styleClass="field-label" text="Người dẫn đầu" />
+                                                        <Label fx:id="detailLblTopBidder" styleClass="section-caption" text="-" />
+                                                    </children>
+                                                </VBox>
+                                                <VBox spacing="4.0" styleClass="panel-soft">
+                                                    <padding><Insets bottom="12.0" left="16.0" right="16.0" top="12.0" /></padding>
+                                                    <children>
+                                                        <Label styleClass="field-label" text="Người tham gia" />
+                                                        <Label fx:id="detailLblParticipants" styleClass="section-title" text="0" />
+                                                    </children>
+                                                </VBox>
+                                            </children>
+                                        </HBox>
+
+                                        <TabPane tabClosingPolicy="UNAVAILABLE">
+                                            <tabs>
+                                                <Tab text="Mô tả sản phẩm">
+                                                    <content>
+                                                        <ScrollPane fitToWidth="true" styleClass="page-surface">
+                                                            <content>
+                                                                <VBox spacing="8.0" style="-fx-padding: 16;">
+                                                                    <children>
+                                                                        <Label fx:id="detailLblDesc" styleClass="section-caption" text="-" wrapText="true" />
+                                                                    </children>
+                                                                </VBox>
+                                                            </content>
+                                                        </ScrollPane>
+                                                    </content>
+                                                </Tab>
+                                                <Tab text="Thông số kỹ thuật">
+                                                    <content>
+                                                        <ScrollPane fitToWidth="true" styleClass="page-surface">
+                                                            <content>
+                                                                <VBox fx:id="specsBox" spacing="8.0" style="-fx-padding: 16;" />
+                                                            </content>
+                                                        </ScrollPane>
+                                                    </content>
+                                                </Tab>
+                                                <Tab text="Lịch sử đấu giá">
+                                                    <content>
+                                                        <fx:include fx:id="bidHistory" source="bid_history.fxml" />
+                                                    </content>
+                                                </Tab>
+                                            </tabs>
+                                        </TabPane>
+
+                                        <VBox spacing="8.0" styleClass="panel-soft">
+                                            <padding><Insets bottom="14.0" left="16.0" right="16.0" top="14.0" /></padding>
+                                            <children>
+                                                <Label styleClass="field-label" text="Người bán" />
+                                                <HBox alignment="CENTER_LEFT" spacing="10.0">
+                                                    <children>
+                                                        <Label fx:id="detailLblSeller" styleClass="section-title" text="-" />
+                                                        <Label fx:id="detailLblSellerRating" styleClass="section-caption" text="-" />
+                                                    </children>
+                                                </HBox>
+                                            </children>
+                                        </VBox>
+
+                                        <HBox spacing="12.0">
+                                            <children>
+                                                <Button fx:id="btnJoinBid" onAction="#handleJoinBid" styleClass="btn-primary" text="Tham gia đấu giá" />
+                                                <Button fx:id="btnWatchDetail" onAction="#handleToggleWatchFromDetail" styleClass="btn-secondary" text="Theo dõi" />
+                                            </children>
+                                        </HBox>
+                                        <Label fx:id="detailLblMsg" styleClass="section-caption" text="" visible="false" wrapText="true" />
+                                    </children>
+                                </VBox>
+                            </children>
+                        </HBox>
+                    </children>
+                </VBox>
+            </content>
+        </ScrollPane>
+    </center>
+</BorderPane>
