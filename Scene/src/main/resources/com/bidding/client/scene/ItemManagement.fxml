@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.*?>
+
+<!--
+    ItemManagement.fxml
+    Màn hình quản lý sản phẩm của Seller.
+    - TableView danh sách sản phẩm
+    - Nút "Thêm sản phẩm" → mờ nền + mở dialog
+    - Nút Sửa → mở dialog với data hiện tại, cập nhật tại chỗ
+    - Nút Xóa → confirm inline (không Alert)
+    - Modal overlay được bật/tắt bằng controller
+
+    Controller: com.example.demo.seller.ItemManagementController
+-->
+<StackPane xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="com.example.demo.seller.ItemManagementController">
+
+    <!-- ══ MAIN CONTENT ══ -->
+    <VBox spacing="0" style="-fx-background-color: #F8FAFC;">
+
+        <!-- Top Bar -->
+        <HBox styleClass="topbar" alignment="CENTER_LEFT" spacing="12">
+            <VBox spacing="2">
+                <Label text="Sản phẩm của tôi" styleClass="topbar-title"/>
+                <Label fx:id="lblItemCount" text="0 sản phẩm" styleClass="topbar-subtitle"/>
+            </VBox>
+            <Region HBox.hgrow="ALWAYS"/>
+            <!-- Search -->
+            <TextField fx:id="txtSearch" promptText="🔍  Tìm sản phẩm..."
+                       styleClass="search-field"
+                       onKeyReleased="#handleSearch"/>
+            <!-- Filter category -->
+            <ComboBox fx:id="cboCategory" promptText="Danh mục"
+                      style="-fx-pref-width: 140px; -fx-font-size: 13px; -fx-background-radius: 6; -fx-border-radius: 6; -fx-border-color: #D1D5DB; -fx-padding: 4 8;"/>
+            <!-- Add button -->
+            <Button text="＋  Thêm sản phẩm" styleClass="btn-primary"
+                    onAction="#handleAddItem"/>
+        </HBox>
+
+        <!-- Content -->
+        <VBox VBox.vgrow="ALWAYS" style="-fx-padding: 24;" spacing="16">
+
+            <!-- Stats row -->
+            <HBox spacing="16">
+                <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+                    <Label text="TỔNG SẢN PHẨM" styleClass="stat-label"/>
+                    <Label fx:id="statTotal" text="0" styleClass="stat-value"/>
+                    <Label text="đang quản lý" styleClass="stat-label"/>
+                </VBox>
+                <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+                    <Label text="ĐANG ĐẤU GIÁ" styleClass="stat-label"/>
+                    <Label fx:id="statRunning" text="0" styleClass="stat-value" style="-fx-text-fill: #D97706;"/>
+                    <Label text="phiên đang chạy" styleClass="stat-label"/>
+                </VBox>
+                <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+                    <Label text="ĐÃ BÁN" styleClass="stat-label"/>
+                    <Label fx:id="statSold" text="0" styleClass="stat-value" style="-fx-text-fill: #16A34A;"/>
+                    <Label text="sản phẩm" styleClass="stat-label"/>
+                </VBox>
+                <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+                    <Label text="CHỜ ĐẤU GIÁ" styleClass="stat-label"/>
+                    <Label fx:id="statPending" text="0" styleClass="stat-value" style="-fx-text-fill: #1A56DB;"/>
+                    <Label text="sản phẩm" styleClass="stat-label"/>
+                </VBox>
+            </HBox>
+
+            <!-- Table card -->
+            <VBox styleClass="card" VBox.vgrow="ALWAYS" spacing="0">
+
+                <HBox styleClass="card-header" alignment="CENTER_LEFT" spacing="12">
+                    <Label text="Danh sách sản phẩm" styleClass="card-title"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="lblSelectedCount" text=""
+                           style="-fx-font-size: 12px; -fx-text-fill: #1A56DB;"/>
+                    <Button fx:id="btnDeleteSelected" text="🗑  Xóa đã chọn"
+                            styleClass="btn-icon-delete"
+                            onAction="#handleDeleteSelected"
+                            visible="false" managed="false"/>
+                </HBox>
+
+                <TableView fx:id="tableItems" VBox.vgrow="ALWAYS"
+                           styleClass="table-view"
+                           style="-fx-border-radius: 0 0 8 8; -fx-border-width: 0;"
+                           onMouseClicked="#handleTableClick">
+
+                    <columns>
+                        <!-- Checkbox column -->
+                        <TableColumn fx:id="colCheck" text="" prefWidth="40" minWidth="40" maxWidth="40"/>
+
+                        <!-- Tên -->
+                        <TableColumn fx:id="colName" text="Tên sản phẩm" prefWidth="220"/>
+
+                        <!-- Danh mục -->
+                        <TableColumn fx:id="colCategory" text="Danh mục" prefWidth="110"/>
+
+                        <!-- Giá khởi điểm -->
+                        <TableColumn fx:id="colPrice" text="Giá khởi điểm" prefWidth="130"/>
+
+                        <!-- Trạng thái -->
+                        <TableColumn fx:id="colStatus" text="Trạng thái" prefWidth="120"/>
+
+                        <!-- Số phiên -->
+                        <TableColumn fx:id="colAuctions" text="Phiên đấu giá" prefWidth="110"/>
+
+                        <!-- Ngày tạo -->
+                        <TableColumn fx:id="colCreated" text="Ngày tạo" prefWidth="110"/>
+
+                        <!-- Hành động -->
+                        <TableColumn fx:id="colActions" text="Hành động" prefWidth="140" minWidth="140"/>
+                    </columns>
+
+                    <placeholder>
+                        <VBox alignment="CENTER" spacing="10" style="-fx-padding: 60;">
+                            <Label text="📦" style="-fx-font-size: 40px;"/>
+                            <Label text="Chưa có sản phẩm nào"
+                                   style="-fx-font-size: 14px; -fx-text-fill: #9CA3AF;"/>
+                            <Label text="Nhấn '＋ Thêm sản phẩm' để bắt đầu"
+                                   style="-fx-font-size: 12px; -fx-text-fill: #D1D5DB;"/>
+                            <Label text="🗄 [DB] GET /api/items?sellerId={id}"
+                                   style="-fx-font-size: 11px; -fx-text-fill: #E5E7EB; -fx-background-color: #FFF9C4; -fx-padding: 4 8; -fx-background-radius: 4;"/>
+                        </VBox>
+                    </placeholder>
+                </TableView>
+
+                <!-- Pagination -->
+                <HBox styleClass="card-header" alignment="CENTER" spacing="12">
+                    <Label fx:id="lblPagination" text="Trang 1 / 1"
+                           style="-fx-font-size: 12px; -fx-text-fill: #64748B;"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="‹ Trước" styleClass="btn-secondary"
+                            onAction="#handlePrevPage" fx:id="btnPrevPage" disable="true"/>
+                    <Button text="Tiếp ›" styleClass="btn-secondary"
+                            onAction="#handleNextPage" fx:id="btnNextPage"/>
+                </HBox>
+            </VBox>
+        </VBox>
+    </VBox>
+
+    <!-- ══ MODAL OVERLAY (ẩn mặc định) ══ -->
+    <!-- Hiển thị khi Add/Edit item, làm mờ nền -->
+    <StackPane fx:id="modalOverlay"
+               styleClass="modal-overlay"
+               visible="false" managed="false"
+               alignment="CENTER"
+               pickOnBounds="true"
+               onMouseClicked="#handleOverlayClick">
+
+        <!-- Dialog card — chặn event không cho xuyên qua overlay -->
+        <VBox fx:id="modalDialog"
+              styleClass="modal-dialog"
+              maxWidth="600" maxHeight="640"
+              prefWidth="580"
+              onMouseClicked="#handleDialogClick"
+              spacing="0">
+
+            <!-- Header -->
+            <HBox styleClass="modal-header" alignment="CENTER_LEFT">
+                <Label fx:id="modalTitle" text="Thêm sản phẩm mới" styleClass="modal-title"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button text="✕" styleClass="btn-icon"
+                        style="-fx-font-size: 16px;"
+                        onAction="#handleCloseModal"/>
+            </HBox>
+
+            <!-- Body (scrollable) -->
+            <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"
+                        style="-fx-background-color: transparent; -fx-border-color: transparent;"
+                        hbarPolicy="NEVER">
+                <VBox styleClass="modal-body" spacing="16">
+
+                    <!-- Row 1: Tên + Danh mục -->
+                    <HBox spacing="16">
+                        <VBox spacing="6" HBox.hgrow="ALWAYS">
+                            <Label text="Tên sản phẩm *" styleClass="field-label"/>
+                            <TextField fx:id="fldName"
+                                       promptText="Nhập tên sản phẩm..."
+                                       styleClass="text-field"/>
+                            <Label fx:id="errName" text="" styleClass="field-error"
+                                   visible="false" managed="false"/>
+                        </VBox>
+                        <VBox spacing="6" prefWidth="170">
+                            <Label text="Danh mục *" styleClass="field-label"/>
+                            <ComboBox fx:id="fldCategory"
+                                      promptText="Chọn danh mục"
+                                      onAction="#handleCategoryChange"
+                                      style="-fx-pref-width: 170px; -fx-font-size: 13px; -fx-padding: 5 8; -fx-border-color: #D1D5DB; -fx-border-radius: 6; -fx-background-radius: 6;"/>
+                            <Label fx:id="errCategory" text="" styleClass="field-error"
+                                   visible="false" managed="false"/>
+                        </VBox>
+                    </HBox>
+
+                    <!-- Mô tả -->
+                    <VBox spacing="6">
+                        <Label text="Mô tả sản phẩm *" styleClass="field-label"/>
+                        <TextArea fx:id="fldDesc"
+                                  promptText="Nhập mô tả chi tiết..."
+                                  prefRowCount="3"
+                                  styleClass="text-area"
+                                  wrapText="true"/>
+                        <Label fx:id="errDesc" text="" styleClass="field-error"
+                               visible="false" managed="false"/>
+                    </VBox>
+
+                    <!-- Row 2: Giá + Tình trạng -->
+                    <HBox spacing="16">
+                        <VBox spacing="6" HBox.hgrow="ALWAYS">
+                            <Label text="Giá khởi điểm (VND) *" styleClass="field-label"/>
+                            <TextField fx:id="fldPrice"
+                                       promptText="Ví dụ: 1000000"
+                                       styleClass="text-field"/>
+                            <Label fx:id="errPrice" text="" styleClass="field-error"
+                                   visible="false" managed="false"/>
+                        </VBox>
+                        <VBox spacing="6" prefWidth="170">
+                            <Label text="Tình trạng" styleClass="field-label"/>
+                            <ComboBox fx:id="fldCondition"
+                                      style="-fx-pref-width: 170px; -fx-font-size: 13px; -fx-padding: 5 8; -fx-border-color: #D1D5DB; -fx-border-radius: 6; -fx-background-radius: 6;"/>
+                        </VBox>
+                    </HBox>
+
+                    <!-- Dynamic fields theo danh mục -->
+                    <VBox fx:id="vboxDynamicFields" spacing="12">
+                        <!-- Được fill bởi controller khi chọn danh mục -->
+                    </VBox>
+
+                    <!-- DB note -->
+                    <Label text="🗄 [DB] POST /api/items  |  PUT /api/items/{id}"
+                           style="-fx-font-size: 11px; -fx-text-fill: #92400E; -fx-background-color: #FEF3C7; -fx-padding: 6 10; -fx-background-radius: 5;" wrapText="true"/>
+                </VBox>
+            </ScrollPane>
+
+            <!-- Footer -->
+            <HBox styleClass="modal-footer" alignment="CENTER_RIGHT" spacing="12">
+                <Label fx:id="lblSaving" text="Đang lưu..."
+                       style="-fx-font-size: 12px; -fx-text-fill: #64748B;"
+                       visible="false" managed="false"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button text="Hủy" styleClass="btn-secondary"
+                        onAction="#handleCloseModal"/>
+                <Button fx:id="btnSaveItem" text="Lưu sản phẩm" styleClass="btn-primary"
+                        onAction="#handleSaveItem"/>
+            </HBox>
+
+        </VBox>
+    </StackPane>
+
+    <!-- ══ CONFIRM DELETE OVERLAY ══ -->
+    <StackPane fx:id="confirmOverlay"
+               styleClass="modal-overlay"
+               visible="false" managed="false"
+               alignment="CENTER">
+        <VBox styleClass="modal-dialog" maxWidth="420" spacing="0">
+            <HBox styleClass="modal-header" alignment="CENTER_LEFT">
+                <Label text="Xác nhận xóa sản phẩm" styleClass="modal-title"/>
+            </HBox>
+            <VBox styleClass="modal-body" spacing="12">
+                <Label fx:id="lblConfirmMsg"
+                       text="Bạn có chắc muốn xóa sản phẩm này?"
+                       wrapText="true"
+                       style="-fx-font-size: 13px; -fx-text-fill: #374151;"/>
+                <Label text="Hành động này không thể hoàn tác."
+                       style="-fx-font-size: 12px; -fx-text-fill: #DC2626;"/>
+            </VBox>
+            <HBox styleClass="modal-footer" alignment="CENTER_RIGHT" spacing="12">
+                <Button text="Hủy" styleClass="btn-secondary"
+                        onAction="#handleCancelDelete"/>
+                <Button text="Xóa" styleClass="btn-danger"
+                        onAction="#handleConfirmDelete"/>
+            </HBox>
+        </VBox>
+    </StackPane>
+
+</StackPane>

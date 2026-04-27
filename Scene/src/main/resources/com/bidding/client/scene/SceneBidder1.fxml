@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Circle?>
+
+<StackPane fx:id="rootPane"
+           xmlns="http://javafx.com/javafx/21"
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.bidding.client.scene.SceneBidder1"
+           prefWidth="1280.0"
+           prefHeight="820.0"
+           styleClass="dashboard-root"
+           stylesheets="@theme.css">
+
+    <children>
+        <BorderPane fx:id="mainPage">
+            <top>
+                <VBox styleClass="top-shell">
+                    <children>
+                        <HBox styleClass="topbar">
+                            <children>
+                                <Button text="Menu" onAction="#toggleMenu" styleClass="menu-toggle" />
+                                <Label text="BidViet" styleClass="brand-title" />
+                                <Label text="BIDDER" styleClass="role-badge" />
+                                <Region HBox.hgrow="ALWAYS" />
+                                <HBox spacing="8.0" alignment="CENTER_LEFT">
+                                    <children>
+                                        <TextField fx:id="searchField"
+                                                   prefWidth="330.0"
+                                                   promptText="Tim kiem phien dau gia..."
+                                                   styleClass="search-input" />
+                                        <Button text="Tim" onAction="#handleSearch" styleClass="btn-primary" />
+                                    </children>
+                                </HBox>
+                                <Region HBox.hgrow="ALWAYS" />
+                                <Label fx:id="lblClock" text="00:00:00" styleClass="toolbar-clock" />
+                                <Label fx:id="lblBalance" text="So du 5.000.000 d" styleClass="toolbar-balance" />
+                                <StackPane onMouseClicked="#toggleAccountInfo" styleClass="avatar-ring">
+                                    <children>
+                                        <Circle radius="26.0" />
+                                        <ImageView fx:id="imgAvatar" fitWidth="52.0" fitHeight="52.0" preserveRatio="false" />
+                                        <Label fx:id="lblAvatarFallback" text="A" styleClass="toolbar-balance" />
+                                    </children>
+                                </StackPane>
+                            </children>
+                            <padding>
+                                <Insets top="2.0" right="2.0" bottom="2.0" left="2.0" />
+                            </padding>
+                        </HBox>
+
+                        <HBox styleClass="filter-bar">
+                            <children>
+                                <Label text="Loc" styleClass="field-label" />
+                                <ComboBox fx:id="filterCategory" prefWidth="170.0" styleClass="select-input" />
+                                <ComboBox fx:id="filterStatus" prefWidth="150.0" styleClass="select-input" />
+                                <ComboBox fx:id="filterPrice" prefWidth="170.0" styleClass="select-input" />
+                                <Button text="Ap dung" onAction="#handleFilter" styleClass="btn-accent" />
+                                <Button text="Xoa loc" onAction="#handleClearFilter" styleClass="btn-secondary" />
+                                <Region HBox.hgrow="ALWAYS" />
+                                <Label text="Sap xep" styleClass="field-label" />
+                                <ComboBox fx:id="sortCombo" prefWidth="180.0" styleClass="select-input" />
+                            </children>
+                        </HBox>
+                    </children>
+                </VBox>
+            </top>
+
+            <center>
+                <ScrollPane fitToWidth="true" styleClass="page-surface">
+                    <content>
+                        <VBox spacing="24.0" style="-fx-padding: 24;">
+                            <children>
+                                <VBox styleClass="dashboard-section">
+                                    <children>
+                                        <HBox alignment="CENTER_LEFT" spacing="12.0">
+                                            <children>
+                                                <Label text="Phien dang dau gia" styleClass="section-title" />
+                                                <Label text="RUNNING" styleClass="role-badge" />
+                                            </children>
+                                        </HBox>
+                                        <FlowPane fx:id="runningProductsPane" hgap="18.0" vgap="18.0" />
+                                        <Label fx:id="lblRunningEmpty"
+                                               text="Khong co phien dang dau gia."
+                                               visible="false"
+                                               styleClass="section-caption" />
+                                    </children>
+                                </VBox>
+
+                                <VBox styleClass="dashboard-section">
+                                    <children>
+                                        <HBox alignment="CENTER_LEFT" spacing="12.0">
+                                            <children>
+                                                <Label text="Phien sap dien ra" styleClass="section-title" />
+                                                <Label text="OPEN" styleClass="role-badge" />
+                                            </children>
+                                        </HBox>
+                                        <FlowPane fx:id="upcomingProductsPane" hgap="18.0" vgap="18.0" />
+                                        <Label fx:id="lblUpcomingEmpty"
+                                               text="Khong co phien sap mo."
+                                               visible="false"
+                                               styleClass="section-caption" />
+                                    </children>
+                                </VBox>
+
+                                <VBox styleClass="dashboard-section">
+                                    <children>
+                                        <HBox alignment="CENTER_LEFT" spacing="12.0">
+                                            <children>
+                                                <Label text="Phien da ket thuc" styleClass="section-title" />
+                                                <Label text="FINISHED" styleClass="role-badge" />
+                                            </children>
+                                        </HBox>
+                                        <FlowPane fx:id="finishedProductsPane" hgap="18.0" vgap="18.0" />
+                                        <Label fx:id="lblFinishedEmpty"
+                                               text="Khong co phien da ket thuc."
+                                               visible="false"
+                                               styleClass="section-caption" />
+                                    </children>
+                                </VBox>
+
+                                <HBox alignment="CENTER" spacing="10.0">
+                                    <children>
+                                        <Button fx:id="btnPrevPage" text="Quay lai" onAction="#handlePrevPage" styleClass="btn-back" />
+                                        <Label fx:id="lblPageInfo" text="Trang 1 / 1" styleClass="section-caption" />
+                                        <Button fx:id="btnNextPage" text="Tiep" onAction="#handleNextPage" styleClass="btn-back" />
+                                    </children>
+                                </HBox>
+                            </children>
+                        </VBox>
+                    </content>
+                </ScrollPane>
+            </center>
+        </BorderPane>
+
+        <fx:include fx:id="detailPage" source="AuctionDetail.fxml" visible="false" />
+
+        <BorderPane fx:id="watchlistPage" visible="false">
+            <top>
+                <VBox styleClass="top-shell">
+                    <children>
+                        <HBox styleClass="topbar">
+                            <children>
+                                <Button text="Quay lai" onAction="#menuGoHome" styleClass="btn-back" />
+                                <VBox spacing="4.0">
+                                    <children>
+                                        <Label text="San pham dang theo doi" styleClass="page-title" />
+                                        <Label text="Danh sach san pham duoc luu trong watchlist." styleClass="page-subtitle" />
+                                    </children>
+                                </VBox>
+                                <Region HBox.hgrow="ALWAYS" />
+                                <Label fx:id="lblClockWatch" text="00:00:00" styleClass="toolbar-clock" />
+                            </children>
+                        </HBox>
+                    </children>
+                </VBox>
+            </top>
+
+            <center>
+                <ScrollPane fitToWidth="true" styleClass="page-surface">
+                    <content>
+                        <VBox style="-fx-padding: 24;" spacing="18.0">
+                            <children>
+                                <FlowPane fx:id="watchlistPane" hgap="18.0" vgap="18.0" />
+                                <Label fx:id="lblWatchlistEmpty"
+                                       text="Chua co san pham nao trong watchlist."
+                                       visible="false"
+                                       styleClass="section-caption" />
+                            </children>
+                        </VBox>
+                    </content>
+                </ScrollPane>
+            </center>
+        </BorderPane>
+
+        <Region fx:id="dimOverlay"
+                visible="false"
+                onMouseClicked="#closeAll"
+                style="-fx-background-color: rgba(15, 23, 42, 0.36);" />
+
+        <VBox fx:id="sideMenu"
+              prefWidth="300.0"
+              maxWidth="300.0"
+              translateX="-300.0"
+              StackPane.alignment="CENTER_LEFT"
+              styleClass="drawer">
+            <children>
+                <VBox styleClass="drawer-header" spacing="6.0">
+                    <children>
+                        <Label text="BidViet" styleClass="drawer-title" />
+                        <Label text="Dieu huong bidder duoc dong bo cung seller." styleClass="drawer-subtitle" />
+                    </children>
+                </VBox>
+
+                <VBox spacing="2.0" style="-fx-padding: 14 0;">
+                    <children>
+                        <Button text="Trang chu" onAction="#menuGoHome" styleClass="drawer-button drawer-button-active" maxWidth="Infinity" />
+                        <Button text="Thong bao" onAction="#menuGoNotifications" styleClass="drawer-button" maxWidth="Infinity" />
+                        <Button text="Dau gia cua toi" onAction="#menuGoMyBids" styleClass="drawer-button" maxWidth="Infinity" />
+                        <Button text="Watchlist" onAction="#menuGoWatchlist" styleClass="drawer-button" maxWidth="Infinity" />
+                        <Button text="Auto Bid" onAction="#handleOpenAutoBid" styleClass="drawer-button" maxWidth="Infinity" />
+                        <Button text="Lich su giao dich" onAction="#menuGoHistory1" styleClass="drawer-button" maxWidth="Infinity" />
+                    </children>
+                </VBox>
+
+                <Region VBox.vgrow="ALWAYS" />
+                <Separator />
+                <VBox spacing="10.0" style="-fx-padding: 18;">
+                    <children>
+                        <Button text="Chuyen sang seller" onAction="#switchToSeller" styleClass="btn-accent" maxWidth="Infinity" />
+                    </children>
+                </VBox>
+            </children>
+        </VBox>
+
+        <VBox fx:id="accountPopup"
+              visible="false"
+              maxWidth="280.0"
+              StackPane.alignment="TOP_RIGHT"
+              styleClass="popup-card">
+            <StackPane.margin>
+                <Insets top="86.0" right="24.0" />
+            </StackPane.margin>
+            <children>
+                <VBox spacing="12.0" style="-fx-padding: 20;">
+                    <children>
+                        <HBox spacing="12.0" alignment="CENTER_LEFT">
+                            <children>
+                                <StackPane styleClass="avatar-ring">
+                                    <children>
+                                        <Circle radius="30.0" />
+                                        <ImageView fx:id="imgAvatarPopup" fitWidth="60.0" fitHeight="60.0" preserveRatio="false" />
+                                        <Label fx:id="lblAvatarPopupFallback" text="A" styleClass="toolbar-balance" />
+                                    </children>
+                                </StackPane>
+                                <VBox spacing="4.0">
+                                    <children>
+                                        <Label fx:id="lblUserName" text="Nguoi dung bidder" styleClass="field-label" />
+                                        <Label fx:id="lblBalancePopup" text="So du: 5.000.000 d" styleClass="section-caption" />
+                                    </children>
+                                </VBox>
+                            </children>
+                        </HBox>
+                        <Button text="Doi anh dai dien" onAction="#handleChangeAvatar" styleClass="btn-secondary" maxWidth="Infinity" />
+                        <Button text="Dang xuat" onAction="#handleLogout" styleClass="btn-danger" maxWidth="Infinity" />
+                    </children>
+                </VBox>
+            </children>
+        </VBox>
+
+        <VBox fx:id="toastHost"
+              mouseTransparent="true"
+              spacing="8.0"
+              StackPane.alignment="TOP_RIGHT">
+            <StackPane.margin>
+                <Insets top="20.0" right="20.0" />
+            </StackPane.margin>
+        </VBox>
+    </children>
+</StackPane>
+

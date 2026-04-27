@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<StackPane xmlns="http://javafx.com/javafx/21"
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.bidding.client.scene.LoadingOverlayController"
+           fx:id="overlayRoot"
+           visible="false" managed="false"
+           style="-fx-background-color: rgba(15,23,42,0.18);">
+    <VBox alignment="CENTER" spacing="10"
+          maxWidth="260"
+          style="-fx-background-color: rgba(255,255,255,0.95); -fx-background-radius: 14; -fx-padding: 18 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.16), 18, 0, 0, 6);">
+        <ProgressIndicator prefWidth="28" prefHeight="28" />
+        <Label fx:id="lblMessage" text="Dang xu ly..."
+               style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #334155;" />
+    </VBox>
+</StackPane>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.bidding.client.scene.LiveBidFeedController"
+      spacing="0"
+      style="-fx-background-color: white;">
+    <HBox style="-fx-background-color: #F5F5F5; -fx-padding: 8 16; -fx-border-color: #E0E0E0; -fx-border-width: 0 0 1 0;">
+        <Label text="Thoi gian" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #757575; -fx-min-width: 70px;"/>
+        <Label text="Nguoi dat gia" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #757575;" HBox.hgrow="ALWAYS"/>
+        <Label text="So tien" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #757575; -fx-min-width: 120px;"/>
+        <Label text="Trang thai" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #757575; -fx-min-width: 70px;"/>
+    </HBox>
+    <ScrollPane fx:id="scrollPane" fitToWidth="true" VBox.vgrow="ALWAYS"
+                style="-fx-background-color: transparent; -fx-border-color: transparent;"
+                hbarPolicy="NEVER" vbarPolicy="AS_NEEDED">
+        <VBox fx:id="bidListContainer" spacing="0"/>
+    </ScrollPane>
+    <VBox fx:id="vboxEmpty" alignment="CENTER" spacing="8" style="-fx-padding: 40;" visible="true" managed="true">
+        <Label text="Live" style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+        <Label text="Chua co luot dat gia nao" style="-fx-font-size: 13px; -fx-text-fill: #BDBDBD;"/>
+        <Label text="[DB] GET /api/bids/{auctionId}?limit=50"
+               style="-fx-font-size: 11px; -fx-text-fill: #BDBDBD; -fx-background-color: #FFF9C4; -fx-padding: 4 8; -fx-background-radius: 3;"/>
+    </VBox>
+</VBox>

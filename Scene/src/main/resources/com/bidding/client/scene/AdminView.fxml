@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.BarChart?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.LineChart?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.chart.PieChart?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Priority?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane prefHeight="768.0" prefWidth="1280.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.bidding.client.scene.AdminView">
+
+    <left>
+        <VBox prefWidth="250.0" spacing="10.0" style="-fx-background-color: #1e293b; -fx-padding: 20;">
+            <Label style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: white;" text="BidViet Admin" />
+            <Label fx:id="clockLabel" style="-fx-font-size: 14px; -fx-text-fill: #94a3b8;" text="00:00:00" />
+
+            <Region prefHeight="30.0" />
+
+            <Button fx:id="navDashboard" maxWidth="Infinity" onAction="#showDashboard" style="-fx-background-color: transparent; -fx-text-fill: white; -fx-alignment: CENTER_LEFT; -fx-font-size: 15px; -fx-cursor: hand;" text="ðŸ“Š Dashboard" />
+            <Button fx:id="navUsers" maxWidth="Infinity" onAction="#showUsers" style="-fx-background-color: transparent; -fx-text-fill: white; -fx-alignment: CENTER_LEFT; -fx-font-size: 15px; -fx-cursor: hand;" text="ðŸ‘¥ Quáº£n lÃ½ ngÆ°á»i dÃ¹ng" />
+            <Button fx:id="navAuctions" maxWidth="Infinity" onAction="#showAuctions" style="-fx-background-color: transparent; -fx-text-fill: white; -fx-alignment: CENTER_LEFT; -fx-font-size: 15px; -fx-cursor: hand;" text="âš– Quáº£n lÃ½ Ä‘áº¥u giÃ¡" />
+            <Button fx:id="navAuditLog" maxWidth="Infinity" onAction="#showAuditLog" style="-fx-background-color: transparent; -fx-text-fill: white; -fx-alignment: CENTER_LEFT; -fx-font-size: 15px; -fx-cursor: hand;" text="ðŸ“ Lá»‹ch sá»­ há»‡ thá»‘ng (Audit)" />
+            <Button fx:id="navStats" maxWidth="Infinity" onAction="#showStats" style="-fx-background-color: transparent; -fx-text-fill: white; -fx-alignment: CENTER_LEFT; -fx-font-size: 15px; -fx-cursor: hand;" text="ðŸ“ˆ Thá»‘ng kÃª chi tiáº¿t" />
+
+            <Region VBox.vgrow="ALWAYS" />
+
+            <Button maxWidth="Infinity" onAction="#handleLogout" style="-fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-padding: 10;" text="ðŸšª ÄÄƒng xuáº¥t" />
+        </VBox>
+    </left>
+
+    <center>
+        <StackPane style="-fx-background-color: #f1f5f9; -fx-padding: 20;">
+
+            <VBox fx:id="dashboardSection" spacing="20.0">
+                <Label style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" text="Dashboard" />
+
+                <HBox spacing="20.0">
+                    <VBox HBox.hgrow="ALWAYS" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 10; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 0);">
+                        <Label style="-fx-text-fill: #64748b;" text="Tá»•ng ngÆ°á»i dÃ¹ng" />
+                        <Label fx:id="statTotalUsers" style="-fx-font-size: 28px; -fx-font-weight: bold;" text="0" />
+                        <Label fx:id="statUsersGrowth" style="-fx-text-fill: #10b981;" text="+0 hÃ´m nay" />
+                    </VBox>
+                    <VBox HBox.hgrow="ALWAYS" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 10; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 0);">
+                        <Label style="-fx-text-fill: #64748b;" text="PhiÃªn Ä‘ang hoáº¡t Ä‘á»™ng" />
+                        <Label fx:id="statActiveSessions" style="-fx-font-size: 28px; -fx-font-weight: bold;" text="0" />
+                        <Label fx:id="statSessionsInfo" style="-fx-text-fill: #f59e0b;" text="0 phiÃªn chá»" />
+                    </VBox>
+                    <VBox HBox.hgrow="ALWAYS" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 10; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 0);">
+                        <Label style="-fx-text-fill: #64748b;" text="Tá»•ng lÆ°á»£t Bid" />
+                        <Label fx:id="statTotalBids" style="-fx-font-size: 28px; -fx-font-weight: bold;" text="0" />
+                        <Label fx:id="statBidsToday" style="-fx-text-fill: #10b981;" text="+0 hÃ´m nay" />
+                    </VBox>
+                    <VBox HBox.hgrow="ALWAYS" style="-fx-background-color: white; -fx-padding: 20; -fx-background-radius: 10; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 0);">
+                        <Label style="-fx-text-fill: #64748b;" text="Doanh thu" />
+                        <Label fx:id="statTotalRevenue" style="-fx-font-size: 28px; -fx-font-weight: bold;" text="0 Ä‘" />
+                        <Label fx:id="statRevenueGrowth" style="-fx-text-fill: #10b981;" text="+0.0% thÃ¡ng nÃ y" />
+                    </VBox>
+                </HBox>
+
+                <HBox spacing="20.0" VBox.vgrow="ALWAYS">
+                    <BarChart fx:id="bidBarChart" title="LÆ°á»£t bid 7 ngÃ y qua" HBox.hgrow="ALWAYS" style="-fx-background-color: white; -fx-background-radius: 10;">
+                        <xAxis><CategoryAxis label="NgÃ y" /></xAxis>
+                        <yAxis><NumberAxis label="LÆ°á»£t bid" /></yAxis>
+                    </BarChart>
+                    <PieChart fx:id="categoryPieChart" title="PhÃ¢n bá»• danh má»¥c" HBox.hgrow="ALWAYS" style="-fx-background-color: white; -fx-background-radius: 10;" />
+                </HBox>
+            </VBox>
+
+            <VBox fx:id="usersSection" spacing="15.0" visible="false">
+                <Label style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" text="Quáº£n lÃ½ NgÆ°á»i dÃ¹ng" />
+
+                <HBox alignment="CENTER_LEFT" spacing="10.0">
+                    <TextField fx:id="userSearchField" prefWidth="250.0" promptText="TÃ¬m tÃªn, email..." />
+                    <ComboBox fx:id="userRoleFilter" prefWidth="150.0" promptText="Táº¥t cáº£ vai trÃ²" />
+                    <Button onAction="#handleUserSearch" style="-fx-background-color: #3b82f6; -fx-text-fill: white;" text="ðŸ” TÃ¬m kiáº¿m" />
+                </HBox>
+
+                <TableView fx:id="userTable" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colUserId" prefWidth="50" text="ID" />
+                        <TableColumn fx:id="colUserName" prefWidth="200" text="Há» tÃªn" />
+                        <TableColumn fx:id="colUserEmail" prefWidth="250" text="Email" />
+                        <TableColumn fx:id="colUserRole" prefWidth="120" text="Vai trÃ²" />
+                        <TableColumn fx:id="colUserStatus" prefWidth="120" text="Tráº¡ng thÃ¡i" />
+                        <TableColumn fx:id="colUserCreatedAt" prefWidth="150" text="NgÃ y táº¡o" />
+                        <TableColumn fx:id="colUserActions" prefWidth="120" text="HÃ nh Ä‘á»™ng" />
+                    </columns>
+                </TableView>
+
+                <HBox alignment="CENTER_RIGHT" spacing="10.0">
+                    <Button onAction="#userPrevPage" text="&lt; TrÆ°á»›c" />
+                    <Label fx:id="userPageInfo" text="Trang 1 / 1" />
+                    <Button onAction="#userNextPage" text="Sau &gt;" />
+                </HBox>
+            </VBox>
+
+            <VBox fx:id="auctionsAdminSection" spacing="15.0" visible="false">
+                <Label style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" text="Quáº£n lÃ½ Äáº¥u giÃ¡" />
+
+                <HBox alignment="CENTER_LEFT" spacing="10.0">
+                    <TextField fx:id="aucSearchField" prefWidth="250.0" promptText="TÃ¬m tÃªn sáº£n pháº©m..." />
+                    <ComboBox fx:id="aucStatusFilter" prefWidth="150.0" promptText="Tráº¡ng thÃ¡i" />
+                    <Button onAction="#handleAucSearch" style="-fx-background-color: #3b82f6; -fx-text-fill: white;" text="ðŸ” TÃ¬m kiáº¿m" />
+                </HBox>
+
+                <TableView fx:id="adminAucTable" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colAdminAucId" prefWidth="50" text="ID" />
+                        <TableColumn fx:id="colAdminAucTitle" prefWidth="250" text="TÃªn sáº£n pháº©m" />
+                        <TableColumn fx:id="colAdminAucSeller" prefWidth="150" text="NgÆ°á»i bÃ¡n" />
+                        <TableColumn fx:id="colAdminAucStatus" prefWidth="100" text="Tráº¡ng thÃ¡i" />
+                        <TableColumn fx:id="colAdminAucPrice" prefWidth="120" text="GiÃ¡ hiá»‡n táº¡i" />
+                        <TableColumn fx:id="colAdminAucBids" prefWidth="80" text="Sá»‘ bid" />
+                        <TableColumn fx:id="colAdminAucEndTime" prefWidth="120" text="Káº¿t thÃºc" />
+                        <TableColumn fx:id="colAdminAucAction" prefWidth="120" text="HÃ nh Ä‘á»™ng" />
+                    </columns>
+                </TableView>
+
+                <HBox alignment="CENTER_RIGHT" spacing="10.0">
+                    <Button onAction="#aucPrevPage" text="&lt; TrÆ°á»›c" />
+                    <Label fx:id="aucPageInfo" text="Trang 1 / 1" />
+                    <Button onAction="#aucNextPage" text="Sau &gt;" />
+                </HBox>
+            </VBox>
+
+            <VBox fx:id="auditLogSection" spacing="15.0" visible="false">
+                <Label style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" text="Lá»‹ch sá»­ há»‡ thá»‘ng (Audit Log)" />
+
+                <HBox alignment="CENTER_LEFT" spacing="10.0">
+                    <DatePicker fx:id="auditDateFilter" promptText="Chá»n ngÃ y..." />
+                    <Button onAction="#filterAuditLog" style="-fx-background-color: #3b82f6; -fx-text-fill: white;" text="Lá»c" />
+                    <Button onAction="#resetAuditFilter" text="KhÃ´i phá»¥c" />
+                </HBox>
+
+                <TableView fx:id="auditTable" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="colAuditTime" prefWidth="150" text="Thá»i gian" />
+                        <TableColumn fx:id="colAuditActor" prefWidth="150" text="NgÆ°á»i thá»±c hiá»‡n" />
+                        <TableColumn fx:id="colAuditAction" prefWidth="150" text="HÃ nh Ä‘á»™ng" />
+                        <TableColumn fx:id="colAuditTarget" prefWidth="150" text="Äá»‘i tÆ°á»£ng" />
+                        <TableColumn fx:id="colAuditDetail" prefWidth="350" text="Chi tiáº¿t" />
+                    </columns>
+                </TableView>
+            </VBox>
+
+            <VBox fx:id="statsSection" spacing="20.0" visible="false">
+                <Label style="-fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" text="Thá»‘ng kÃª chi tiáº¿t" />
+
+                <HBox spacing="20.0" VBox.vgrow="ALWAYS">
+                    <BarChart fx:id="revenueChart" title="Doanh thu 6 thÃ¡ng (Triá»‡u VNÄ)" HBox.hgrow="ALWAYS" style="-fx-background-color: white; -fx-background-radius: 10;">
+                        <xAxis><CategoryAxis label="ThÃ¡ng" /></xAxis>
+                        <yAxis><NumberAxis label="Triá»‡u Ä‘" /></yAxis>
+                    </BarChart>
+                    <LineChart fx:id="usersGrowthChart" title="TÄƒng trÆ°á»Ÿng ngÆ°á»i dÃ¹ng má»›i" HBox.hgrow="ALWAYS" style="-fx-background-color: white; -fx-background-radius: 10;">
+                        <xAxis><CategoryAxis label="Tuáº§n" /></xAxis>
+                        <yAxis><NumberAxis label="NgÆ°á»i dÃ¹ng má»›i" /></yAxis>
+                    </LineChart>
+                </HBox>
+
+                <HBox spacing="20.0" VBox.vgrow="ALWAYS">
+                    <PieChart fx:id="rolesPieChart" title="PhÃ¢n bá»• vai trÃ² ngÆ°á»i dÃ¹ng" HBox.hgrow="ALWAYS" style="-fx-background-color: white; -fx-background-radius: 10;" />
+                    <Region HBox.hgrow="ALWAYS" /> </HBox>
+            </VBox>
+
+        </StackPane>
+    </center>
+</BorderPane>
