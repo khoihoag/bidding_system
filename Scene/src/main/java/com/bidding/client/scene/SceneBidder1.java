@@ -958,24 +958,24 @@ public class SceneBidder1 {
 
     @FXML
     void handleOpenAutoBid(ActionEvent event) {
-        openScene("SceneAutoBid.fxml", "BidViet - Auto Bid");
+        openScene("SceneAutoBid.fxml", "BidViet - Tra gia tu dong");
     }
 
     @FXML
     void switchToSeller(ActionEvent event) {
-        openScene("SceneSeller1.fxml", "BidViet - Seller Dashboard");
+        openScene("SceneSeller1.fxml", "BidViet - Bang dieu khien nguoi ban");
     }
 
     @FXML
     void handleLogout(ActionEvent event) {
-        openScene("Scene1.fxml", "Login System");
+        openScene("Scene1.fxml", "Dang nhap he thong");
     }
 
     @FXML
     void handleChangeAvatar(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Chon anh dai dien");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg"));
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Tap tin anh", "*.png", "*.jpg", "*.jpeg"));
         File selectedFile = fileChooser.showOpenDialog(rootPane == null ? null : rootPane.getScene().getWindow());
         if (selectedFile == null) {
             return;

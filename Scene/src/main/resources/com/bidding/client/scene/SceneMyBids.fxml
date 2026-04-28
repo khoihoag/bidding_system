@@ -26,11 +26,11 @@
     <children>
         <HBox alignment="CENTER_LEFT" spacing="14.0">
             <children>
-                <Button text="← Quay lai" onAction="#handleBack" styleClass="btn-back" />
+                <Button text="← Quay lại" onAction="#handleBack" styleClass="btn-back" />
                 <VBox spacing="4.0">
                     <children>
-                        <Label text="Dau Gia Cua Toi" styleClass="page-title" />
-                        <Label fx:id="summaryLabel" text="Tong quan cac phien dau gia cua ban" styleClass="page-subtitle" />
+                        <Label text="Đấu giá của tôi" styleClass="page-title" />
+                        <Label fx:id="summaryLabel" text="Tổng quan các phiên đấu giá của bạn" styleClass="page-subtitle" />
                     </children>
                 </VBox>
                 <Region HBox.hgrow="ALWAYS" />
@@ -43,7 +43,7 @@
                     <children>
                         <VBox styleClass="dashboard-section">
                             <children>
-                                <Label text="Phien dang tham gia" styleClass="section-title" />
+                                <Label text="Phiên đang tham gia" styleClass="section-title" />
                                 <FlowPane fx:id="activeBidsGrid" hgap="18.0" vgap="18.0" />
                             </children>
                         </VBox>
@@ -52,7 +52,7 @@
 
                         <VBox styleClass="dashboard-section">
                             <children>
-                                <Label text="Phien sap tham gia" styleClass="section-title" />
+                                <Label text="Phiên sắp tham gia" styleClass="section-title" />
                                 <FlowPane fx:id="upcomingBidsGrid" hgap="18.0" vgap="18.0" />
                             </children>
                         </VBox>
@@ -61,7 +61,7 @@
 
                         <VBox styleClass="dashboard-section">
                             <children>
-                                <Label text="Phien da tham gia" styleClass="section-title" />
+                                <Label text="Phiên đã tham gia" styleClass="section-title" />
                                 <FlowPane fx:id="pastBidsGrid" hgap="18.0" vgap="18.0" />
                             </children>
                         </VBox>

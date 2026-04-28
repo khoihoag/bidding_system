@@ -32,15 +32,15 @@
                     <children>
                         <HBox styleClass="topbar">
                             <children>
-                                <Button text="Menu" onAction="#toggleMenu" styleClass="menu-toggle" />
+                                <Button text="Trình đơn" onAction="#toggleMenu" styleClass="menu-toggle" />
                                 <Label text="BidViet" styleClass="brand-title" />
-                                <Label text="BIDDER" styleClass="role-badge" />
+                                <Label text="NGUOI MUA" styleClass="role-badge" />
                                 <Region HBox.hgrow="ALWAYS" />
                                 <HBox spacing="8.0" alignment="CENTER_LEFT">
                                     <children>
                                         <TextField fx:id="searchField"
                                                    prefWidth="330.0"
-                                                   promptText="Tim kiem phien dau gia..."
+                                                   promptText="Tìm kiếm phiên đấu giá..."
                                                    styleClass="search-input" />
                                         <Button text="Tim" onAction="#handleSearch" styleClass="btn-primary" />
                                     </children>
@@ -63,14 +63,14 @@
 
                         <HBox styleClass="filter-bar">
                             <children>
-                                <Label text="Loc" styleClass="field-label" />
+                                <Label text="Lọc" styleClass="field-label" />
                                 <ComboBox fx:id="filterCategory" prefWidth="170.0" styleClass="select-input" />
                                 <ComboBox fx:id="filterStatus" prefWidth="150.0" styleClass="select-input" />
                                 <ComboBox fx:id="filterPrice" prefWidth="170.0" styleClass="select-input" />
-                                <Button text="Ap dung" onAction="#handleFilter" styleClass="btn-accent" />
-                                <Button text="Xoa loc" onAction="#handleClearFilter" styleClass="btn-secondary" />
+                                <Button text="Áp dụng" onAction="#handleFilter" styleClass="btn-accent" />
+                                <Button text="Xóa lọc" onAction="#handleClearFilter" styleClass="btn-secondary" />
                                 <Region HBox.hgrow="ALWAYS" />
-                                <Label text="Sap xep" styleClass="field-label" />
+                                <Label text="Sắp xếp" styleClass="field-label" />
                                 <ComboBox fx:id="sortCombo" prefWidth="180.0" styleClass="select-input" />
                             </children>
                         </HBox>
@@ -88,12 +88,12 @@
                                         <HBox alignment="CENTER_LEFT" spacing="12.0">
                                             <children>
                                                 <Label text="Phien dang dau gia" styleClass="section-title" />
-                                                <Label text="RUNNING" styleClass="role-badge" />
+                                                <Label text="DANG DIEN RA" styleClass="role-badge" />
                                             </children>
                                         </HBox>
                                         <FlowPane fx:id="runningProductsPane" hgap="18.0" vgap="18.0" />
                                         <Label fx:id="lblRunningEmpty"
-                                               text="Khong co phien dang dau gia."
+                                               text="Không có phiên đang đấu giá."
                                                visible="false"
                                                styleClass="section-caption" />
                                     </children>
@@ -104,12 +104,12 @@
                                         <HBox alignment="CENTER_LEFT" spacing="12.0">
                                             <children>
                                                 <Label text="Phien sap dien ra" styleClass="section-title" />
-                                                <Label text="OPEN" styleClass="role-badge" />
+                                                <Label text="SAP MO" styleClass="role-badge" />
                                             </children>
                                         </HBox>
                                         <FlowPane fx:id="upcomingProductsPane" hgap="18.0" vgap="18.0" />
                                         <Label fx:id="lblUpcomingEmpty"
-                                               text="Khong co phien sap mo."
+                                               text="Không có phiên sắp mở."
                                                visible="false"
                                                styleClass="section-caption" />
                                     </children>
@@ -120,12 +120,12 @@
                                         <HBox alignment="CENTER_LEFT" spacing="12.0">
                                             <children>
                                                 <Label text="Phien da ket thuc" styleClass="section-title" />
-                                                <Label text="FINISHED" styleClass="role-badge" />
+                                                <Label text="DA KET THUC" styleClass="role-badge" />
                                             </children>
                                         </HBox>
                                         <FlowPane fx:id="finishedProductsPane" hgap="18.0" vgap="18.0" />
                                         <Label fx:id="lblFinishedEmpty"
-                                               text="Khong co phien da ket thuc."
+                                               text="Không có phiên đã kết thúc."
                                                visible="false"
                                                styleClass="section-caption" />
                                     </children>
@@ -133,9 +133,9 @@
 
                                 <HBox alignment="CENTER" spacing="10.0">
                                     <children>
-                                        <Button fx:id="btnPrevPage" text="Quay lai" onAction="#handlePrevPage" styleClass="btn-back" />
+                                        <Button fx:id="btnPrevPage" text="Quay lại" onAction="#handlePrevPage" styleClass="btn-back" />
                                         <Label fx:id="lblPageInfo" text="Trang 1 / 1" styleClass="section-caption" />
-                                        <Button fx:id="btnNextPage" text="Tiep" onAction="#handleNextPage" styleClass="btn-back" />
+                                        <Button fx:id="btnNextPage" text="Tiếp" onAction="#handleNextPage" styleClass="btn-back" />
                                     </children>
                                 </HBox>
                             </children>
@@ -153,11 +153,11 @@
                     <children>
                         <HBox styleClass="topbar">
                             <children>
-                                <Button text="Quay lai" onAction="#menuGoHome" styleClass="btn-back" />
+                                <Button text="Quay lại" onAction="#menuGoHome" styleClass="btn-back" />
                                 <VBox spacing="4.0">
                                     <children>
-                                        <Label text="San pham dang theo doi" styleClass="page-title" />
-                                        <Label text="Danh sach san pham duoc luu trong watchlist." styleClass="page-subtitle" />
+                                        <Label text="Sản phẩm đang theo dõi" styleClass="page-title" />
+                                        <Label text="Danh sách sản phẩm được lưu trong mục theo dõi." styleClass="page-subtitle" />
                                     </children>
                                 </VBox>
                                 <Region HBox.hgrow="ALWAYS" />
@@ -175,7 +175,7 @@
                             <children>
                                 <FlowPane fx:id="watchlistPane" hgap="18.0" vgap="18.0" />
                                 <Label fx:id="lblWatchlistEmpty"
-                                       text="Chua co san pham nao trong watchlist."
+                                       text="Chưa có sản phẩm nào trong mục theo dõi."
                                        visible="false"
                                        styleClass="section-caption" />
                             </children>
@@ -200,18 +200,18 @@
                 <VBox styleClass="drawer-header" spacing="6.0">
                     <children>
                         <Label text="BidViet" styleClass="drawer-title" />
-                        <Label text="Dieu huong bidder duoc dong bo cung seller." styleClass="drawer-subtitle" />
+                        <Label text="Điều hướng người mua được đồng bộ cùng giao diện người bán." styleClass="drawer-subtitle" />
                     </children>
                 </VBox>
 
                 <VBox spacing="2.0" style="-fx-padding: 14 0;">
                     <children>
                         <Button text="Trang chu" onAction="#menuGoHome" styleClass="drawer-button drawer-button-active" maxWidth="Infinity" />
-                        <Button text="Thong bao" onAction="#menuGoNotifications" styleClass="drawer-button" maxWidth="Infinity" />
-                        <Button text="Dau gia cua toi" onAction="#menuGoMyBids" styleClass="drawer-button" maxWidth="Infinity" />
-                        <Button text="Watchlist" onAction="#menuGoWatchlist" styleClass="drawer-button" maxWidth="Infinity" />
-                        <Button text="Auto Bid" onAction="#handleOpenAutoBid" styleClass="drawer-button" maxWidth="Infinity" />
-                        <Button text="Lich su giao dich" onAction="#menuGoHistory1" styleClass="drawer-button" maxWidth="Infinity" />
+                        <Button text="Thông báo" onAction="#menuGoNotifications" styleClass="drawer-button" maxWidth="Infinity" />
+                        <Button text="Đấu giá của tôi" onAction="#menuGoMyBids" styleClass="drawer-button" maxWidth="Infinity" />
+                        <Button text="Danh sách theo dõi" onAction="#menuGoWatchlist" styleClass="drawer-button" maxWidth="Infinity" />
+                        <Button text="Trả giá tự động" onAction="#handleOpenAutoBid" styleClass="drawer-button" maxWidth="Infinity" />
+                        <Button text="Lịch sử giao dịch" onAction="#menuGoHistory1" styleClass="drawer-button" maxWidth="Infinity" />
                     </children>
                 </VBox>
 
@@ -219,7 +219,7 @@
                 <Separator />
                 <VBox spacing="10.0" style="-fx-padding: 18;">
                     <children>
-                        <Button text="Chuyen sang seller" onAction="#switchToSeller" styleClass="btn-accent" maxWidth="Infinity" />
+                        <Button text="Chuyển sang người bán" onAction="#switchToSeller" styleClass="btn-accent" maxWidth="Infinity" />
                     </children>
                 </VBox>
             </children>
@@ -247,14 +247,14 @@
                                 </StackPane>
                                 <VBox spacing="4.0">
                                     <children>
-                                        <Label fx:id="lblUserName" text="Nguoi dung bidder" styleClass="field-label" />
-                                        <Label fx:id="lblBalancePopup" text="So du: 5.000.000 d" styleClass="section-caption" />
+                                        <Label fx:id="lblUserName" text="Người dùng" styleClass="field-label" />
+                                        <Label fx:id="lblBalancePopup" text="Số dư: 5.000.000 đ" styleClass="section-caption" />
                                     </children>
                                 </VBox>
                             </children>
                         </HBox>
-                        <Button text="Doi anh dai dien" onAction="#handleChangeAvatar" styleClass="btn-secondary" maxWidth="Infinity" />
-                        <Button text="Dang xuat" onAction="#handleLogout" styleClass="btn-danger" maxWidth="Infinity" />
+                        <Button text="Đổi ảnh đại diện" onAction="#handleChangeAvatar" styleClass="btn-secondary" maxWidth="Infinity" />
+                        <Button text="Đăng xuất" onAction="#handleLogout" styleClass="btn-danger" maxWidth="Infinity" />
                     </children>
                 </VBox>
             </children>

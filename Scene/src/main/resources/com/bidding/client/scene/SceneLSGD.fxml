@@ -25,11 +25,11 @@
     <children>
         <HBox alignment="CENTER_LEFT" spacing="14.0">
             <children>
-                <Button text="← Quay lai" onAction="#goBack" styleClass="btn-back" />
+                <Button text="← Quay lại" onAction="#goBack" styleClass="btn-back" />
                 <VBox spacing="4.0">
                     <children>
-                        <Label text="Lich Su Giao Dich" styleClass="page-title" />
-                        <Label text="Tong hop cac giao dich cua bidder." styleClass="page-subtitle" />
+                        <Label text="Lịch sử giao dịch" styleClass="page-title" />
+                        <Label text="Tổng hợp các giao dịch của người mua." styleClass="page-subtitle" />
                     </children>
                 </VBox>
                 <Region HBox.hgrow="ALWAYS" />
@@ -40,26 +40,28 @@
             <children>
                 <VBox styleClass="dashboard-section" HBox.hgrow="ALWAYS">
                     <children>
-                        <Label text="Tong so giao dich" styleClass="section-caption" />
-                        <Label text="15" styleClass="section-title" />
+                        <Label text="Tổng số giao dịch" styleClass="section-caption" />
+                        <Label fx:id="lblTransactionCount" text="0" styleClass="section-title" />
                     </children>
                 </VBox>
                 <VBox styleClass="dashboard-section" HBox.hgrow="ALWAYS">
                     <children>
-                        <Label text="Tong tien da chi" styleClass="section-caption" />
-                        <Label text="45.500.000 d" styleClass="section-title" />
+                        <Label text="Tổng tiền đã chi" styleClass="section-caption" />
+                        <Label fx:id="lblTotalSpent" text="0 d" styleClass="section-title" />
                     </children>
                 </VBox>
             </children>
         </HBox>
 
+        <Label fx:id="lblHistoryNote" text="" styleClass="section-caption" wrapText="true" />
+
         <TableView fx:id="tableTransactions" VBox.vgrow="ALWAYS" styleClass="page-surface">
             <columns>
-                <TableColumn fx:id="colId" text="Ma GD" prefWidth="100.0" />
-                <TableColumn fx:id="colItemName" text="Ten san pham" prefWidth="280.0" />
-                <TableColumn fx:id="colAmount" text="So tien" prefWidth="170.0" />
-                <TableColumn fx:id="colTime" text="Thoi gian" prefWidth="210.0" />
-                <TableColumn fx:id="colStatus" text="Trang thai" prefWidth="180.0" />
+                <TableColumn fx:id="colId" text="Mã GD" prefWidth="100.0" />
+                <TableColumn fx:id="colItemName" text="Tên sản phẩm" prefWidth="280.0" />
+                <TableColumn fx:id="colAmount" text="Số tiền" prefWidth="170.0" />
+                <TableColumn fx:id="colTime" text="Thời gian" prefWidth="210.0" />
+                <TableColumn fx:id="colStatus" text="Trạng thái" prefWidth="180.0" />
             </columns>
             <columnResizePolicy>
                 <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />

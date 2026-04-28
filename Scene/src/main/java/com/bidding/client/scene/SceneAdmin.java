@@ -523,7 +523,7 @@ public class SceneAdmin {
             Parent root = FXMLLoader.load(getClass().getResource("/com/bidding/client/scene/Scene1.fxml"));
             Stage stage = (Stage) welcomeLabel.getScene().getWindow();
             stage.setScene(new Scene(root, 1200, 760));
-            stage.setTitle("Login System");
+            stage.setTitle("Dang nhap he thong");
             stage.setMaximized(false);
             stage.setResizable(true);
             stage.centerOnScreen();

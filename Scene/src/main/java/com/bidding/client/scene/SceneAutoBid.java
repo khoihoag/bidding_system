@@ -1,5 +1,7 @@
 package com.bidding.client.scene;
 
+import com.bidding.client.network.NetworkClient;
+import com.google.gson.JsonObject;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -22,6 +24,7 @@ public class SceneAutoBid implements Initializable {
     @FXML private TextField txtMaxBid;
     @FXML private TextField txtIncrement;
     @FXML private Label lblMessage;
+    @FXML private Label lblServerNote;
     @FXML private TableView<AutoBidItem> tableAutoBid;
     @FXML private TableColumn<AutoBidItem, String> colProductId;
     @FXML private TableColumn<AutoBidItem, String> colProductName;
@@ -31,9 +34,10 @@ public class SceneAutoBid implements Initializable {
     @FXML private TableColumn<AutoBidItem, String> colStatus;
     @FXML private Button btnBack;
 
-    private ObservableList<AutoBidItem> autoBidList;
+    private final ObservableList<AutoBidItem> autoBidList = FXCollections.observableArrayList();
 
     @Override
+    // Khoi tao bang va thong bao ro action nao co trong doc.
     public void initialize(URL location, ResourceBundle resources) {
         colProductId.setCellValueFactory(new PropertyValueFactory<>("productId"));
         colProductName.setCellValueFactory(new PropertyValueFactory<>("productName"));
@@ -42,48 +46,102 @@ public class SceneAutoBid implements Initializable {
         colIncrement.setCellValueFactory(new PropertyValueFactory<>("increment"));
         colStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
 
-        autoBidList = FXCollections.observableArrayList(
-                new AutoBidItem("SP001", "Laptop Dell XPS 15", "15.000.000", "20.000.000", "500.000", "Dang chay"),
-                new AutoBidItem("SP005", "iPhone 14 Pro Max", "22.500.000", "22.000.000", "200.000", "Da vuot MaxBid"),
-                new AutoBidItem("SP012", "Dong ho Rolex", "45.000.000", "50.000.000", "1.000.000", "Tam dung")
-        );
-
         tableAutoBid.setItems(autoBidList);
+        tableAutoBid.setPlaceholder(new Label("Hiện chưa có chức năng lấy danh sách trả giá tự động, nên màn này tạm thời chỉ gửi cấu hình lên server."));
+        lblServerNote.setText("Nhập mã phiên, giá tối đa và bước giá. Tài liệu JSON hiện mới cho phép đăng ký trả giá tự động, chưa hỗ trợ tải danh sách đã lưu.");
+        NetworkClient.autoBidListener = this::handleAutoBidReply;
     }
 
     @FXML
+    // Gui REGISTER_AUTO_BID theo dung schema doc.
     void handleStartBot(ActionEvent event) {
         lblMessage.setText("");
-        String pId = txtProductId.getText();
-        String maxBid = txtMaxBid.getText();
-        String inc = txtIncrement.getText();
+        String auctionId = safeText(txtProductId);
+        String maxBid = safeText(txtMaxBid);
+        String increment = safeText(txtIncrement);
 
-        if (pId.isEmpty() || maxBid.isEmpty() || inc.isEmpty()) {
-            lblMessage.setStyle("-fx-text-fill: #b93832; -fx-font-weight: bold;");
-            lblMessage.setText("Vui long nhap day du thong tin.");
+        if (auctionId.isEmpty() || maxBid.isEmpty() || increment.isEmpty()) {
+            showMessage("Vui lòng nhập đầy đủ thông tin.", false);
             return;
         }
 
-        AutoBidItem newItem = new AutoBidItem(pId, "San pham moi test", "0", maxBid, inc, "Dang chay");
-        autoBidList.add(0, newItem);
-
-        lblMessage.setStyle("-fx-text-fill: #15803d; -fx-font-weight: bold;");
-        lblMessage.setText("Da khoi dong bot Auto Bid.");
-
-        txtProductId.clear();
-        txtMaxBid.clear();
-        txtIncrement.clear();
+        try {
+            long maxBidValue = Long.parseLong(normalizeNumber(maxBid));
+            long incrementValue = Long.parseLong(normalizeNumber(increment));
+            String json = String.format(
+                    "{\"action\":\"REGISTER_AUTO_BID\",\"auctionId\":\"%s\",\"maxBid\":%d,\"increment\":%d}",
+                    escapeJson(auctionId),
+                    maxBidValue,
+                    incrementValue
+            );
+            NetworkClient.send(json);
+            showMessage("Đã gửi cấu hình trả giá tự động lên server. Bảng bên dưới sẽ để trống cho tới khi có thêm chức năng lấy danh sách.", true);
+        } catch (NumberFormatException exception) {
+            showMessage("Giá tối đa và bước giá phải là số hợp lệ.", false);
+        }
     }
 
     @FXML
+    // Quay ve bidder dashboard.
     void handleBack(ActionEvent event) {
         try {
             Stage stage = (Stage) btnBack.getScene().getWindow();
             AppNavigator.openPrimary(stage, "/com/bidding/client/scene/SceneBidder1.fxml", "BidViet - Nen tang dau gia truc tuyen");
-        } catch (Exception e) {
-            lblMessage.setStyle("-fx-text-fill: #b93832; -fx-font-weight: bold;");
-            lblMessage.setText("Khong the quay lai SceneBidder1.fxml");
+        } catch (Exception exception) {
+            showMessage("Không thể quay lại màn hình người mua.", false);
         }
+    }
+
+    // Xu ly ket qua dang ky auto bid tu server.
+    private void handleAutoBidReply(JsonObject response) {
+        String action = getString(response, "action", "");
+        if ("ERROR".equals(action)) {
+            showMessage(getString(response, "message", "Không lưu được cấu hình trả giá tự động."), false);
+            return;
+        }
+        if (!"REGISTER_AUTO_BID_REPLY".equals(action)) {
+            return;
+        }
+
+        if ("SUCCESS".equalsIgnoreCase(getString(response, "status", ""))) {
+            showMessage("Server đã xác nhận cấu hình trả giá tự động. Hiện chưa có chức năng tải lại danh sách đã lưu.", true);
+            txtProductId.clear();
+            txtMaxBid.clear();
+            txtIncrement.clear();
+        } else {
+            showMessage(getString(response, "message", "Server từ chối cấu hình trả giá tự động."), false);
+        }
+    }
+
+    // Hien message tren man auto bid.
+    private void showMessage(String message, boolean success) {
+        lblMessage.setStyle(success
+                ? "-fx-text-fill: #15803d; -fx-font-weight: bold;"
+                : "-fx-text-fill: #b93832; -fx-font-weight: bold;");
+        lblMessage.setText(message);
+    }
+
+    // Lam sach textfield.
+    private String safeText(TextField field) {
+        return field == null || field.getText() == null ? "" : field.getText().trim();
+    }
+
+    // Chuan hoa so truoc khi parse.
+    private String normalizeNumber(String value) {
+        return value.replace(".", "").replace(",", "").trim();
+    }
+
+    // Escape chuoi truoc khi gui JSON.
+    private String escapeJson(String value) {
+        return value == null ? "" : value.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
+    // Doc chuoi JSON voi fallback tuy chon.
+    private String getString(JsonObject object, String key, String fallback) {
+        if (object == null || !object.has(key) || object.get(key).isJsonNull()) {
+            return fallback;
+        }
+        return object.get(key).getAsString();
     }
 
     public static class AutoBidItem {
@@ -94,6 +152,7 @@ public class SceneAutoBid implements Initializable {
         private final String increment;
         private final String status;
 
+        // Tao dong du lieu cho table khi sau nay doc bo sung action list.
         public AutoBidItem(String productId, String productName, String currentPrice, String maxBid, String increment, String status) {
             this.productId = productId;
             this.productName = productName;

@@ -24,16 +24,20 @@
     <children>
         <HBox alignment="CENTER_LEFT" spacing="14.0">
             <children>
-                <Button text="← Quay lai" onAction="#handleBackToBidder" styleClass="btn-back" />
+                <Button text="← Quay lại" onAction="#handleBackToBidder" styleClass="btn-back" />
                 <VBox spacing="4.0">
                     <children>
-                        <Label text="Thong Bao" styleClass="page-title" />
-                        <Label text="Danh sach thong bao cua bidder." styleClass="page-subtitle" />
+                        <Label text="Thông báo" styleClass="page-title" />
+                        <Label text="Danh sách thông báo của người mua." styleClass="page-subtitle" />
+                        <Label fx:id="lblServerNote"
+                               text="Theo tài liệu JSON hiện tại chỉ có GLOBAL_NOTIFY đang đẩy realtime. Chưa có chức năng lấy lịch sử thông báo từ server."
+                               styleClass="section-caption"
+                               wrapText="true" />
                     </children>
                 </VBox>
                 <Region HBox.hgrow="ALWAYS" />
-                <Button text="Danh dau da doc" onAction="#handleMarkAsRead" styleClass="btn-secondary" />
-                <Button text="Doc tat ca" onAction="#handleMarkAllAsRead" styleClass="btn-accent" />
+                <Button text="Đánh dấu đã đọc" onAction="#handleMarkAsRead" styleClass="btn-secondary" />
+                <Button text="Đọc tất cả" onAction="#handleMarkAllAsRead" styleClass="btn-accent" />
             </children>
         </HBox>
 

@@ -16,7 +16,7 @@ public class HelloApplication1 extends Application {
         FXMLLoader loader = new FXMLLoader(HelloApplication1.class.getResource("/com/bidding/client/scene/SceneBidder1.fxml"));
         Scene scene = new Scene(loader.load(), AppNavigator.LOGIN_WIDTH, AppNavigator.LOGIN_HEIGHT);
 
-        stage.setTitle("Login System");
+        stage.setTitle("Dang nhap he thong");
         stage.setResizable(true);
         stage.setMaximized(false);
         stage.setScene(scene);

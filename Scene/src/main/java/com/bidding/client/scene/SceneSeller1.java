@@ -63,6 +63,7 @@ public class SceneSeller1 implements Initializable {
     @FXML private Label lblPopupTitle;
     @FXML private Button btnSubmitProduct;
     @FXML private Label lblProductCount;
+    @FXML private Label lblSellerNote;
 
     @FXML private ScrollPane viewImageScroll;
     @FXML private HBox viewImageContainer;
@@ -91,6 +92,7 @@ public class SceneSeller1 implements Initializable {
 
     private static class ProductData {
         int id;
+        String itemIdRef;
         String auctionId;
         String name;
         String startPrice;
@@ -102,9 +104,10 @@ public class SceneSeller1 implements Initializable {
         int bidCount;
 
         // Tao model seller de bind UI va payload.
-        ProductData(int id, String auctionId, String name, String startPrice, String currentPrice,
+        ProductData(int id, String itemIdRef, String auctionId, String name, String startPrice, String currentPrice,
                     String description, String startTimeStr, String endTimeStr, List<String> imagePaths, int bidCount) {
             this.id = id;
+            this.itemIdRef = itemIdRef;
             this.auctionId = auctionId;
             this.name = name;
             this.startPrice = startPrice;
@@ -134,7 +137,7 @@ public class SceneSeller1 implements Initializable {
         cbPhut.setValue("00");
 
         NetworkClient.sellerListener = this::handleSellerResponse;
-        loadMockProducts();
+        lblSellerNote.setText("Dang tai san pham that tu server qua GET_ITEMS.");
         requestSellerItems();
     }
 
@@ -204,17 +207,16 @@ public class SceneSeller1 implements Initializable {
         }
 
         ProductData resolved = extractReplyProduct(response);
-        if (resolved == null) {
-            resolved = pendingDraft;
+        if (resolved != null) {
+            upsertProduct(resolved);
         }
-        if (resolved == null) {
-            showError("Server da xac nhan nhung client khong doc duoc du lieu item.", false);
-            return;
+        requestSellerItems();
+        if ("ADD_ITEM".equals(expectedAction) && resolved == null) {
+            showError("Server da xac nhan them san pham. Doc JSON chi tra SUCCESS, client dang tai lai GET_ITEMS de lay itemId that.", true);
+        } else {
+            showError(expectedAction.equals("ADD_ITEM") ? "Dang san pham thanh cong!" : "Cap nhat san pham thanh cong!", true);
         }
-
-        upsertProduct(resolved);
-        showError(expectedAction.equals("ADD_ITEM") ? "Dang san pham thanh cong!" : "Cap nhat san pham thanh cong!", true);
-        scheduleAuctionIfNeeded(resolved);
+        scheduleAuctionIfNeeded(resolved == null ? pendingDraft : resolved);
         clearPendingState();
         closePopupLater();
     }
@@ -237,45 +239,23 @@ public class SceneSeller1 implements Initializable {
     // Xu ly reply cho schedule/start auction.
     private void handleLifecycleReply(JsonObject response, String action) {
         if ("SUCCESS".equalsIgnoreCase(getString(response, "status", "SUCCESS"))) {
+            String auctionId = getString(response, "auctionId", "");
+            if (productBeingViewed != null && !auctionId.isBlank()) {
+                productBeingViewed.auctionId = auctionId;
+            }
             if ("SCHEDULE_AUCTION_REPLY".equals(action)) {
                 showError("Da dong bo lich dau gia voi server.", true);
             } else {
+                viewLblMsg.setVisible(true);
+                viewLblMsg.setStyle("-fx-text-fill: #15803d; -fx-font-weight: bold;");
+                viewLblMsg.setText(auctionId.isBlank()
+                        ? "Server da ghi nhan phien bat dau."
+                        : "Server da mo phien dau gia. Auction ID: " + auctionId);
                 showError("Server da ghi nhan phien bat dau.", true);
             }
         } else {
             showError(getString(response, "message", "Khong dong bo duoc phien dau gia."), false);
         }
-    }
-
-    // Nap du lieu mau de scene van mo duoc khi server chua co.
-    private void loadMockProducts() {
-        allProducts.clear();
-        LocalDateTime now = LocalDateTime.now();
-        allProducts.add(new ProductData(
-                dummyIdCounter++,
-                "auc-local-1",
-                "Dong ho Rolex Submariner co dien",
-                "15000000",
-                "15000000",
-                "Dong ho Rolex Submariner san xuat nam 1990, phien ban co dien cuc hiem. Day la du lieu fallback khi server chua tra ve danh sach.",
-                now.minusHours(1).format(DT_FORMATTER),
-                now.plusDays(3).format(DT_FORMATTER),
-                new ArrayList<>(),
-                0
-        ));
-        allProducts.add(new ProductData(
-                dummyIdCounter++,
-                "auc-local-2",
-                "Laptop MacBook Pro 2021 M1 Pro",
-                "28000000",
-                "31200000",
-                "MacBook Pro 14 inch chip M1 Pro, RAM 16GB, SSD 512GB. Du lieu nay chi dung de scene seller van render duoc neu server chua san sang.",
-                now.minusDays(2).format(DT_FORMATTER),
-                now.minusHours(2).format(DT_FORMATTER),
-                new ArrayList<>(),
-                4
-        ));
-        renderProducts();
     }
 
     // Thay toan bo danh sach bang data moi tu server.
@@ -286,11 +266,9 @@ public class SceneSeller1 implements Initializable {
                 parsed.add(parseProduct(element.getAsJsonObject()));
             }
         }
-        if (!parsed.isEmpty()) {
-            allProducts.clear();
-            allProducts.addAll(parsed);
-            renderProducts();
-        }
+        allProducts.clear();
+        allProducts.addAll(parsed);
+        renderProducts();
     }
 
     // Ve lai toan bo card seller.
@@ -309,14 +287,14 @@ public class SceneSeller1 implements Initializable {
         VBox card = new VBox(8);
         card.setStyle("-fx-background-color: white; -fx-padding: 0; -fx-background-radius: 10; "
                 + "-fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.08), 10, 0, 0, 2);");
-        card.setPrefWidth(215);
+        card.setPrefWidth(270);
 
         ImageView imgView = new ImageView();
         if (!data.imagePaths.isEmpty()) {
             loadImageToView(imgView, data.imagePaths.get(0));
         }
-        imgView.setFitHeight(140);
-        imgView.setFitWidth(215);
+        imgView.setFitHeight(170);
+        imgView.setFitWidth(270);
         imgView.setPreserveRatio(false);
         imgView.setStyle("-fx-background-color: #ecf0f1;");
 
@@ -324,35 +302,35 @@ public class SceneSeller1 implements Initializable {
         content.setStyle("-fx-padding: 12 12 10 12;");
 
         Label lblName = new Label(data.name);
-        lblName.setStyle("-fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: #2c3e50; -fx-wrap-text: true;");
+        lblName.setStyle("-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #2c3e50; -fx-wrap-text: true;");
         lblName.setWrapText(true);
-        lblName.setMaxWidth(190);
+        lblName.setMaxWidth(235);
 
         Label lblPrice = new Label("Khoi diem: " + formatPrice(data.startPrice) + " d");
-        lblPrice.setStyle("-fx-font-size: 12px; -fx-text-fill: #f39c12; -fx-font-weight: bold;");
+        lblPrice.setStyle("-fx-font-size: 14px; -fx-text-fill: #f39c12; -fx-font-weight: bold;");
 
         Label lblCurrent = new Label("Gia hien tai: " + formatPrice(firstNonBlank(data.currentPrice, data.startPrice)) + " d");
-        lblCurrent.setStyle("-fx-font-size: 12px; -fx-text-fill: #1d5fa7; -fx-font-weight: bold;");
+        lblCurrent.setStyle("-fx-font-size: 14px; -fx-text-fill: #1d5fa7; -fx-font-weight: bold;");
 
         String status = calculateStatus(data.endTimeStr);
         Label lblStatus = new Label(status);
         lblStatus.setStyle("Da ket thuc".equals(status)
-                ? "-fx-text-fill: #e74c3c; -fx-font-size: 12px; -fx-font-weight: bold;"
-                : "-fx-text-fill: #27ae60; -fx-font-size: 12px; -fx-font-weight: bold;");
+                ? "-fx-text-fill: #e74c3c; -fx-font-size: 14px; -fx-font-weight: bold;"
+                : "-fx-text-fill: #27ae60; -fx-font-size: 14px; -fx-font-weight: bold;");
 
         HBox btnBox = new HBox(6);
         btnBox.setStyle("-fx-padding: 5 0 0 0;");
 
         Button btnView = new Button("Xem");
-        btnView.setStyle("-fx-background-color: #12263a; -fx-text-fill: white; -fx-font-size: 11px; -fx-padding: 5 10; -fx-background-radius: 6; -fx-cursor: hand;");
+        btnView.setStyle("-fx-background-color: #12263a; -fx-text-fill: white; -fx-font-size: 13px; -fx-padding: 8 16; -fx-background-radius: 8; -fx-cursor: hand;");
         btnView.setOnAction(e -> openViewPopup(data));
 
         Button btnEdit = new Button("Sua");
-        btnEdit.setStyle("-fx-background-color: #1d5fa7; -fx-text-fill: white; -fx-font-size: 11px; -fx-padding: 5 10; -fx-background-radius: 6; -fx-cursor: hand;");
+        btnEdit.setStyle("-fx-background-color: #1d5fa7; -fx-text-fill: white; -fx-font-size: 13px; -fx-padding: 8 16; -fx-background-radius: 8; -fx-cursor: hand;");
         btnEdit.setOnAction(e -> openEditPopup(data));
 
         Button btnDelete = new Button("Xoa");
-        btnDelete.setStyle("-fx-background-color: #b93832; -fx-text-fill: white; -fx-font-size: 11px; -fx-padding: 5 8; -fx-background-radius: 6; -fx-cursor: hand;");
+        btnDelete.setStyle("-fx-background-color: #b93832; -fx-text-fill: white; -fx-font-size: 13px; -fx-padding: 8 14; -fx-background-radius: 8; -fx-cursor: hand;");
         btnDelete.setOnAction(e -> confirmAndDelete(data));
 
         btnBox.getChildren().addAll(btnView, btnEdit, btnDelete);
@@ -393,6 +371,31 @@ public class SceneSeller1 implements Initializable {
         dimOverlay.toFront();
         viewProductPopup.setVisible(true);
         viewProductPopup.toFront();
+    }
+
+    @FXML
+    // Mo phien dau gia ngay lap tuc theo START_AUCTION trong doc.
+    void handleStartAuctionNow(ActionEvent event) {
+        if (productBeingViewed == null) {
+            return;
+        }
+        if (resolveItemId(productBeingViewed).isBlank()) {
+            viewLblMsg.setVisible(true);
+            viewLblMsg.setStyle("-fx-text-fill: #b93832; -fx-font-weight: bold;");
+            viewLblMsg.setText("Chua co itemId that tu server, nen chua gui duoc START_AUCTION.");
+            return;
+        }
+
+        int durationMinutes = Math.max(1, (int) ChronoUnit.MINUTES.between(LocalDateTime.now(), parseDateTimeSafe(productBeingViewed.endTimeStr)));
+        String startJson = String.format(
+                "{\"action\":\"START_AUCTION\",\"itemId\":\"%s\",\"durationMinutes\":%d}",
+                escapeJson(resolveItemId(productBeingViewed)),
+                durationMinutes
+        );
+        NetworkClient.send(startJson);
+        viewLblMsg.setVisible(true);
+        viewLblMsg.setStyle("-fx-text-fill: #1d5fa7; -fx-font-weight: bold;");
+        viewLblMsg.setText("Da gui START_AUCTION len server.");
     }
 
     // Dong popup xem chi tiet.
@@ -497,7 +500,7 @@ public class SceneSeller1 implements Initializable {
     void handleUploadImages(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Chon anh san pham");
-        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Images", "*.png", "*.jpg", "*.jpeg"));
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Tap tin anh", "*.png", "*.jpg", "*.jpeg"));
 
         List<File> selectedFiles = fileChooser.showOpenMultipleDialog(null);
         if (selectedFiles == null || selectedFiles.isEmpty()) {
@@ -584,7 +587,7 @@ public class SceneSeller1 implements Initializable {
     void handleLogout(ActionEvent event) {
         try {
             Stage stage = (Stage) accountPopup.getScene().getWindow();
-            AppNavigator.openEntry(stage, "/com/bidding/client/scene/Scene1.fxml", "Login System");
+            AppNavigator.openEntry(stage, "/com/bidding/client/scene/Scene1.fxml", "Dang nhap he thong");
         } catch (Exception exception) {
             exception.printStackTrace();
             showError("Khong mo duoc man hinh dang nhap.", false);
@@ -614,7 +617,7 @@ public class SceneSeller1 implements Initializable {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Chon anh dai dien");
         fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg")
+                new FileChooser.ExtensionFilter("Tap tin anh", "*.png", "*.jpg", "*.jpeg")
         );
 
         File selectedFile = fileChooser.showOpenDialog(null);
@@ -626,7 +629,7 @@ public class SceneSeller1 implements Initializable {
     // Yeu cau server tra danh sach auction seller.
     @FXML
     void handleManageAuctions(ActionEvent event) {
-        NetworkClient.send("{\"action\":\"AUCTIONS_LIST\"}");
+        NetworkClient.send("{\"action\":\"GET_AUCTIONS\"}");
         showError("Dang tai danh sach phien dau gia...", true);
     }
 
@@ -692,9 +695,12 @@ public class SceneSeller1 implements Initializable {
         }
 
         int id = productBeingEdited != null ? productBeingEdited.id : dummyIdCounter++;
+        String itemIdRef = productBeingEdited != null && productBeingEdited.itemIdRef != null && !productBeingEdited.itemIdRef.isBlank()
+                ? productBeingEdited.itemIdRef
+                : "";
         String auctionId = productBeingEdited != null && productBeingEdited.auctionId != null && !productBeingEdited.auctionId.isBlank()
                 ? productBeingEdited.auctionId
-                : "auc-client-" + id;
+                : "";
         String currentPrice = productBeingEdited != null && productBeingEdited.currentPrice != null && !productBeingEdited.currentPrice.isBlank()
                 ? productBeingEdited.currentPrice
                 : gia;
@@ -705,6 +711,7 @@ public class SceneSeller1 implements Initializable {
 
         return new ProductData(
                 id,
+                itemIdRef,
                 auctionId,
                 tenSP,
                 gia,
@@ -720,9 +727,10 @@ public class SceneSeller1 implements Initializable {
     // Parse item tu JSON server theo schema linh hoat.
     private ProductData parseProduct(JsonObject object) {
         int id = getInt(object, "itemId", getInt(object, "id", dummyIdCounter++));
-        String auctionId = firstNonBlank(getString(object, "auctionId"), getString(object, "id"), "auc-" + id);
+        String itemIdRef = firstNonBlank(getString(object, "itemId"), getString(object, "id"), String.valueOf(id));
+        String auctionId = firstNonBlank(getString(object, "auctionId"), "");
         String name = firstNonBlank(getString(object, "itemName"), getNestedString(object, "item", "name"), getString(object, "name"), "Chua dat ten");
-        String startPrice = String.valueOf(getLong(object, "startPrice", getLong(object, "price", getLong(object, "currentPrice", 0L))));
+        String startPrice = String.valueOf(getLong(object, "startingPrice", getLong(object, "startPrice", getLong(object, "price", getLong(object, "currentPrice", 0L)))));
         String currentPrice = String.valueOf(getLong(object, "currentPrice", getLong(object, "newPrice", getLong(object, "startPrice", 0L))));
         String description = firstNonBlank(getString(object, "description"), getString(object, "desc"), "Chua co mo ta");
         String startTime = firstNonBlank(getString(object, "startTime"), LocalDateTime.now().minusMinutes(5).format(DT_FORMATTER));
@@ -736,7 +744,7 @@ public class SceneSeller1 implements Initializable {
             }
         }
         int bidCount = getInt(object, "bidCount", 0);
-        return new ProductData(id, auctionId, name, startPrice, currentPrice, description, startTime, endTime, images, bidCount);
+        return new ProductData(id, itemIdRef, auctionId, name, startPrice, currentPrice, description, startTime, endTime, images, bidCount);
     }
 
     // Trich san pham tu payload reply cua server.
@@ -775,55 +783,42 @@ public class SceneSeller1 implements Initializable {
 
     // Tao payload chung cho add va update.
     private String buildItemJson(String action, ProductData product) {
-        String imageJson = buildImageArrayJson(product.imagePaths);
+        if ("ADD_ITEM".equals(action)) {
+            return String.format(
+                    "{\"action\":\"ADD_ITEM\",\"name\":\"%s\",\"description\":\"%s\",\"startingPrice\":%s}",
+                    escapeJson(product.name),
+                    escapeJson(product.description),
+                    normalizeNumber(product.startPrice)
+            );
+        }
         return String.format(
-                "{\"action\":\"%s\",\"auctionId\":\"%s\",\"itemId\":%d,\"id\":%d,\"itemName\":\"%s\",\"startPrice\":%s,\"currentPrice\":%s,\"description\":\"%s\",\"startTime\":\"%s\",\"endTime\":\"%s\",\"imagePaths\":%s,\"item\":{\"name\":\"%s\"}}",
-                action,
-                escapeJson(product.auctionId),
-                product.id,
-                product.id,
+                "{\"action\":\"UPDATE_ITEM\",\"itemId\":\"%s\",\"name\":\"%s\",\"description\":\"%s\"}",
+                escapeJson(resolveItemId(product)),
                 escapeJson(product.name),
-                normalizeNumber(product.startPrice),
-                normalizeNumber(product.currentPrice),
-                escapeJson(product.description),
-                escapeJson(product.startTimeStr),
-                escapeJson(product.endTimeStr),
-                imageJson,
-                escapeJson(product.name)
+                escapeJson(product.description)
         );
     }
 
     // Tao payload xoa item.
     private String buildDeleteJson(ProductData product) {
         return String.format(
-                "{\"action\":\"DELETE_ITEM\",\"auctionId\":\"%s\",\"itemId\":%d}",
-                escapeJson(product.auctionId),
-                product.id
+                "{\"action\":\"DELETE_ITEM\",\"itemId\":\"%s\"}",
+                escapeJson(resolveItemId(product))
         );
     }
 
     // Tu dong gui schedule auction neu can.
     private void scheduleAuctionIfNeeded(ProductData product) {
-        if (product == null || product.auctionId == null || product.auctionId.isBlank()) {
+        if (product == null || resolveItemId(product).isBlank()) {
             return;
         }
         String scheduleJson = String.format(
-                "{\"action\":\"SCHEDULE_AUCTION\",\"auctionId\":\"%s\",\"itemId\":%d,\"startTime\":\"%s\",\"endTime\":\"%s\"}",
-                escapeJson(product.auctionId),
-                product.id,
-                escapeJson(product.startTimeStr),
-                escapeJson(product.endTimeStr)
+                "{\"action\":\"SCHEDULE_AUCTION\",\"itemId\":\"%s\",\"startTime\":\"%s\",\"endTime\":\"%s\"}",
+                escapeJson(resolveItemId(product)),
+                escapeJson(toServerDateTime(product.startTimeStr)),
+                escapeJson(toServerDateTime(product.endTimeStr))
         );
         NetworkClient.send(scheduleJson);
-
-        if (parseDateTime(product.startTimeStr).isBefore(LocalDateTime.now().plusSeconds(1))) {
-            String startJson = String.format(
-                    "{\"action\":\"START_AUCTION\",\"auctionId\":\"%s\",\"itemId\":%d}",
-                    escapeJson(product.auctionId),
-                    product.id
-            );
-            NetworkClient.send(startJson);
-        }
     }
 
     // Dong popup sau khi server xac nhan.
@@ -870,6 +865,11 @@ public class SceneSeller1 implements Initializable {
     // Cap nhat so luong san pham dang hien thi.
     private void updateProductCountLabel() {
         lblProductCount.setText(productContainer.getChildren().size() + " san pham dang hien thi");
+        if (productContainer.getChildren().isEmpty()) {
+            lblSellerNote.setText("Chua co du lieu san pham that tu server. Neu server khong tra GET_ITEMS/AUCTIONS_LIST thi man nay se de trong.");
+        } else {
+            lblSellerNote.setText("Danh sach dang hien thi tu du lieu that cua server.");
+        }
     }
 
     // Hien thong bao tren popup seller.
@@ -946,10 +946,13 @@ public class SceneSeller1 implements Initializable {
         }
     }
 
-    // So sanh hai product theo auctionId hoac id.
+    // So sanh hai product theo itemId, auctionId hoac id.
     private boolean sameProduct(ProductData left, ProductData right) {
         if (left == null || right == null) {
             return false;
+        }
+        if (!resolveItemId(left).isBlank() && !resolveItemId(right).isBlank()) {
+            return resolveItemId(left).equals(resolveItemId(right));
         }
         if (left.auctionId != null && !left.auctionId.isBlank() && right.auctionId != null && !right.auctionId.isBlank()) {
             return left.auctionId.equals(right.auctionId);
@@ -983,7 +986,32 @@ public class SceneSeller1 implements Initializable {
 
     // Parse LocalDateTime theo format chung.
     private LocalDateTime parseDateTime(String value) {
+        if (value != null && value.contains("T")) {
+            return LocalDateTime.parse(value, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        }
         return LocalDateTime.parse(value, DT_FORMATTER);
+    }
+
+    // Parse an toan khi gia tri thoi gian loi.
+    private LocalDateTime parseDateTimeSafe(String value) {
+        try {
+            return parseDateTime(value);
+        } catch (Exception exception) {
+            return LocalDateTime.now().plusHours(1);
+        }
+    }
+
+    // Chuyen datetime client sang format server co chu T.
+    private String toServerDateTime(String value) {
+        return parseDateTimeSafe(value).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+    }
+
+    // Lay itemId that de gui len server.
+    private String resolveItemId(ProductData product) {
+        if (product == null) {
+            return "";
+        }
+        return firstNonBlank(product.itemIdRef, String.valueOf(product.id));
     }
 
     // Lay string tu object.

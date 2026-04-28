@@ -15,7 +15,7 @@
           maxWidth="260"
           style="-fx-background-color: rgba(255,255,255,0.95); -fx-background-radius: 14; -fx-padding: 18 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.16), 18, 0, 0, 6);">
         <ProgressIndicator prefWidth="28" prefHeight="28" />
-        <Label fx:id="lblMessage" text="Dang xu ly..."
+        <Label fx:id="lblMessage" text="Đang xử lý..."
                style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #334155;" />
     </VBox>
 </StackPane>

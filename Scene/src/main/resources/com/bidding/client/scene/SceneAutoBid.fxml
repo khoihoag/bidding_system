@@ -26,11 +26,11 @@
     <children>
         <HBox alignment="CENTER_LEFT" spacing="14.0">
             <children>
-                <Button fx:id="btnBack" text="← Quay lai" onAction="#handleBack" styleClass="btn-back" />
+                <Button fx:id="btnBack" text="← Quay lại" onAction="#handleBack" styleClass="btn-back" />
                 <VBox spacing="4.0">
                     <children>
-                        <Label text="Auto Bid" styleClass="page-title" />
-                        <Label text="Thiet lap bot tra gia tu dong cho bidder." styleClass="page-subtitle" />
+                        <Label text="Trả giá tự động" styleClass="page-title" />
+                        <Label text="Thiết lập bot trả giá tự động cho người mua." styleClass="page-subtitle" />
                     </children>
                 </VBox>
                 <Region HBox.hgrow="ALWAYS" />
@@ -39,8 +39,9 @@
 
         <VBox styleClass="dashboard-section">
             <children>
-                <Label text="Cach hoat dong" styleClass="section-title" />
-                <Label text="Nhap ma san pham, gia toi da va buoc gia. Phan nay hien dang dung du lieu giao dien, chua ket noi backend that."
+                <Label text="Cách hoạt động" styleClass="section-title" />
+                <Label fx:id="lblServerNote"
+                       text="Tài liệu JSON hiện có REGISTER_AUTO_BID và REGISTER_AUTO_BID_REPLY. Hiện chưa có chức năng lấy danh sách cấu hình đã lưu từ server."
                        wrapText="true"
                        styleClass="section-caption" />
             </children>
@@ -48,10 +49,10 @@
 
         <HBox spacing="12.0" styleClass="dashboard-section">
             <children>
-                <TextField fx:id="txtProductId" promptText="Ma san pham" styleClass="text-input" prefWidth="180.0" />
-                <TextField fx:id="txtMaxBid" promptText="Gia toi da" styleClass="text-input" prefWidth="220.0" />
-                <TextField fx:id="txtIncrement" promptText="Buoc gia" styleClass="text-input" prefWidth="180.0" />
-                <Button text="Khoi dong bot" onAction="#handleStartBot" styleClass="btn-accent" />
+                <TextField fx:id="txtProductId" promptText="Mã phiên đấu giá" styleClass="text-input" prefWidth="180.0" />
+                <TextField fx:id="txtMaxBid" promptText="Giá tối đa" styleClass="text-input" prefWidth="220.0" />
+                <TextField fx:id="txtIncrement" promptText="Bước giá" styleClass="text-input" prefWidth="180.0" />
+                <Button text="Khởi động bot" onAction="#handleStartBot" styleClass="btn-accent" />
                 <Region HBox.hgrow="ALWAYS" />
                 <Label fx:id="lblMessage" styleClass="section-caption" />
             </children>
@@ -59,12 +60,12 @@
 
         <TableView fx:id="tableAutoBid" VBox.vgrow="ALWAYS" styleClass="page-surface">
             <columns>
-                <TableColumn fx:id="colProductId" text="Ma SP" prefWidth="110.0" />
-                <TableColumn fx:id="colProductName" text="Ten san pham" prefWidth="280.0" />
-                <TableColumn fx:id="colCurrentPrice" text="Gia hien tai" prefWidth="170.0" />
-                <TableColumn fx:id="colMaxBid" text="Gia toi da" prefWidth="170.0" />
-                <TableColumn fx:id="colIncrement" text="Buoc gia" prefWidth="160.0" />
-                <TableColumn fx:id="colStatus" text="Trang thai" prefWidth="180.0" />
+                <TableColumn fx:id="colProductId" text="Mã SP" prefWidth="110.0" />
+                <TableColumn fx:id="colProductName" text="Tên sản phẩm" prefWidth="280.0" />
+                <TableColumn fx:id="colCurrentPrice" text="Giá hiện tại" prefWidth="170.0" />
+                <TableColumn fx:id="colMaxBid" text="Giá tối đa" prefWidth="170.0" />
+                <TableColumn fx:id="colIncrement" text="Bước giá" prefWidth="160.0" />
+                <TableColumn fx:id="colStatus" text="Trạng thái" prefWidth="180.0" />
             </columns>
         </TableView>
     </children>

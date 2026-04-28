@@ -28,9 +28,9 @@
             <children>
                 <HBox alignment="CENTER_LEFT" styleClass="topbar" spacing="16.0" style="-fx-padding: 12 24 12 24;">
                     <children>
-                        <Button text="Menu" onAction="#toggleMenu" styleClass="menu-toggle" />
+                        <Button text="Trình đơn" onAction="#toggleMenu" styleClass="menu-toggle" />
                         <Label text="BidViet" styleClass="brand-title" />
-                        <Label text="SELLER" styleClass="role-badge" />
+                        <Label text="NGUOI BAN" styleClass="role-badge" />
                         <Region HBox.hgrow="ALWAYS" />
                         
                         <Button fx:id="btnAvatar" onAction="#toggleAccountPopup" 
@@ -50,15 +50,16 @@
                     <children>
                         <VBox spacing="4.0">
                             <children>
-                                <Label text="San pham cua toi" styleClass="page-title" />
-                                <Label fx:id="lblProductCount" text="0 san pham dang hien thi" styleClass="page-subtitle" />
+                                <Label text="Sản phẩm của tôi" styleClass="page-title" />
+                                <Label fx:id="lblProductCount" text="0 sản phẩm đang hiển thị" styleClass="page-subtitle" />
+                                <Label fx:id="lblSellerNote" text="" styleClass="section-caption" wrapText="true" />
                             </children>
                         </VBox>
                         <Region HBox.hgrow="ALWAYS" />
-                        <Button fx:id="btnFilterAll" text="Tat ca" onAction="#filterAll" styleClass="btn-secondary" />
-                        <Button fx:id="btnFilterActive" text="Dang dau gia" onAction="#filterActive" styleClass="btn-secondary" />
-                        <Button fx:id="btnFilterEnded" text="Da ket thuc" onAction="#filterEnded" styleClass="btn-secondary" />
-                        <Button text="Them san pham" onAction="#showAddProductPopup" styleClass="btn-accent" />
+                        <Button fx:id="btnFilterAll" text="Tất cả" onAction="#filterAll" styleClass="btn-secondary" />
+                        <Button fx:id="btnFilterActive" text="Đang đấu giá" onAction="#filterActive" styleClass="btn-secondary" />
+                        <Button fx:id="btnFilterEnded" text="Đã kết thúc" onAction="#filterEnded" styleClass="btn-secondary" />
+                        <Button text="Thêm sản phẩm" onAction="#showAddProductPopup" styleClass="btn-accent" />
                     </children>
                 </HBox>
 
@@ -94,16 +95,16 @@
                         <VBox styleClass="drawer-header" spacing="6.0" style="-fx-padding: 24 18 18 18;">
                             <children>
                                 <Label text="BidViet" styleClass="drawer-title" />
-                                <Label text="Seller dung cung he mau va kich thuoc voi bidder." styleClass="drawer-subtitle" wrapText="true" />
+                                <Label text="Giao diện người bán được đồng bộ màu sắc và kích thước với người mua." styleClass="drawer-subtitle" wrapText="true" />
                             </children>
                         </VBox>
 
                         <VBox spacing="2.0" style="-fx-padding: 14 0;">
                             <children>
-                                <Button text="San pham cua toi" styleClass="drawer-button drawer-button-active" maxWidth="Infinity" />
-                                <Button text="Them san pham" onAction="#showAddProductPopup" styleClass="drawer-button" maxWidth="Infinity" />
-                                <Button text="Quan ly dau gia" onAction="#handleManageAuctions" styleClass="drawer-button" maxWidth="Infinity" />
-                                <Button text="Thong ke doanh thu" onAction="#handleRevenueStats" styleClass="drawer-button" maxWidth="Infinity" />
+                                <Button text="Sản phẩm của tôi" styleClass="drawer-button drawer-button-active" maxWidth="Infinity" />
+                                <Button text="Thêm sản phẩm" onAction="#showAddProductPopup" styleClass="drawer-button" maxWidth="Infinity" />
+                                <Button text="Quản lý đấu giá" onAction="#handleManageAuctions" styleClass="drawer-button" maxWidth="Infinity" />
+                                <Button text="Thống kê doanh thu" onAction="#handleRevenueStats" styleClass="drawer-button" maxWidth="Infinity" />
                             </children>
                         </VBox>
 
@@ -111,7 +112,7 @@
                         <Separator />
                         <VBox spacing="10.0" style="-fx-padding: 18;">
                             <children>
-                                <Button text="Chuyen sang bidder" onAction="#switchToBidder" styleClass="btn-secondary" maxWidth="Infinity" />
+                                <Button text="Chuyển sang người mua" onAction="#switchToBidder" styleClass="btn-secondary" maxWidth="Infinity" />
                             </children>
                         </VBox>
                     </children>
@@ -128,14 +129,14 @@
             <children>
                 <VBox spacing="14.0" AnchorPane.topAnchor="20.0" AnchorPane.rightAnchor="20.0" AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="20.0" alignment="TOP_CENTER">
                     <children>
-                        <Label text="Tran Van A" styleClass="page-subtitle" />
-                        <Label text="Tai khoan seller" styleClass="field-label" />
+                        <Label text="Trần Văn A" styleClass="page-subtitle" />
+                        <Label text="Tài khoản người bán" styleClass="field-label" />
                         
-                        <Button text="Cap nhat Avatar" onAction="#handleUploadAvatar" styleClass="btn-secondary" maxWidth="Infinity" style="-fx-font-size: 12px;"/>
+                        <Button text="Cập nhật ảnh đại diện" onAction="#handleUploadAvatar" styleClass="btn-secondary" maxWidth="Infinity" style="-fx-font-size: 12px;"/>
                         
                         <Separator />
-                        <Label text="Doanh thu hien dang la du lieu giao dien." styleClass="section-caption" wrapText="true" alignment="CENTER"/>
-                        <Button text="Dang xuat" onAction="#handleLogout" styleClass="btn-danger" maxWidth="Infinity" />
+                        <Label text="Doanh thu hiện đang là dữ liệu giao diện." styleClass="section-caption" wrapText="true" alignment="CENTER"/>
+                        <Button text="Đăng xuất" onAction="#handleLogout" styleClass="btn-danger" maxWidth="Infinity" />
                     </children>
                 </VBox>
             </children>
@@ -153,22 +154,22 @@
                     <children>
                         <HBox alignment="CENTER_LEFT">
                             <children>
-                                <Label fx:id="lblPopupTitle" text="Them san pham moi" styleClass="page-title" />
+                                <Label fx:id="lblPopupTitle" text="Thêm sản phẩm mới" styleClass="page-title" />
                                 <Region HBox.hgrow="ALWAYS" />
-                                <Button text="Dong" onAction="#handleCancelAction" styleClass="btn-back" />
+                                <Button text="Đóng" onAction="#handleCancelAction" styleClass="btn-back" />
                             </children>
                         </HBox>
 
-                        <Label text="Ten san pham" styleClass="field-label" />
-                        <TextField fx:id="txtTenSP" prefHeight="42.0" styleClass="text-input" promptText="Nhap ten san pham" />
+                        <Label text="Tên sản phẩm" styleClass="field-label" />
+                        <TextField fx:id="txtTenSP" prefHeight="42.0" styleClass="text-input" promptText="Nhập tên sản phẩm" />
 
-                        <Label text="Gia khoi diem" styleClass="field-label" />
-                        <TextField fx:id="txtGiaKhoiDiem" prefHeight="42.0" styleClass="text-input" promptText="Chi nhap so" />
+                        <Label text="Giá khởi điểm" styleClass="field-label" />
+                        <TextField fx:id="txtGiaKhoiDiem" prefHeight="42.0" styleClass="text-input" promptText="Chỉ nhập số" />
 
-                        <Label text="Mo ta" styleClass="field-label" />
-                        <TextArea fx:id="txtMoTa" prefHeight="100.0" wrapText="true" styleClass="text-input" promptText="Mo ta chi tiet san pham" />
+                        <Label text="Mô tả" styleClass="field-label" />
+                        <TextArea fx:id="txtMoTa" prefHeight="100.0" wrapText="true" styleClass="text-input" promptText="Mô tả chi tiết sản phẩm" />
 
-                        <Label text="Thoi gian ket thuc" styleClass="field-label" />
+                        <Label text="Thời gian kết thúc" styleClass="field-label" />
                         <HBox spacing="10.0">
                             <children>
                                 <DatePicker fx:id="datePicker" prefWidth="170.0" />
@@ -179,8 +180,8 @@
 
                         <HBox alignment="CENTER_LEFT" spacing="12.0">
                             <children>
-                                <Button text="Tai anh len" onAction="#handleUploadImages" styleClass="btn-secondary" />
-                                <Label text="Ban co the chon nhieu anh." styleClass="section-caption" />
+                                <Button text="Tải ảnh lên" onAction="#handleUploadImages" styleClass="btn-secondary" />
+                                <Label text="Bạn có thể chọn nhiều ảnh." styleClass="section-caption" />
                             </children>
                         </HBox>
 
@@ -198,8 +199,8 @@
 
                         <HBox alignment="CENTER_RIGHT" spacing="10.0">
                             <children>
-                                <Button text="Huy" onAction="#handleCancelAction" styleClass="btn-back" />
-                                <Button fx:id="btnSubmitProduct" text="Dang san pham" onAction="#handleAddProductSubmit" styleClass="btn-accent" />
+                                <Button text="Hủy" onAction="#handleCancelAction" styleClass="btn-back" />
+                                <Button fx:id="btnSubmitProduct" text="Đăng sản phẩm" onAction="#handleAddProductSubmit" styleClass="btn-accent" />
                             </children>
                         </HBox>
                     </children>
@@ -219,9 +220,9 @@
                     <children>
                         <HBox alignment="CENTER_LEFT">
                             <children>
-                                <Label text="Chi tiet san pham" styleClass="page-title" />
+                                <Label text="Chi tiết sản phẩm" styleClass="page-title" />
                                 <Region HBox.hgrow="ALWAYS" />
-                                <Button text="Dong" onAction="#closeViewPopup" styleClass="btn-back" />
+                                <Button text="Đóng" onAction="#closeViewPopup" styleClass="btn-back" />
                             </children>
                         </HBox>
 
@@ -241,27 +242,28 @@
                                                 </HBox>
                                             </content>
                                         </ScrollPane>
-                                        <Label fx:id="viewLblStatus" text="Trang thai" styleClass="field-label" />
-                                        <Label fx:id="viewLblBidCount" text="0 luot" styleClass="section-caption" />
-                                        <Label fx:id="viewLblCurrentPrice" text="0 d" styleClass="section-caption" />
+                                        <Label fx:id="viewLblStatus" text="Trạng thái" styleClass="field-label" />
+                                        <Label fx:id="viewLblBidCount" text="0 lượt" styleClass="section-caption" />
+                                        <Label fx:id="viewLblCurrentPrice" text="0 đ" styleClass="section-caption" />
                                     </children>
                                 </VBox>
 
                                 <VBox spacing="12.0" HBox.hgrow="ALWAYS">
                                     <children>
-                                        <Label fx:id="viewLblName" text="Ten san pham" styleClass="page-title" wrapText="true" />
-                                        <Label text="Gia khoi diem" styleClass="field-label" />
-                                        <Label fx:id="viewLblPrice" text="0 d" styleClass="toolbar-balance" />
-                                        <Label text="Ket thuc luc" styleClass="field-label" />
+                                        <Label fx:id="viewLblName" text="Tên sản phẩm" styleClass="page-title" wrapText="true" />
+                                        <Label text="Giá khởi điểm" styleClass="field-label" />
+                                        <Label fx:id="viewLblPrice" text="0 đ" styleClass="toolbar-balance" />
+                                        <Label text="Kết thúc lúc" styleClass="field-label" />
                                         <Label fx:id="viewLblEndTime" text="--" styleClass="section-caption" />
-                                        <Label text="Mo ta" styleClass="field-label" />
+                                        <Label text="Mô tả" styleClass="field-label" />
                                         <Label fx:id="viewLblDesc" text="--" wrapText="true" styleClass="section-caption" />
                                         <HBox spacing="10.0">
-                                            <children>
-                                                <Button text="Chinh sua" onAction="#handleEditFromView" styleClass="btn-accent" />
-                                                <Button text="Xoa san pham" onAction="#handleDeleteFromView" styleClass="btn-danger" />
-                                            </children>
-                                        </HBox>
+                                             <children>
+                                                 <Button text="Chỉnh sửa" onAction="#handleEditFromView" styleClass="btn-accent" />
+                                                 <Button text="Mở phiên ngay" onAction="#handleStartAuctionNow" styleClass="btn-secondary" />
+                                                 <Button text="Xóa sản phẩm" onAction="#handleDeleteFromView" styleClass="btn-danger" />
+                                             </children>
+                                         </HBox>
                                         <Label fx:id="viewLblMsg" visible="false" wrapText="true" />
                                     </children>
                                 </VBox>

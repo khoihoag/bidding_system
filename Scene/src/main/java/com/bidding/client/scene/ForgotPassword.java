@@ -28,13 +28,13 @@ public class ForgotPassword {
         String contact = txtContact.getText();
 
         if (contact == null || contact.trim().isEmpty()) {
-            showError("Vui long nhap email hoac so dien thoai truoc khi nhan ma.");
+            showError("Vui lòng nhập email hoặc số điện thoại trước khi nhận mã.");
             return;
         }
 
         generatedOTP = "123456";
-        System.out.println("Da gui OTP den: " + contact + ". OTP: " + generatedOTP);
-        showSuccess("Da gui ma OTP thanh cong. Vui long kiem tra email/tin nhan.");
+        System.out.println("Đã gửi OTP đến: " + contact + ". OTP: " + generatedOTP);
+        showSuccess("Đã gửi mã OTP thành công. Vui lòng kiểm tra email hoặc tin nhắn.");
     }
 
     @FXML
@@ -47,27 +47,27 @@ public class ForgotPassword {
         String confirmPass = txtConfirmPassword.getText();
 
         if (contact == null || contact.trim().isEmpty()) {
-            showError("Vui long nhap email hoac so dien thoai.");
+            showError("Vui lòng nhập email hoặc số điện thoại.");
             return;
         }
         if (otp == null || otp.trim().isEmpty()) {
-            showError("Vui long nhap ma OTP.");
+            showError("Vui lòng nhập mã OTP.");
             return;
         }
         if (!otp.equals(generatedOTP)) {
-            showError("Ma OTP khong chinh xac.");
+            showError("Mã OTP không chính xác.");
             return;
         }
         if (newPass == null || !newPass.matches("^[a-zA-Z0-9]{6,15}$")) {
-            showError("Mat khau moi tu 6-15 ky tu, chi gom chu va so.");
+            showError("Mật khẩu mới từ 6-15 ký tự, chỉ gồm chữ và số.");
             return;
         }
         if (!newPass.equals(confirmPass)) {
-            showError("Mat khau xac nhan khong khop.");
+            showError("Mật khẩu xác nhận không khớp.");
             return;
         }
 
-        showSuccess("Doi mat khau thanh cong. Dang quay lai man dang nhap...");
+        showSuccess("Đổi mật khẩu thành công. Đang quay lại màn đăng nhập...");
         PauseTransition pause = new PauseTransition(Duration.seconds(2));
         pause.setOnFinished(e -> openLoginScene());
         pause.play();
@@ -84,14 +84,14 @@ public class ForgotPassword {
             Parent root = loader.load();
 
             Stage currentStage = (Stage) txtContact.getScene().getWindow();
-            currentStage.setTitle("Dang nhap");
+            currentStage.setTitle("Đăng nhập");
             currentStage.setScene(new Scene(root, 1200, 760));
             currentStage.setResizable(true);
             currentStage.centerOnScreen();
             currentStage.show();
         } catch (Exception exception) {
             exception.printStackTrace();
-            showError("Khong mo duoc Scene1.fxml. Loi: " + exception.getClass().getSimpleName());
+            showError("Không mở được `Scene1.fxml`. Lỗi: " + exception.getClass().getSimpleName());
         }
     }
 

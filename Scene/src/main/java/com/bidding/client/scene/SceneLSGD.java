@@ -9,6 +9,7 @@ import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -22,6 +23,9 @@ public class SceneLSGD {
     @FXML private TableColumn<Transaction, String> colAmount;
     @FXML private TableColumn<Transaction, String> colTime;
     @FXML private TableColumn<Transaction, String> colStatus;
+    @FXML private Label lblTransactionCount;
+    @FXML private Label lblTotalSpent;
+    @FXML private Label lblHistoryNote;
 
     private final ObservableList<Transaction> data = FXCollections.observableArrayList();
 
@@ -37,6 +41,7 @@ public class SceneLSGD {
 
         NetworkClient.historyListener = this::handleHistoryResponse;
         NetworkClient.send("{\"action\":\"HISTORY\"}");
+        lblHistoryNote.setText("Du lieu bang duoc nap that tu HISTORY_REPLY.");
     }
 
     // Xu ly lich su tra ve tu server.
@@ -52,16 +57,24 @@ public class SceneLSGD {
 
         data.clear();
         JsonArray historyArray = getArray(response, "data");
+        long totalSpent = 0L;
         for (JsonElement element : historyArray) {
             JsonObject item = element.getAsJsonObject();
+            long amount = getLong(item, "amount", getLong(item, "price", getLong(item, "newPrice", 0L)));
+            totalSpent += amount;
             data.add(new Transaction(
                     firstNonBlank(getString(item, "id"), getString(item, "itemId"), getString(item, "auctionId"), "---"),
                     firstNonBlank(getString(item, "itemName"), getNestedString(item, "item", "name"), "Chua co ten"),
-                    formatPrice(getLong(item, "amount", getLong(item, "price", getLong(item, "newPrice", 0L)))) + " d",
+                    formatPrice(amount) + " d",
                     firstNonBlank(getString(item, "time"), getString(item, "createdAt"), getString(item, "bidTime"), "---"),
                     firstNonBlank(getString(item, "status"), getString(item, "result"), "UNKNOWN")
             ));
         }
+        lblTransactionCount.setText(String.valueOf(data.size()));
+        lblTotalSpent.setText(formatPrice(totalSpent) + " d");
+        lblHistoryNote.setText(data.isEmpty()
+                ? "Server da tra HISTORY_REPLY nhung hien chua co giao dich nao."
+                : "Tong ket ben tren duoc tinh truc tiep tu mang data cua HISTORY_REPLY.");
     }
 
     // Quay ve scene bidder.
