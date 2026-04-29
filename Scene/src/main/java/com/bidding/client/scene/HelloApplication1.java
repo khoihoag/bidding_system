@@ -10,7 +10,8 @@ import com.bidding.client.network.NetworkClient;
 public class HelloApplication1 extends Application {
     @Override
     public void start(Stage stage) throws Exception {
-        NetworkClient.connect("127.0.0.1", 1234);
+        // ServerMain đang listen ở 8080
+        NetworkClient.connect("127.0.0.1", 8080);
 
 
         FXMLLoader loader = new FXMLLoader(HelloApplication1.class.getResource("/com/bidding/client/scene/SceneBidder1.fxml"));

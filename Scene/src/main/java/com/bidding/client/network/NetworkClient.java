@@ -27,6 +27,7 @@ public class NetworkClient {
     public static Consumer<JsonObject> sellerListener;
     public static Consumer<JsonObject> autoBidListener;
     public static Consumer<JsonObject> notificationListener;
+    public static Consumer<JsonObject> addItemListener;
 
     // Mo ket noi socket toi server.
     public static void connect(String serverIp, int port) {
@@ -86,8 +87,11 @@ public class NetworkClient {
                     dispatch(itemsListener, response);
             case "REGISTER_AUTO_BID_REPLY" -> dispatch(autoBidListener, response);
             case "HISTORY_REPLY" -> dispatch(historyListener, response);
-            case "AUCTIONS_LIST", "ADD_ITEM_REPLY", "UPDATE_ITEM_REPLY", "DELETE_ITEM_REPLY",
-                 "SCHEDULE_AUCTION_REPLY", "START_AUCTION_REPLY" -> dispatch(sellerListener, response);
+            case "AUCTIONS_LIST", "DELETE_ITEM_REPLY", "START_AUCTION_REPLY" -> dispatch(sellerListener, response);
+            case "ADD_ITEM_REPLY", "UPDATE_ITEM_REPLY", "SCHEDULE_AUCTION_REPLY" -> {
+                dispatch(sellerListener, response);
+                dispatch(addItemListener, response);
+            }
             case "GLOBAL_NOTIFY" -> {
                 dispatch(itemsListener, response);
                 dispatch(sellerListener, response);
@@ -101,6 +105,7 @@ public class NetworkClient {
                 dispatch(sellerListener, response);
                 dispatch(autoBidListener, response);
                 dispatch(notificationListener, response);
+                dispatch(addItemListener, response);
             }
             default -> System.out.println("Server gui action chua duoc xu ly: " + action);
         }

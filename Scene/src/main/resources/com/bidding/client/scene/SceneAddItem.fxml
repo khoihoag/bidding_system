@@ -1,0 +1,553 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<AnchorPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.bidding.client.scene.SceneAddItem"
+            prefWidth="860.0"
+            prefHeight="820.0"
+            styleClass="dashboard-root"
+            stylesheets="@theme.css">
+
+    <children>
+
+        <!-- ═══════════════════════ TOPBAR ═══════════════════════ -->
+        <HBox alignment="CENTER_LEFT" spacing="14.0"
+              styleClass="topbar"
+              style="-fx-padding: 13 28 13 20;"
+              AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <children>
+                <Button text="← Quay lại" onAction="#handleCancel" styleClass="btn-back" />
+                <Separator orientation="VERTICAL" style="-fx-opacity:0.3;" />
+                <VBox spacing="1.0">
+                    <children>
+                        <Label fx:id="lblPageTitle" text="Thêm sản phẩm mới"
+                               styleClass="brand-title" style="-fx-font-size:18px;" />
+                        <Label fx:id="lblSubtitle"
+                               text="Chọn đúng loại – server dùng field type để tạo đúng lớp Item."
+                               styleClass="section-caption" />
+                    </children>
+                </VBox>
+                <Region HBox.hgrow="ALWAYS" />
+                <Label text="BidViet" styleClass="role-badge" />
+            </children>
+        </HBox>
+
+        <!-- ═══════════════════════ BODY (scroll) ═══════════════════════ -->
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
+                    AnchorPane.topAnchor="68.0" AnchorPane.leftAnchor="0.0"
+                    AnchorPane.rightAnchor="0.0" AnchorPane.bottomAnchor="0.0"
+                    style="-fx-background-color:transparent; -fx-border-color:transparent;">
+            <content>
+                <VBox spacing="0.0" style="-fx-padding: 24 40 36 40; -fx-background-color: #f8fafc;">
+                    <children>
+
+                        <!-- ════ SECTION 1 ─ Thông tin cơ bản (Item cha) ════ -->
+                        <VBox styleClass="popup-card"
+                              style="-fx-padding:20 24 20 24; -fx-background-radius:12;">
+                            <children>
+
+                                <!-- Header section -->
+                                <HBox alignment="CENTER_LEFT" spacing="8.0"
+                                      style="-fx-padding: 0 0 14 0;">
+                                    <children>
+                                        <Label text="●" style="-fx-text-fill:#1d5fa7; -fx-font-size:10px;" />
+                                        <Label text="Thông tin cơ bản"
+                                               style="-fx-font-size:15px; -fx-font-weight:bold; -fx-text-fill:#12263a;" />
+                                        <Label text="(chung cho mọi loại sản phẩm)"
+                                               styleClass="section-caption" />
+                                    </children>
+                                </HBox>
+
+                                <!-- Tên + Loại sản phẩm -->
+                                <HBox spacing="16.0" style="-fx-padding: 0 0 12 0;">
+                                    <children>
+                                        <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                            <children>
+                                                <HBox spacing="4.0" alignment="CENTER_LEFT">
+                                                    <children>
+                                                        <Label text="Tên sản phẩm" styleClass="field-label" />
+                                                        <Label text="*" style="-fx-text-fill:#e74c3c; -fx-font-weight:bold;" />
+                                                    </children>
+                                                </HBox>
+                                                <TextField fx:id="txtName" prefHeight="40.0"
+                                                           styleClass="text-input"
+                                                           promptText="Nhập tên sản phẩm (2–200 ký tự)" />
+                                            </children>
+                                        </VBox>
+                                        <VBox spacing="5.0" prefWidth="186.0">
+                                            <children>
+                                                <HBox spacing="4.0" alignment="CENTER_LEFT">
+                                                    <children>
+                                                        <Label text="Loại sản phẩm (type)" styleClass="field-label" />
+                                                        <Label text="*" style="-fx-text-fill:#e74c3c; -fx-font-weight:bold;" />
+                                                    </children>
+                                                </HBox>
+                                                <ComboBox fx:id="cbType"
+                                                          prefWidth="186.0" prefHeight="40.0"
+                                                          onAction="#handleTypeChange" />
+                                            </children>
+                                        </VBox>
+                                    </children>
+                                </HBox>
+
+                                <!-- Giá khởi điểm + Tình trạng -->
+                                <HBox spacing="16.0" style="-fx-padding: 0 0 12 0;">
+                                    <children>
+                                        <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                            <children>
+                                                <HBox spacing="4.0" alignment="CENTER_LEFT">
+                                                    <children>
+                                                        <Label text="Giá khởi điểm (VNĐ)" styleClass="field-label" />
+                                                        <Label text="*" style="-fx-text-fill:#e74c3c; -fx-font-weight:bold;" />
+                                                    </children>
+                                                </HBox>
+                                                <TextField fx:id="txtStartingPrice" prefHeight="40.0"
+                                                           styleClass="text-input"
+                                                           promptText="Chỉ nhập số (VD: 500000)" />
+                                            </children>
+                                        </VBox>
+                                        <VBox spacing="5.0" prefWidth="210.0">
+                                            <children>
+                                                <HBox spacing="4.0" alignment="CENTER_LEFT">
+                                                    <children>
+                                                        <Label text="Tình trạng (condition)" styleClass="field-label" />
+                                                        <Label text="*" style="-fx-text-fill:#e74c3c; -fx-font-weight:bold;" />
+                                                    </children>
+                                                </HBox>
+                                                <ComboBox fx:id="cbCondition"
+                                                          prefWidth="210.0" prefHeight="40.0" />
+                                            </children>
+                                        </VBox>
+                                    </children>
+                                </HBox>
+
+                                <!-- Mô tả -->
+                                <VBox spacing="5.0">
+                                    <children>
+                                        <HBox spacing="4.0" alignment="CENTER_LEFT">
+                                            <children>
+                                                <Label text="Mô tả sản phẩm" styleClass="field-label" />
+                                                <Label text="*" style="-fx-text-fill:#e74c3c; -fx-font-weight:bold;" />
+                                            </children>
+                                        </HBox>
+                                        <TextArea fx:id="txtDescription"
+                                                  prefHeight="90.0" wrapText="true"
+                                                  styleClass="text-input"
+                                                  promptText="Mô tả chi tiết sản phẩm (ít nhất 10 ký tự)" />
+                                    </children>
+                                </VBox>
+
+                            </children>
+                        </VBox>
+
+                        <Region prefHeight="14.0" />
+
+                        <!-- ════ SECTION 2 ─ Thông tin đặc thù (dynamic form) ════ -->
+
+                        <!-- ── Art ─────────────────────────────────────────── -->
+                        <VBox fx:id="panelArt" visible="true" managed="true"
+                              styleClass="popup-card"
+                              style="-fx-padding:20 24 20 24; -fx-background-radius:12;">
+                            <children>
+                                <HBox alignment="CENTER_LEFT" spacing="8.0"
+                                      style="-fx-padding: 0 0 14 0;">
+                                    <children>
+                                        <Label text="🎨" style="-fx-font-size:16px;" />
+                                        <Label text="Thông tin Nghệ thuật (Art)"
+                                               style="-fx-font-size:15px; -fx-font-weight:bold; -fx-text-fill:#12263a;" />
+                                        <Label text="— artist · medium · yearCreated · dimensions"
+                                               styleClass="section-caption" />
+                                    </children>
+                                </HBox>
+
+                                <HBox spacing="14.0" style="-fx-padding: 0 0 10 0;">
+                                    <children>
+                                        <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                            <children>
+                                                <HBox spacing="4.0">
+                                                    <children>
+                                                        <Label text="Nghệ sĩ / Tác giả" styleClass="field-label" />
+                                                        <Label text="*" style="-fx-text-fill:#e74c3c;-fx-font-weight:bold;" />
+                                                    </children>
+                                                </HBox>
+                                                <TextField fx:id="txtArtist" prefHeight="38.0"
+                                                           styleClass="text-input"
+                                                           promptText="VD: Leonardo Da Vinci" />
+                                            </children>
+                                        </VBox>
+                                        <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                            <children>
+                                                <HBox spacing="4.0">
+                                                    <children>
+                                                        <Label text="Chất liệu (medium)" styleClass="field-label" />
+                                                        <Label text="*" style="-fx-text-fill:#e74c3c;-fx-font-weight:bold;" />
+                                                    </children>
+                                                </HBox>
+                                                <TextField fx:id="txtMedium" prefHeight="38.0"
+                                                           styleClass="text-input"
+                                                           promptText="VD: Sơn dầu, Màu nước…" />
+                                            </children>
+                                        </VBox>
+                                    </children>
+                                </HBox>
+
+                                <HBox spacing="14.0">
+                                    <children>
+                                        <VBox spacing="5.0" prefWidth="160.0">
+                                            <children>
+                                                <HBox spacing="4.0">
+                                                    <children>
+                                                        <Label text="Năm sáng tác" styleClass="field-label" />
+                                                        <Label text="*" style="-fx-text-fill:#e74c3c;-fx-font-weight:bold;" />
+                                                    </children>
+                                                </HBox>
+                                                <TextField fx:id="txtYearCreated" prefHeight="38.0"
+                                                           styleClass="text-input"
+                                                           promptText="VD: 1503" />
+                                            </children>
+                                        </VBox>
+                                        <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                            <children>
+                                                <Label text="Kích thước (dimensions)" styleClass="field-label" />
+                                                <TextField fx:id="txtDimensions" prefHeight="38.0"
+                                                           styleClass="text-input"
+                                                           promptText="VD: 77x53 cm" />
+                                            </children>
+                                        </VBox>
+                                    </children>
+                                </HBox>
+                            </children>
+                        </VBox>
+
+                        <!-- ── Electronics ───────────────────────────────────── -->
+                        <VBox fx:id="panelElectronics" visible="false" managed="false"
+                              styleClass="popup-card"
+                              style="-fx-padding:20 24 20 24; -fx-background-radius:12;">
+                            <children>
+                                <HBox alignment="CENTER_LEFT" spacing="8.0"
+                                      style="-fx-padding: 0 0 14 0;">
+                                    <children>
+                                        <Label text="💻" style="-fx-font-size:16px;" />
+                                        <Label text="Thông tin Điện tử (Electronics)"
+                                               style="-fx-font-size:15px; -fx-font-weight:bold; -fx-text-fill:#12263a;" />
+                                        <Label text="— brand · model · warrantyMonths · powerWatts"
+                                               styleClass="section-caption" />
+                                    </children>
+                                </HBox>
+
+                                <HBox spacing="14.0" style="-fx-padding: 0 0 10 0;">
+                                    <children>
+                                        <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                            <children>
+                                                <HBox spacing="4.0">
+                                                    <children>
+                                                        <Label text="Hãng sản xuất (brand)" styleClass="field-label" />
+                                                        <Label text="*" style="-fx-text-fill:#e74c3c;-fx-font-weight:bold;" />
+                                                    </children>
+                                                </HBox>
+                                                <TextField fx:id="txtBrand" prefHeight="38.0"
+                                                           styleClass="text-input"
+                                                           promptText="VD: Samsung, Apple, Sony…" />
+                                            </children>
+                                        </VBox>
+                                        <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                            <children>
+                                                <HBox spacing="4.0">
+                                                    <children>
+                                                        <Label text="Model" styleClass="field-label" />
+                                                        <Label text="*" style="-fx-text-fill:#e74c3c;-fx-font-weight:bold;" />
+                                                    </children>
+                                                </HBox>
+                                                <TextField fx:id="txtElecModel" prefHeight="38.0"
+                                                           styleClass="text-input"
+                                                           promptText="VD: Galaxy S24 Ultra" />
+                                            </children>
+                                        </VBox>
+                                    </children>
+                                </HBox>
+
+                                <HBox spacing="14.0">
+                                    <children>
+                                        <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                            <children>
+                                                <HBox spacing="4.0">
+                                                    <children>
+                                                        <Label text="Bảo hành (warrantyMonths)" styleClass="field-label" />
+                                                        <Label text="*" style="-fx-text-fill:#e74c3c;-fx-font-weight:bold;" />
+                                                    </children>
+                                                </HBox>
+                                                <TextField fx:id="txtWarrantyMonths" prefHeight="38.0"
+                                                           styleClass="text-input"
+                                                           promptText="Số tháng, VD: 12" />
+                                            </children>
+                                        </VBox>
+                                        <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                            <children>
+                                                <Label text="Công suất (powerWatts)" styleClass="field-label" />
+                                                <TextField fx:id="txtPowerWatts" prefHeight="38.0"
+                                                           styleClass="text-input"
+                                                           promptText="Số Watts, VD: 65 (bỏ qua nếu không có)" />
+                                            </children>
+                                        </VBox>
+                                    </children>
+                                </HBox>
+                            </children>
+                        </VBox>
+
+                        <!-- ── Vehicle ──────────────────────────────────────── -->
+                        <VBox fx:id="panelVehicle" visible="false" managed="false"
+                              styleClass="popup-card"
+                              style="-fx-padding:20 24 20 24; -fx-background-radius:12;">
+                            <children>
+                                <HBox alignment="CENTER_LEFT" spacing="8.0"
+                                      style="-fx-padding: 0 0 14 0;">
+                                    <children>
+                                        <Label text="🚗" style="-fx-font-size:16px;" />
+                                        <Label text="Thông tin Phương tiện (Vehicle)"
+                                               style="-fx-font-size:15px; -fx-font-weight:bold; -fx-text-fill:#12263a;" />
+                                        <Label text="— make · model · year · mileage · fuelType"
+                                               styleClass="section-caption" />
+                                    </children>
+                                </HBox>
+
+                                <HBox spacing="14.0" style="-fx-padding: 0 0 10 0;">
+                                    <children>
+                                        <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                            <children>
+                                                <HBox spacing="4.0">
+                                                    <children>
+                                                        <Label text="Hãng xe (make)" styleClass="field-label" />
+                                                        <Label text="*" style="-fx-text-fill:#e74c3c;-fx-font-weight:bold;" />
+                                                    </children>
+                                                </HBox>
+                                                <TextField fx:id="txtMake" prefHeight="38.0"
+                                                           styleClass="text-input"
+                                                           promptText="VD: Toyota, Honda, VinFast…" />
+                                            </children>
+                                        </VBox>
+                                        <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                            <children>
+                                                <HBox spacing="4.0">
+                                                    <children>
+                                                        <Label text="Tên / Model xe" styleClass="field-label" />
+                                                        <Label text="*" style="-fx-text-fill:#e74c3c;-fx-font-weight:bold;" />
+                                                    </children>
+                                                </HBox>
+                                                <TextField fx:id="txtVehModel" prefHeight="38.0"
+                                                           styleClass="text-input"
+                                                           promptText="VD: Camry, Civic, VF9…" />
+                                            </children>
+                                        </VBox>
+                                    </children>
+                                </HBox>
+
+                                <HBox spacing="14.0">
+                                    <children>
+                                        <VBox spacing="5.0" prefWidth="150.0">
+                                            <children>
+                                                <HBox spacing="4.0">
+                                                    <children>
+                                                        <Label text="Năm SX (year)" styleClass="field-label" />
+                                                        <Label text="*" style="-fx-text-fill:#e74c3c;-fx-font-weight:bold;" />
+                                                    </children>
+                                                </HBox>
+                                                <TextField fx:id="txtYear" prefHeight="38.0"
+                                                           styleClass="text-input"
+                                                           promptText="VD: 2020" />
+                                            </children>
+                                        </VBox>
+                                        <VBox spacing="5.0" prefWidth="170.0">
+                                            <children>
+                                                <Label text="Số km đã chạy (mileage)" styleClass="field-label" />
+                                                <TextField fx:id="txtMileage" prefHeight="38.0"
+                                                           styleClass="text-input"
+                                                           promptText="VD: 45000" />
+                                            </children>
+                                        </VBox>
+                                        <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                                            <children>
+                                                <HBox spacing="4.0">
+                                                    <children>
+                                                        <Label text="Nhiên liệu (fuelType)" styleClass="field-label" />
+                                                        <Label text="*" style="-fx-text-fill:#e74c3c;-fx-font-weight:bold;" />
+                                                    </children>
+                                                </HBox>
+                                                <TextField fx:id="txtFuelType" prefHeight="38.0"
+                                                           styleClass="text-input"
+                                                           promptText="VD: Xăng, Điện, Hybrid…" />
+                                            </children>
+                                        </VBox>
+                                    </children>
+                                </HBox>
+                            </children>
+                        </VBox>
+
+                        <!-- ── Other (dùng form Item cha – không có trường đặc thù) ── -->
+                        <VBox fx:id="panelOther" visible="false" managed="false"
+                              styleClass="popup-card"
+                              style="-fx-padding:20 24 20 24; -fx-background-radius:12;">
+                            <children>
+                                <HBox alignment="CENTER_LEFT" spacing="8.0"
+                                      style="-fx-padding: 0 0 10 0;">
+                                    <children>
+                                        <Label text="📦" style="-fx-font-size:16px;" />
+                                        <Label text="Sản phẩm khác (Other)"
+                                               style="-fx-font-size:15px; -fx-font-weight:bold; -fx-text-fill:#12263a;" />
+                                    </children>
+                                </HBox>
+                                <Label text="Loại sản phẩm này dùng thông tin chung của Item cha."
+                                       styleClass="section-caption"
+                                       style="-fx-padding: 0 0 6 0;" />
+                                <Label text="Chỉ cần điền Tên, Mô tả, Giá khởi điểm và Tình trạng ở trên — không có trường đặc thù bổ sung."
+                                       styleClass="section-caption" wrapText="true"
+                                       style="-fx-background-color:#f0f9ff; -fx-background-radius:8;
+                                              -fx-padding:12; -fx-text-fill:#0369a1;" />
+                            </children>
+                        </VBox>
+
+                        <Region prefHeight="14.0" />
+
+                        <!-- ════ SECTION 3 ─ Thời gian kết thúc ════ -->
+                        <VBox styleClass="popup-card"
+                              style="-fx-padding:20 24 20 24; -fx-background-radius:12;">
+                            <children>
+                                <HBox alignment="CENTER_LEFT" spacing="8.0"
+                                      style="-fx-padding: 0 0 14 0;">
+                                    <children>
+                                        <Label text="⏰" style="-fx-font-size:15px;" />
+                                        <Label text="Thời gian kết thúc đấu giá"
+                                               style="-fx-font-size:15px; -fx-font-weight:bold; -fx-text-fill:#12263a;" />
+                                        <Label text="— dùng để gửi SCHEDULE_AUCTION sau ADD_ITEM"
+                                               styleClass="section-caption" />
+                                    </children>
+                                </HBox>
+                                <HBox spacing="16.0" alignment="CENTER_LEFT">
+                                    <children>
+                                        <VBox spacing="5.0">
+                                            <children>
+                                                <HBox spacing="4.0">
+                                                    <children>
+                                                        <Label text="Ngày kết thúc" styleClass="field-label" />
+                                                        <Label text="*" style="-fx-text-fill:#e74c3c;-fx-font-weight:bold;" />
+                                                    </children>
+                                                </HBox>
+                                                <DatePicker fx:id="datePicker"
+                                                            prefWidth="190.0" prefHeight="40.0"
+                                                            promptText="Chọn ngày" />
+                                            </children>
+                                        </VBox>
+                                        <VBox spacing="5.0">
+                                            <children>
+                                                <Label text="Giờ" styleClass="field-label" />
+                                                <ComboBox fx:id="cbGio" prefWidth="86.0" prefHeight="40.0" />
+                                            </children>
+                                        </VBox>
+                                        <Label text=":" style="-fx-font-size:20px; -fx-font-weight:bold;
+                                                              -fx-text-fill:#64748b; -fx-padding:14 0 0 0;" />
+                                        <VBox spacing="5.0">
+                                            <children>
+                                                <Label text="Phút" styleClass="field-label" />
+                                                <ComboBox fx:id="cbPhut" prefWidth="86.0" prefHeight="40.0" />
+                                            </children>
+                                        </VBox>
+                                        <Label text="(Phải sau thời điểm hiện tại)"
+                                               styleClass="section-caption"
+                                               style="-fx-padding: 18 0 0 6;" />
+                                    </children>
+                                </HBox>
+                            </children>
+                        </VBox>
+
+                        <Region prefHeight="14.0" />
+
+                        <!-- ════ SECTION 4 ─ Hình ảnh sản phẩm ════ -->
+                        <VBox styleClass="popup-card"
+                              style="-fx-padding:20 24 20 24; -fx-background-radius:12;">
+                            <children>
+                                <HBox alignment="CENTER_LEFT" spacing="8.0"
+                                      style="-fx-padding: 0 0 12 0;">
+                                    <children>
+                                        <Label text="🖼" style="-fx-font-size:15px;" />
+                                        <Label text="Hình ảnh sản phẩm"
+                                               style="-fx-font-size:15px; -fx-font-weight:bold; -fx-text-fill:#12263a;" />
+                                        <HBox spacing="4.0">
+                                            <children>
+                                                <Label text="*" style="-fx-text-fill:#e74c3c;-fx-font-weight:bold;" />
+                                                <Label text="Bắt buộc khi thêm mới" styleClass="section-caption" />
+                                            </children>
+                                        </HBox>
+                                    </children>
+                                </HBox>
+
+                                <HBox alignment="CENTER_LEFT" spacing="14.0"
+                                      style="-fx-padding: 0 0 10 0;">
+                                    <children>
+                                        <Button text="⬆  Tải ảnh lên"
+                                                onAction="#handleUploadImages"
+                                                styleClass="btn-secondary"
+                                                style="-fx-font-size:13px; -fx-padding:10 22;" />
+                                        <Label fx:id="lblImageCount"
+                                               text="Chưa có ảnh nào."
+                                               styleClass="section-caption" />
+                                    </children>
+                                </HBox>
+
+                                <ScrollPane prefHeight="130.0"
+                                            hbarPolicy="AS_NEEDED" vbarPolicy="NEVER"
+                                            style="-fx-background-color:#f1f5f9;
+                                                   -fx-background-radius:8;
+                                                   -fx-border-color:#e2e8f0;
+                                                   -fx-border-radius:8;">
+                                    <content>
+                                        <HBox fx:id="imageContainer" spacing="10.0">
+                                            <padding>
+                                                <Insets top="10.0" right="10.0" bottom="10.0" left="10.0" />
+                                            </padding>
+                                        </HBox>
+                                    </content>
+                                </ScrollPane>
+                            </children>
+                        </VBox>
+
+                        <Region prefHeight="18.0" />
+
+                        <!-- ════ Thông báo lỗi / thành công ════ -->
+                        <Label fx:id="lblErrorMsg" visible="false" wrapText="true"
+                               style="-fx-padding: 0 0 6 0;" />
+
+                        <!-- ════ Nút hành động ════ -->
+                        <HBox alignment="CENTER_RIGHT" spacing="12.0">
+                            <children>
+                                <Button text="Hủy bỏ"
+                                        onAction="#handleCancel"
+                                        styleClass="btn-back"
+                                        style="-fx-font-size:14px; -fx-padding:11 28;" />
+                                <Button fx:id="btnSubmit"
+                                        text="Đăng sản phẩm"
+                                        onAction="#handleSubmit"
+                                        styleClass="btn-accent"
+                                        style="-fx-font-size:14px; -fx-padding:11 34;" />
+                            </children>
+                        </HBox>
+
+                    </children>
+                </VBox>
+            </content>
+        </ScrollPane>
+
+    </children>
+</AnchorPane>
