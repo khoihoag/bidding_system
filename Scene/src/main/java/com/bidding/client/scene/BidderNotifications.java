@@ -1,5 +1,7 @@
 package com.bidding.client.scene;
 
+import com.bidding.client.network.NetworkClient;
+import com.google.gson.JsonObject;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -18,16 +20,20 @@ import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 
 import java.net.URL;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ResourceBundle;
 
 public class BidderNotifications implements Initializable {
 
-    @FXML
-    private ListView<Notification> notificationListView;
+    @FXML private ListView<Notification> notificationListView;
+    @FXML private Label lblServerNote;
 
     private final ObservableList<Notification> notificationList = FXCollections.observableArrayList();
+    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     @Override
+    // Gan renderer va chi nhan thong bao that tu GLOBAL_NOTIFY.
     public void initialize(URL location, ResourceBundle resources) {
         notificationListView.setCellFactory(param -> new ListCell<>() {
             @Override
@@ -63,21 +69,31 @@ public class BidderNotifications implements Initializable {
             }
         });
 
-        loadMockData();
+        notificationListView.setItems(notificationList);
+        notificationListView.setPlaceholder(new Label("Chua co thong bao realtime tu server. Doc JSON hien chua co action lay lich su thong bao."));
+        lblServerNote.setText("Thong bao tren man nay chi nhan tu push GLOBAL_NOTIFY. Khong con fake data.");
+        NetworkClient.notificationListener = this::handleNotificationResponse;
     }
 
-    private void loadMockData() {
-        notificationList.addAll(
-                new Notification("Chua doc", "He thong", "07/04/2026 08:30", "Chao mung ban den voi san dau gia BidViet."),
-                new Notification("Chua doc", "Admin", "07/04/2026 09:15", "Tai khoan cua ban da duoc cap nhat."),
-                new Notification("Da doc", "Seller ShopApple", "07/04/2026 10:00", "San pham iPhone 15 sap ket thuc dau gia."),
-                new Notification("Chua doc", "He thong", "07/04/2026 14:20", "Ban da bi vuot gia o phien dau gia Macbook."),
-                new Notification("Da doc", "Seller GamerGear", "07/04/2026 16:45", "Thanh toan don hang Logitech da thanh cong.")
-        );
-        notificationListView.setItems(notificationList);
+    // Nhan GLOBAL_NOTIFY tu server va them vao list.
+    private void handleNotificationResponse(JsonObject response) {
+        String action = getString(response, "action", "");
+        if ("GLOBAL_NOTIFY".equals(action)) {
+            notificationList.add(0, new Notification(
+                    "Chua doc",
+                    getString(response, "source", "He thong"),
+                    LocalDateTime.now().format(TIME_FORMAT),
+                    getString(response, "message", "Co thong bao moi tu server.")
+            ));
+            return;
+        }
+        if ("ERROR".equals(action)) {
+            lblServerNote.setText("Thong bao realtime gap loi: " + getString(response, "message", "Server tra ve loi."));
+        }
     }
 
     @FXML
+    // Danh dau 1 thong bao da doc tren UI.
     void handleMarkAsRead(ActionEvent event) {
         Notification selected = notificationListView.getSelectionModel().getSelectedItem();
         if (selected != null) {
@@ -94,6 +110,7 @@ public class BidderNotifications implements Initializable {
     }
 
     @FXML
+    // Danh dau toan bo thong bao da doc tren UI.
     void handleMarkAllAsRead(ActionEvent event) {
         for (Notification notification : notificationList) {
             notification.setStatus("Da doc");
@@ -102,11 +119,12 @@ public class BidderNotifications implements Initializable {
     }
 
     @FXML
+    // Quay lai bidder dashboard.
     void handleBackToBidder(ActionEvent event) {
         try {
             Stage stage = (Stage) notificationListView.getScene().getWindow();
             AppNavigator.openPrimary(stage, "/com/bidding/client/scene/SceneBidder1.fxml", "BidViet - Nen tang dau gia truc tuyen");
-        } catch (Exception e) {
+        } catch (Exception exception) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Loi dieu huong");
             alert.setHeaderText(null);
@@ -115,12 +133,21 @@ public class BidderNotifications implements Initializable {
         }
     }
 
+    // Doc chuoi tu JSON response.
+    private String getString(JsonObject object, String key, String fallback) {
+        if (object == null || !object.has(key) || object.get(key).isJsonNull()) {
+            return fallback;
+        }
+        return object.get(key).getAsString();
+    }
+
     public static class Notification {
         private final SimpleStringProperty status;
         private final SimpleStringProperty source;
         private final SimpleStringProperty time;
         private final SimpleStringProperty message;
 
+        // Tao model thong bao de bind list view.
         public Notification(String status, String source, String time, String message) {
             this.status = new SimpleStringProperty(status);
             this.source = new SimpleStringProperty(source);

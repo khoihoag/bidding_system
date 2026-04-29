@@ -28,50 +28,50 @@ public class Scene1 {
         String password = passwordField.getText();
 
         if (username == null || username.trim().isEmpty()) {
-            showError("Ban dang de trong Username.");
+            showError("Bạn đang để trống tên đăng nhập.");
             return;
         }
         if (password == null || password.trim().isEmpty()) {
-            showError("Vui long nhap Password.");
+            showError("Vui lòng nhập mật khẩu.");
             return;
         }
         if (username.length() < 6 || username.length() > 15) {
-            showError("Username tu 6 den 15 ky tu.");
+            showError("Tên đăng nhập từ 6 đến 15 ký tự.");
             return;
         }
         if (!username.matches("^[a-zA-Z][a-zA-Z0-9]+$")) {
-            showError("Username phai bat dau bang chu va khong co ky tu dac biet.");
+            showError("Tên đăng nhập phải bắt đầu bằng chữ và không có ký tự đặc biệt.");
             return;
         }
         if (password.length() < 6 || password.length() > 15) {
-            showError("Mat khau tu 6 den 15 ky tu.");
+            showError("Mật khẩu từ 6 đến 15 ký tự.");
             return;
         }
         if (!password.matches("^[a-zA-Z0-9]+$")) {
-            showError("Mat khau chi gom chu va so.");
+            showError("Mật khẩu chỉ gồm chữ và số.");
             return;
         }
 
         try {
             String json = String.format("{\"action\":\"LOGIN\", \"username\":\"%s\", \"password\":\"%s\"}",username, password);
             NetworkClient.send(json);
-            showSuccess("Dang dang nhap...");
+            showSuccess("Đang đăng nhập...");
 
         } catch (Exception exception) {
             exception.printStackTrace();
-            showError("Khong mo duoc man hinh sau dang nhap. Loi: " + exception.getClass().getSimpleName());
+            showError("Không mở được màn hình sau đăng nhập. Lỗi: " + exception.getClass().getSimpleName());
             return;
         }
     }
 
     @FXML
     void handleForgotPassword(ActionEvent event) {
-        openEntryScene("/com/bidding/client/scene/ForgotPassword.fxml", "Forgot Password");
+        openEntryScene("/com/bidding/client/scene/ForgotPassword.fxml", "Quên mật khẩu");
     }
 
     @FXML
     void handleRegisterClick(ActionEvent event) {
-        openEntryScene("/com/bidding/client/scene/Resign.fxml", "Dang Ky Tai Khoan");
+        openEntryScene("/com/bidding/client/scene/Resign.fxml", "Đăng ký tài khoản");
     }
 
     private void openPrimaryScene(String resourcePath, String title) throws Exception {
@@ -85,7 +85,7 @@ public class Scene1 {
             AppNavigator.openEntry(currentStage, resourcePath, title);
         } catch (Exception exception) {
             exception.printStackTrace();
-            showError("Khong mo duoc giao dien. Loi: " + exception.getClass().getSimpleName());
+            showError("Không mở được giao diện. Lỗi: " + exception.getClass().getSimpleName());
         }
     }
 
@@ -110,7 +110,7 @@ public class Scene1 {
             Platform.runLater(() -> {
                 if (status.equals("SUCCESS")) {
                     myname = usernameField.getText(); // Chỉ gán khi đăng nhập thành công
-                    showSuccess("Dang nhap thanh cong.");
+                    showSuccess("Đăng nhập thành công.");
 
                     try {
                         openPrimaryScene("/com/bidding/client/scene/SceneBidder1.fxml",
@@ -120,7 +120,7 @@ public class Scene1 {
                     }
 
                 } else {
-                    showError("Sai Username hoac Password.");
+                    showError("Sai tên đăng nhập hoặc mật khẩu.");
                 }
             });
         };

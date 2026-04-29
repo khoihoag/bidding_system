@@ -11,25 +11,25 @@
 <?import javafx.scene.shape.Circle?>
 
 <HBox alignment="CENTER_LEFT" spacing="14" style="-fx-background-color: #ffffff; -fx-padding: 12 18; -fx-border-color: #e5e7eb; -fx-border-width: 0 0 1 0;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.bidding.client.scene.NavBarController">
-    <Button onAction="#handleMenu" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-cursor: hand; -fx-background-color: #eff4fa; -fx-text-fill: #111827; -fx-padding: 8 12; -fx-background-radius: 12;" text="Menu" />
+    <Button onAction="#handleMenu" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-cursor: hand; -fx-background-color: #eff4fa; -fx-text-fill: #111827; -fx-padding: 8 12; -fx-background-radius: 12;" text="Trình đơn" />
     <VBox spacing="2">
         <Label style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #111827;" text="TManhdtrai" />
-        <Label style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #2563eb;" text="BIDDER CONTROL" />
+        <Label style="-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #2563eb;" text="ĐIỀU KHIỂN NGƯỜI MUA" />
     </VBox>
     <HBox alignment="CENTER_LEFT" spacing="8">
-        <Button fx:id="btnHome" onAction="#handleHome" text="Trang chu" />
-        <Button fx:id="btnWatchlist" onAction="#handleWatchlist" text="Theo doi" />
-        <Button fx:id="btnProfile" onAction="#handleProfile" text="Ho so" />
+        <Button fx:id="btnHome" onAction="#handleHome" text="Trang chủ" />
+        <Button fx:id="btnWatchlist" onAction="#handleWatchlist" text="Theo dõi" />
+        <Button fx:id="btnProfile" onAction="#handleProfile" text="Hồ sơ" />
     </HBox>
     <Region HBox.hgrow="ALWAYS" />
     <HBox alignment="CENTER_LEFT" spacing="6">
-        <TextField fx:id="txtSearch" onAction="#handleSearch" prefWidth="250" promptText="Tim kiem phien dau gia..." style="-fx-padding: 8 12; -fx-background-radius: 20; -fx-border-radius: 20; -fx-font-size: 13px; -fx-background-color: #f9fafb; -fx-border-color: #d1d5db;" />
-        <Button fx:id="btnSearch" onAction="#handleSearch" style="-fx-padding: 8 16; -fx-background-radius: 20; -fx-background-color: #111827; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;" text="Tim" />
+        <TextField fx:id="txtSearch" onAction="#handleSearch" prefWidth="250" promptText="Tìm kiếm phiên đấu giá..." style="-fx-padding: 8 12; -fx-background-radius: 20; -fx-border-radius: 20; -fx-font-size: 13px; -fx-background-color: #f9fafb; -fx-border-color: #d1d5db;" />
+        <Button fx:id="btnSearch" onAction="#handleSearch" style="-fx-padding: 8 16; -fx-background-radius: 20; -fx-background-color: #111827; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;" text="Tìm" />
     </HBox>
     <Region HBox.hgrow="ALWAYS" />
     <HBox alignment="CENTER_RIGHT" spacing="10">
         <StackPane>
-            <Button onAction="#handleNotifications" style="-fx-background-color: #eff6ff; -fx-text-fill: #1d4ed8; -fx-font-weight: bold; -fx-background-radius: 20; -fx-cursor: hand;" text="Thong bao" />
+            <Button onAction="#handleNotifications" style="-fx-background-color: #eff6ff; -fx-text-fill: #1d4ed8; -fx-font-weight: bold; -fx-background-radius: 20; -fx-cursor: hand;" text="Thông báo" />
             <StackPane fx:id="notificationBadgePane" managed="false" style="-fx-background-color: #dc2626; -fx-background-radius: 999; -fx-min-width: 18; -fx-min-height: 18; -fx-max-width: 18; -fx-max-height: 18;" translateX="7" translateY="-7" visible="false" StackPane.alignment="TOP_RIGHT">
                 <Label fx:id="lblNotificationBadge" style="-fx-text-fill: white; -fx-font-size: 10px; -fx-font-weight: bold;" text="0" />
             </StackPane>
