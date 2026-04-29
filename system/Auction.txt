@@ -1,0 +1,94 @@
+Nhóm Auction (Đấu Giá):
+
+-case "START_AUCTION":
+    + Json nhận vào :{
+                       "action": "START_AUCTION",
+                       "itemId": "item123",
+                       "durationMinutes": 60
+                     }
+    + Json trả về (Cho người tạo):{
+                                    "action": "START_AUCTION_REPLY",
+                                    "status": "SUCCESS",
+                                    "auctionId": "auc789"
+                                  }
+    + Json Broadcast (Báo cho toàn server):{
+                                             "action": "GLOBAL_NOTIFY",
+                                             "message": "Món hàng mới lên sàn: Bức tranh mùa thu!"
+                                           }
+    + Tr hợp thất bại :{
+                         "action": "ERROR",
+                         "message": "Bạn không thể mang đồ của người khác đi đấu giá!"
+                       }
+    + Luồng chạy: ClientHandler ---> AuctionController ---> AuctionService ---> AuctionRepository ---> ClientHandler (và ClientManager để broadcast)
+
+-case "SCHEDULE_AUCTION":
+    + Json nhận vào :{
+                       "action": "SCHEDULE_AUCTION",
+                       "itemId": "item123",
+                       "startTime": "2026-05-01T08:00:00",
+                       "endTime": "2026-05-01T20:00:00"
+                     }
+    + Json trả về :{
+                     "action": "SCHEDULE_AUCTION_REPLY",
+                     "status": "SUCCESS",
+                     "auctionId": "auc101"
+                   }
+    + Tr hợp thất bại :{
+                         "action": "ERROR",
+                         "message": "Lỗi định dạng thời gian. Vui lòng dùng chuẩn yyyy-MM-ddTHH:mm:ss"
+                       }
+
+-case "GET_AUCTIONS":
+    + Json nhận vào :{
+                       "action": "GET_AUCTIONS"
+                     }
+    + Json trả về :{
+                     "action": "AUCTIONS_LIST",
+                     "data": [
+                         {
+                             "id": "auc789",
+                             "item": {...},
+                             "currentPrice": 1500000,
+                             "status": "RUNNING"
+                         }
+                     ]
+                   }
+
+-case "BID":
+    + Json nhận vào :{
+                       "action": "BID",
+                       "itemId": "auc789", // Lưu ý: Code đang dùng tên biến là itemId nhưng truyền vào đấu giá
+                       "amount": 2000000
+                     }
+    + Json trả về :{
+                     "action": "BID_REPLY",
+                     "status": "SUCCESS"
+                   }
+
+-case "REGISTER_AUTO_BID":
+    + Json nhận vào :{
+                       "action": "REGISTER_AUTO_BID",
+                       "auctionId": "auc789",
+                       "maxBid": 5000000,
+                       "increment": 50000
+                     }
+    + Json trả về :{
+                     "action": "REGISTER_AUTO_BID_REPLY",
+                     "status": "SUCCESS"
+                   }
+
+-case "HISTORY":
+    + Json nhận vào :{
+                       "action": "HISTORY"
+                     }
+    + Json trả về :{
+                     "action": "HISTORY_REPLY",
+                     "data": [
+                         {
+                             "id": 1,
+                             "auctionId": "auc789",
+                             "bidAmount": 2000000,
+                             "status": "ACCEPTED"
+                         }
+                     ]
+                   }

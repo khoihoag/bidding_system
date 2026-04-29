@@ -1,0 +1,33 @@
+Nhóm Admin (Quản trị viên):
+
+-case "GET_ALL_USERS":
+    + Json nhận vào :{
+                       "action": "GET_ALL_USERS"
+                     }
+    + Json trả về :{
+                     "action": "USERS_LIST",
+                     "data": [
+                         { "id": "u1", "username": "loifaz12", "role": "USER", "balance": 0.0 }
+                     ]
+                   }
+
+-case "BAN_USER":
+    + Json nhận vào :{
+                       "action": "BAN_USER",
+                       "targetUserId": "u1"
+                     }
+    + Json trả về :{
+                     "action": "BAN_USER_REPLY",
+                     "status": "SUCCESS",
+                     "message": "Đã khóa tài khoản thành công!"
+                   }
+
+-case "FORCE_CLOSE":
+    + Json nhận vào :{
+                       "action": "FORCE_CLOSE",
+                       "auctionId": "auc789"
+                     }
+    + Json trả về :{
+                     "action": "FORCE_CLOSE_REPLY",
+                     "status": "SUCCESS"
+                   }

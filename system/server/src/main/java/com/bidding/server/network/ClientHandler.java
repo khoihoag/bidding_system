@@ -63,7 +63,7 @@ public class ClientHandler implements Runnable {
                         case "ADD_ITEM": itemController.handleAddItem(request); break;
                         case "UPDATE_ITEM": itemController.handleUpdateItem(request); break;
                         case "DELETE_ITEM": itemController.handleDeleteItem(request); break;
-
+                        case "GET_AI_PRICE": itemController.handleGetAIPrice(request); break;
                         // Nhóm Đấu Giá (Auction)
                         case "START_AUCTION": auctionController.handleStartAuction(request); break;
                         case "SCHEDULE_AUCTION": auctionController.handleScheduleAuction(request); break;
@@ -71,6 +71,7 @@ public class ClientHandler implements Runnable {
                         case "BID": auctionController.handleBid(request); break;
                         case "REGISTER_AUTO_BID": auctionController.handleRegisterAutoBid(request);break;
                         case "HISTORY": auctionController.handleGetHistory(); break;
+
 
                         // Nhóm Quản Trị (Admin)
                         case "GET_ALL_USERS": adminController.handleGetAllUsers(); break;
