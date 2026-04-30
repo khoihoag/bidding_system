@@ -1,4 +1,4 @@
-package com.bidding.server.network;
+package com.bidding.server.model.network;
 
 import com.bidding.server.events.AuctionEvent;
 import com.bidding.server.events.AuctionObserver;
