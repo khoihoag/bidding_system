@@ -1,4 +1,4 @@
-package com.bidding.server.network;
+package com.bidding.server.model.network;
 import com.bidding.server.repository.UserRepository;
 import com.bidding.server.service.AuctionService;
 import com.bidding.server.service.UserService;
@@ -10,10 +10,12 @@ import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import com.bidding.server.service.AdminService;
+import com.bidding.server.service.DatabaseSeeder;
 import com.bidding.server.repository.UserRepository;
 public class ServerMain {
 
     public static void main(String[] args) {
+        DatabaseSeeder.seedIfEmpty();
         System.out.println("--- BẮT ĐẦU KHỞI ĐỘNG SERVER ---");
 
         // =======================================================

@@ -424,7 +424,14 @@ public class SceneSeller1 implements Initializable {
 
     @FXML
     void handleManageAuctions(ActionEvent event) {
-        NetworkClient.send("{\"action\":\"GET_AUCTIONS\"}");
+        try {
+            Stage stage = (Stage) sideMenu.getScene().getWindow();
+            AppNavigator.openPrimary(stage,
+                    "/com/bidding/client/scene/SceneAuctionManagement.fxml", "BidViet - Quản lý đấu giá");
+        } catch (Exception e) {
+            e.printStackTrace();
+            showInfoPopup("Không mở được màn hình quản lý đấu giá.");
+        }
     }
 
     @FXML

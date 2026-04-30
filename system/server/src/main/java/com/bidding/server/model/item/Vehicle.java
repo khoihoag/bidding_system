@@ -4,11 +4,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import com.bidding.server.enums.ItemCondition;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 @Entity
 public class Vehicle extends Item {
     private String make;
     private String model;
+    @Column(name = "vehicle_year")
     private int year;
     private int mileage;
     private String fuelType;

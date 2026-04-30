@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.shape.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.text.*?>
+
+<AnchorPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.bidding.client.scene.SceneAuctionManagement"
+            prefWidth="1280" prefHeight="800"
+            style="-fx-background-color:#f0f2f5;">
+
+    <fx:define>
+        <ToggleGroup fx:id="filterGroup"/>
+    </fx:define>
+
+    <!-- DIM OVERLAY -->
+    <AnchorPane fx:id="dimOverlay"
+                AnchorPane.topAnchor="0" AnchorPane.bottomAnchor="0"
+                AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0"
+                style="-fx-background-color:rgba(0,0,0,0.45);"
+                visible="false"
+                onMouseClicked="#closePopups"/>
+
+    <!-- ═══════════════════════════════════════════════════
+         HEADER
+    ═══════════════════════════════════════════════════ -->
+    <HBox AnchorPane.topAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0"
+          prefHeight="64"
+          style="-fx-background-color:#12263a;-fx-padding:0 24;-fx-alignment:CENTER_LEFT;-fx-spacing:16;">
+
+        <Button fx:id="btnMenu" text="☰" onAction="#toggleMenu"
+                style="-fx-background-color:transparent;-fx-text-fill:white;-fx-font-size:22px;-fx-cursor:hand;-fx-padding:4 10;"/>
+
+        <Label text="BidViet" style="-fx-font-size:22px;-fx-font-weight:bold;-fx-text-fill:white;"/>
+        <Label text="NGƯỜI BÁN" style="-fx-background-color:#1d5fa7;-fx-text-fill:white;-fx-font-size:11px;
+               -fx-font-weight:bold;-fx-padding:3 8;-fx-background-radius:4;"/>
+
+        <HBox HBox.hgrow="ALWAYS"/>
+
+        <Label fx:id="lblClock" text="00:00:00"
+               style="-fx-text-fill:#aec6e8;-fx-font-size:15px;-fx-font-weight:bold;"/>
+        <Label text="  |  " style="-fx-text-fill:#4a6fa5;"/>
+        <Label fx:id="lblBalance" text="Số dư: 0 đ"
+               style="-fx-text-fill:#f39c12;-fx-font-size:14px;-fx-font-weight:bold;"/>
+
+        <Button fx:id="btnAvatar" text="A" onAction="#toggleAccountPopup"
+                style="-fx-background-color:#1d5fa7;-fx-text-fill:white;-fx-font-size:16px;
+                       -fx-font-weight:bold;-fx-min-width:42;-fx-min-height:42;
+                       -fx-background-radius:21;-fx-cursor:hand;-fx-padding:0;"/>
+    </HBox>
+
+    <!-- ═══════════════════════════════════════════════════
+         SIDE MENU
+    ═══════════════════════════════════════════════════ -->
+    <AnchorPane fx:id="sideMenu"
+                AnchorPane.topAnchor="64" AnchorPane.leftAnchor="0" AnchorPane.bottomAnchor="0"
+                prefWidth="280"
+                style="-fx-background-color:#1a3550;"
+                visible="false">
+        <VBox AnchorPane.topAnchor="0" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0"
+              spacing="4" style="-fx-padding:20 0;">
+
+            <Label text="MENU" style="-fx-text-fill:#4a6fa5;-fx-font-size:11px;
+                   -fx-font-weight:bold;-fx-padding:0 20 8 20;"/>
+
+            <Button text="🏠  Trang chủ Seller" onAction="#goToSellerHome"
+                    maxWidth="Infinity"
+                    style="-fx-background-color:transparent;-fx-text-fill:#c8d8ea;
+                           -fx-font-size:14px;-fx-padding:12 20;-fx-alignment:CENTER_LEFT;-fx-cursor:hand;"/>
+
+            <Button text="📦  Quản lý sản phẩm" onAction="#goToItemManagement"
+                    maxWidth="Infinity"
+                    style="-fx-background-color:#12263a;-fx-text-fill:white;
+                           -fx-font-size:14px;-fx-padding:12 20;-fx-alignment:CENTER_LEFT;-fx-cursor:hand;-fx-font-weight:bold;"/>
+
+            <Button text="🔨  Quản lý phiên đấu giá" onAction="#goToAuctionManagement"
+                    maxWidth="Infinity"
+                    style="-fx-background-color:transparent;-fx-text-fill:#c8d8ea;
+                           -fx-font-size:14px;-fx-padding:12 20;-fx-alignment:CENTER_LEFT;-fx-cursor:hand;"/>
+
+            <Separator style="-fx-padding:8 0;"/>
+
+            <Button text="👤  Chuyển sang Người mua" onAction="#switchToBidder"
+                    maxWidth="Infinity"
+                    style="-fx-background-color:transparent;-fx-text-fill:#c8d8ea;
+                           -fx-font-size:14px;-fx-padding:12 20;-fx-alignment:CENTER_LEFT;-fx-cursor:hand;"/>
+            <Button text="🚪  Đăng xuất" onAction="#handleLogout"
+                    maxWidth="Infinity"
+                    style="-fx-background-color:transparent;-fx-text-fill:#e74c3c;
+                           -fx-font-size:14px;-fx-padding:12 20;-fx-alignment:CENTER_LEFT;-fx-cursor:hand;"/>
+        </VBox>
+    </AnchorPane>
+
+    <!-- ═══════════════════════════════════════════════════
+         MAIN CONTENT
+    ═══════════════════════════════════════════════════ -->
+    <VBox AnchorPane.topAnchor="64" AnchorPane.leftAnchor="0"
+          AnchorPane.rightAnchor="0" AnchorPane.bottomAnchor="0"
+          spacing="0">
+
+        <!-- Sub-nav tabs -->
+        <HBox style="-fx-background-color:#1d3752;-fx-padding:0 24;-fx-spacing:0;">
+            <Button fx:id="btnTabProducts" text="📦  Quản lý sản phẩm" onAction="#switchTabProducts"
+                    style="-fx-background-color:#12263a;-fx-text-fill:white;-fx-font-size:13px;
+                           -fx-font-weight:bold;-fx-padding:14 22;-fx-background-radius:0;-fx-cursor:hand;
+                           -fx-border-color:transparent transparent #f39c12 transparent;-fx-border-width:0 0 3 0;"/>
+            <Button fx:id="btnTabAuction" text="🔨  Quan sát phiên đấu giá" onAction="#switchTabAuction"
+                    style="-fx-background-color:transparent;-fx-text-fill:#aec6e8;-fx-font-size:13px;
+                           -fx-padding:14 22;-fx-background-radius:0;-fx-cursor:hand;"/>
+        </HBox>
+
+        <!-- ─── TAB: Quản lý sản phẩm ─── -->
+        <VBox fx:id="tabProducts" VBox.vgrow="ALWAYS" spacing="0">
+
+            <!-- Toolbar -->
+            <HBox style="-fx-background-color:white;-fx-padding:14 24;-fx-spacing:12;
+                         -fx-border-color:#e0e0e0;-fx-border-width:0 0 1 0;-fx-alignment:CENTER_LEFT;">
+                <Label text="Sản phẩm của tôi"
+                       style="-fx-font-size:18px;-fx-font-weight:bold;-fx-text-fill:#12263a;"/>
+                <Label fx:id="lblProductCount" text="(0 sản phẩm)"
+                       style="-fx-font-size:13px;-fx-text-fill:#7f8c8d;"/>
+                <HBox HBox.hgrow="ALWAYS"/>
+
+                <!-- Filter buttons -->
+                <ToggleButton fx:id="btnFilterAll" text="Tất cả" selected="true"
+                              onAction="#filterAll" toggleGroup="$filterGroup"
+                              style="-fx-background-color:#12263a;-fx-text-fill:white;
+                                     -fx-font-size:12px;-fx-padding:7 14;-fx-background-radius:6 0 0 6;-fx-cursor:hand;"/>
+                <ToggleButton fx:id="btnFilterActive" text="Đang chạy"
+                              onAction="#filterActive" toggleGroup="$filterGroup"
+                              style="-fx-background-color:#e8f5e9;-fx-text-fill:#27ae60;
+                                     -fx-font-size:12px;-fx-padding:7 14;-fx-background-radius:0;-fx-cursor:hand;"/>
+                <ToggleButton fx:id="btnFilterEnded" text="Đã kết thúc"
+                              onAction="#filterEnded" toggleGroup="$filterGroup"
+                              style="-fx-background-color:#fdecea;-fx-text-fill:#e74c3c;
+                                     -fx-font-size:12px;-fx-padding:7 14;-fx-background-radius:0 6 6 0;-fx-cursor:hand;"/>
+
+                <Button text="🔄 Làm mới" onAction="#refreshItems"
+                        style="-fx-background-color:#f0f2f5;-fx-text-fill:#12263a;
+                               -fx-font-size:12px;-fx-padding:7 14;-fx-background-radius:6;-fx-cursor:hand;"/>
+            </HBox>
+
+            <!-- Product Grid -->
+            <ScrollPane VBox.vgrow="ALWAYS" fitToWidth="true"
+                        style="-fx-background:#f0f2f5;-fx-background-color:#f0f2f5;-fx-padding:0;">
+                <FlowPane fx:id="productContainer"
+                          hgap="20" vgap="20"
+                          style="-fx-padding:24;-fx-background-color:#f0f2f5;"
+                          prefWrapLength="1200"/>
+            </ScrollPane>
+        </VBox>
+
+        <!-- ─── TAB: Quan sát phiên đấu giá ─── -->
+        <VBox fx:id="tabAuction" VBox.vgrow="ALWAYS" spacing="0" visible="false" managed="false">
+            <HBox style="-fx-background-color:white;-fx-padding:14 24;-fx-alignment:CENTER_LEFT;">
+                <Label text="Quan sát phiên đấu giá"
+                       style="-fx-font-size:18px;-fx-font-weight:bold;-fx-text-fill:#12263a;"/>
+            </HBox>
+            <Label text="(Chức năng này sẽ được phát triển sau)"
+                   style="-fx-font-size:15px;-fx-text-fill:#7f8c8d;-fx-padding:40;"
+                   VBox.vgrow="ALWAYS"/>
+        </VBox>
+    </VBox>
+
+    <!-- ═══════════════════════════════════════════════════
+         POPUP: XEM CHI TIẾT + CHỌN ĐẤU GIÁ
+    ═══════════════════════════════════════════════════ -->
+    <AnchorPane fx:id="popupAuctionAction"
+                visible="false"
+                prefWidth="580" prefHeight="640"
+                style="-fx-background-color:white;-fx-background-radius:14;
+                       -fx-effect:dropshadow(three-pass-box,rgba(0,0,0,0.22),28,0,0,6);">
+        <VBox AnchorPane.topAnchor="0" AnchorPane.leftAnchor="0"
+              AnchorPane.rightAnchor="0" AnchorPane.bottomAnchor="0" spacing="0">
+
+            <!-- Header popup -->
+            <HBox style="-fx-background-color:#12263a;-fx-padding:18 22;-fx-background-radius:14 14 0 0;
+                         -fx-alignment:CENTER_LEFT;-fx-spacing:10;">
+                <Label text="📦" style="-fx-font-size:18px;"/>
+                <Label fx:id="popupTitle" text="Chi tiết sản phẩm"
+                       style="-fx-font-size:16px;-fx-font-weight:bold;-fx-text-fill:white;"/>
+                <HBox HBox.hgrow="ALWAYS"/>
+                <Button text="✕" onAction="#closeAuctionActionPopup"
+                        style="-fx-background-color:transparent;-fx-text-fill:#aec6e8;
+                               -fx-font-size:16px;-fx-cursor:hand;-fx-padding:2 6;"/>
+            </HBox>
+
+            <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS"
+                        style="-fx-background:#fff;-fx-background-color:white;">
+                <VBox spacing="16" style="-fx-padding:24;">
+
+                    <!-- Ảnh sản phẩm -->
+                    <ScrollPane prefHeight="200" fitToHeight="false"
+                                style="-fx-background:#f8f9fa;-fx-background-color:#f8f9fa;-fx-background-radius:8;">
+                        <HBox fx:id="popupImageContainer" spacing="8"
+                              style="-fx-padding:10;-fx-alignment:CENTER_LEFT;"/>
+                    </ScrollPane>
+
+                    <!-- Thông tin sản phẩm -->
+                    <VBox spacing="10" style="-fx-background-color:#f8f9fa;-fx-padding:16;-fx-background-radius:8;">
+                        <Label text="THÔNG TIN SẢN PHẨM"
+                               style="-fx-font-size:11px;-fx-font-weight:bold;-fx-text-fill:#7f8c8d;"/>
+
+                        <GridPane hgap="16" vgap="8">
+                            <Label text="Tên:" style="-fx-font-weight:bold;-fx-text-fill:#555;" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                            <Label fx:id="popupLblName" text="—" style="-fx-text-fill:#2c3e50;-fx-wrap-text:true;"
+                                   GridPane.columnIndex="1" GridPane.rowIndex="0" maxWidth="360"/>
+
+                            <Label text="Giá khởi điểm:" style="-fx-font-weight:bold;-fx-text-fill:#555;" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                            <Label fx:id="popupLblStartPrice" text="—"
+                                   style="-fx-text-fill:#f39c12;-fx-font-weight:bold;-fx-font-size:14px;"
+                                   GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+
+                            <Label text="Giá hiện tại:" style="-fx-font-weight:bold;-fx-text-fill:#555;" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                            <Label fx:id="popupLblCurrentPrice" text="—"
+                                   style="-fx-text-fill:#1d5fa7;-fx-font-weight:bold;-fx-font-size:14px;"
+                                   GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+
+                            <Label text="Trạng thái:" style="-fx-font-weight:bold;-fx-text-fill:#555;" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                            <Label fx:id="popupLblStatus" text="—" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+
+                            <Label text="Mô tả:" style="-fx-font-weight:bold;-fx-text-fill:#555;" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+                            <Label fx:id="popupLblDesc" text="—" style="-fx-text-fill:#555;-fx-wrap-text:true;"
+                                   GridPane.columnIndex="1" GridPane.rowIndex="4" maxWidth="360"/>
+                        </GridPane>
+                    </VBox>
+
+                    <!-- Chọn hành động đấu giá -->
+                    <VBox spacing="14" style="-fx-background-color:#eaf4ff;-fx-padding:18;-fx-background-radius:10;
+                                              -fx-border-color:#b0d0f0;-fx-border-width:1;-fx-border-radius:10;">
+                        <Label text="🔨  CHỌN HÀNH ĐỘNG ĐẤU GIÁ"
+                               style="-fx-font-size:13px;-fx-font-weight:bold;-fx-text-fill:#12263a;"/>
+
+                        <!-- Option 1: Đấu giá ngay -->
+                        <VBox spacing="8" style="-fx-background-color:white;-fx-padding:14;-fx-background-radius:8;
+                                                  -fx-border-color:#1d5fa7;-fx-border-width:1.5;-fx-border-radius:8;">
+                            <HBox spacing="8" style="-fx-alignment:CENTER_LEFT;">
+                                <Label text="⚡" style="-fx-font-size:16px;"/>
+                                <Label text="Đấu giá ngay" style="-fx-font-size:14px;-fx-font-weight:bold;-fx-text-fill:#12263a;"/>
+                            </HBox>
+                            <Label text="Mở phiên đấu giá ngay lập tức. Nhập thời gian (phút) rồi nhấn Bắt đầu."
+                                   style="-fx-text-fill:#7f8c8d;-fx-font-size:12px;-fx-wrap-text:true;"/>
+                            <HBox spacing="10" style="-fx-alignment:CENTER_LEFT;">
+                                <Label text="Thời gian (phút):" style="-fx-font-size:13px;-fx-text-fill:#555;"/>
+                                <TextField fx:id="txtDurationMinutes" promptText="60"
+                                           prefWidth="80"
+                                           style="-fx-font-size:13px;-fx-padding:6 10;-fx-background-radius:6;
+                                                  -fx-border-color:#ccc;-fx-border-radius:6;-fx-border-width:1;"/>
+                                <Button text="▶  Bắt đầu ngay" onAction="#handleStartAuctionNow"
+                                        style="-fx-background-color:#1d5fa7;-fx-text-fill:white;-fx-font-size:13px;
+                                               -fx-font-weight:bold;-fx-padding:8 18;-fx-background-radius:8;-fx-cursor:hand;"/>
+                            </HBox>
+                        </VBox>
+
+                        <!-- Option 2: Lên lịch -->
+                        <VBox spacing="8" style="-fx-background-color:white;-fx-padding:14;-fx-background-radius:8;
+                                                  -fx-border-color:#27ae60;-fx-border-width:1.5;-fx-border-radius:8;">
+                            <HBox spacing="8" style="-fx-alignment:CENTER_LEFT;">
+                                <Label text="📅" style="-fx-font-size:16px;"/>
+                                <Label text="Lên lịch đấu giá" style="-fx-font-size:14px;-fx-font-weight:bold;-fx-text-fill:#12263a;"/>
+                            </HBox>
+                            <Label text="Đặt thời gian bắt đầu và kết thúc cụ thể. Định dạng: yyyy-MM-dd HH:mm:ss"
+                                   style="-fx-text-fill:#7f8c8d;-fx-font-size:12px;-fx-wrap-text:true;"/>
+                            <GridPane hgap="10" vgap="8">
+                                <Label text="Bắt đầu:" style="-fx-font-size:13px;-fx-text-fill:#555;"
+                                       GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                                <TextField fx:id="txtStartTime" promptText="2026-05-01 08:00:00"
+                                           prefWidth="220"
+                                           style="-fx-font-size:13px;-fx-padding:6 10;-fx-background-radius:6;
+                                                  -fx-border-color:#ccc;-fx-border-radius:6;-fx-border-width:1;"
+                                           GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+
+                                <Label text="Kết thúc:" style="-fx-font-size:13px;-fx-text-fill:#555;"
+                                       GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                                <TextField fx:id="txtEndTime" promptText="2026-05-01 20:00:00"
+                                           prefWidth="220"
+                                           style="-fx-font-size:13px;-fx-padding:6 10;-fx-background-radius:6;
+                                                  -fx-border-color:#ccc;-fx-border-radius:6;-fx-border-width:1;"
+                                           GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                            </GridPane>
+                            <Button text="📅  Lên lịch" onAction="#handleScheduleAuction"
+                                    style="-fx-background-color:#27ae60;-fx-text-fill:white;-fx-font-size:13px;
+                                           -fx-font-weight:bold;-fx-padding:8 18;-fx-background-radius:8;-fx-cursor:hand;"/>
+                        </VBox>
+                    </VBox>
+
+                    <!-- Thông báo kết quả -->
+                    <Label fx:id="popupResultMsg" text=""
+                           style="-fx-font-size:13px;-fx-font-weight:bold;-fx-wrap-text:true;"
+                           visible="false" wrapText="true"/>
+                </VBox>
+            </ScrollPane>
+        </VBox>
+    </AnchorPane>
+
+    <!-- ═══════════════════════════════════════════════════
+         ACCOUNT POPUP
+    ═══════════════════════════════════════════════════ -->
+    <AnchorPane fx:id="accountPopup"
+                visible="false"
+                prefWidth="220" prefHeight="160"
+                style="-fx-background-color:white;-fx-background-radius:10;
+                       -fx-effect:dropshadow(three-pass-box,rgba(0,0,0,0.18),16,0,0,4);">
+        <VBox AnchorPane.topAnchor="0" AnchorPane.leftAnchor="0"
+              AnchorPane.rightAnchor="0" AnchorPane.bottomAnchor="0"
+              spacing="2" style="-fx-padding:8;">
+            <Label text="Tài khoản" style="-fx-font-weight:bold;-fx-font-size:13px;-fx-padding:6 10 4 10;-fx-text-fill:#12263a;"/>
+            <Separator/>
+            <Button text="📷  Đổi avatar" onAction="#handleUploadAvatar"
+                    maxWidth="Infinity"
+                    style="-fx-background-color:transparent;-fx-text-fill:#2c3e50;-fx-font-size:13px;
+                           -fx-padding:8 12;-fx-alignment:CENTER_LEFT;-fx-cursor:hand;"/>
+            <Button text="🚪  Đăng xuất" onAction="#handleLogout"
+                    maxWidth="Infinity"
+                    style="-fx-background-color:transparent;-fx-text-fill:#e74c3c;-fx-font-size:13px;
+                           -fx-padding:8 12;-fx-alignment:CENTER_LEFT;-fx-cursor:hand;"/>
+        </VBox>
+    </AnchorPane>
+
+</AnchorPane>
