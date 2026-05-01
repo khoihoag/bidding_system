@@ -9,7 +9,7 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import javafx.application.Platform;
-// Trần Mạnh đẹp trai 
+
 
 
 public class Scene1 {
@@ -106,24 +106,44 @@ public class Scene1 {
 @FXML
 public void initialize() {
     NetworkClient.loginListener = response -> {
-    
-        System.out.println("Server phản hồi: " + response.toString());
-        String action = response.has("action") ? response.get("action").getAsString() : "";
+        
+        System.out.println("Server phản hồi Login: " + response.toString());
+
         Platform.runLater(() -> {
-            if ("SUCCESS".equals(action)) { 
-                myname = usernameField.getText(); 
-                showSuccess("Đăng nhập thành công.");
-                try {
-                    openPrimaryScene("/com/bidding/client/scene/SceneBidder1.fxml",
-                                    "BidViet - Nền tảng đấu giá trực tuyến");
-                } catch (Exception e) {
-                    e.printStackTrace();
+            // if (response == null) {
+            //     showError("Nhận phản hồi rỗng từ server.");
+            //     return;
+            // }
+
+            String action = response.has("action") ? response.get("action").getAsString() : "";
+            String status = response.has("status") ? response.get("status").getAsString() : "";
+
+            if ("LOGIN_REPLY".equals(action)) {
+                if ("SUCCESS".equals(status)) {
+                    myname = usernameField.getText().trim();
+                    
+                    showSuccess("Đăng nhập thành công.");
+                    
+                    try {
+                        openPrimaryScene("/com/bidding/client/scene/SceneBidder1.fxml",
+                                        "BidViet - Nền tảng đấu giá trực tuyến");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        showError("Đăng nhập thành công nhưng không chuyển được màn hình.");
+                    }
+                } else {
+                    // Trường hợp LOGIN_REPLY nhưng status không phải SUCCESS
+                    showError("Đăng nhập thất bại.");
                 }
-            } else if ("ERROR".equals(action)) {
-                String serverMessage = response.has("message") ? response.get("message").getAsString() : "Lỗi không xác định từ Server.";
+            } 
+            else if ("ERROR".equals(action)) {
+                String serverMessage = response.has("message") 
+                    ? response.get("message").getAsString() 
+                    : "Lỗi không xác định từ Server.";
                 showError(serverMessage);
-            } else {
-                showError("Phản hồi không xác định từ hệ thống.");
+            } 
+            else {
+                showError("Phản hồi không xác định từ hệ thống: " + action);
             }
         });
     };
