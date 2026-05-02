@@ -1,12 +1,12 @@
 package com.bidding.server.model.transaction;
 
-import com.bidding.server.model.auction.AuctionMapper;
+import com.bidding.server.model.AuctionMapper;
 import javax.annotation.processing.Generated;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-05-02T16:29:59+0700",
-    comments = "version: 1.5.5.Final, compiler: javac, environment: Java 26.0.1 (Oracle Corporation)"
+    date = "2026-05-03T00:24:51+0700",
+    comments = "version: 1.5.5.Final, compiler: javac, environment: Java 21.0.10 (Microsoft)"
 )
 public class BiddingTransactionMapperImpl implements BiddingTransactionMapper {
 

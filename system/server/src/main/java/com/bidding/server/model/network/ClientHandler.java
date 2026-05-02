@@ -1,5 +1,4 @@
 package com.bidding.server.model.network;
-import com.bidding.server.model.item.Art;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -7,7 +6,7 @@ import com.bidding.server.model.user.User;
 import com.bidding.server.model.transaction.BiddingTransactionEntity;
 import com.bidding.server.service.UserService;
 import com.bidding.server.service.AuctionService;
-import com.bidding.server.model.auction.Auction; // Nhớ import cái này
+import com.bidding.server.model.Auction; // Nhớ import cái này
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;

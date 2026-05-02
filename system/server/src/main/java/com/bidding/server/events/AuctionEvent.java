@@ -1,6 +1,6 @@
 package com.bidding.server.events;
 
-import com.bidding.server.model.auction.Auction;
+import com.bidding.server.model.Auction;
 import com.bidding.server.enums.EventType;
 import com.bidding.server.model.transaction.BiddingTransaction;
 import java.time.LocalDateTime;

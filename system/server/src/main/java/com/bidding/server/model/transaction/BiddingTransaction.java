@@ -1,6 +1,6 @@
 package com.bidding.server.model.transaction;
 
-import com.bidding.server.model.auction.Auction;
+import com.bidding.server.model.Auction;
 import com.bidding.server.model.user.User; // <--- THÊM IMPORT NÀY
 import com.bidding.server.enums.BidStatus;
 import lombok.AllArgsConstructor;

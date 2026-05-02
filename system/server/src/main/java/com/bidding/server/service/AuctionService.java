@@ -1,8 +1,8 @@
 package com.bidding.server.service;
 import com.bidding.server.model.item.Item;
-import com.bidding.server.model.auction.Auction;
-import com.bidding.server.model.auction.AuctionEntity;
-import com.bidding.server.model.auction.AuctionMapper;
+import com.bidding.server.model.Auction;
+import com.bidding.server.model.AuctionEntity;
+import com.bidding.server.model.AuctionMapper;
 import com.bidding.server.repository.AuctionRepository;
 import com.bidding.server.events.AuctionObserver;
 import com.bidding.server.model.transaction.BiddingTransaction;

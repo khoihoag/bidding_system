@@ -1,10 +1,8 @@
 package com.bidding.server.model.transaction;
 
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
-import java.util.List;
-import com.bidding.server.model.auction.AuctionMapper;
+import com.bidding.server.model.AuctionMapper;
 @Mapper(uses = {AuctionMapper.class}) // <--- CHIÊU NÀY QUAN TRỌNG
 public interface BiddingTransactionMapper {
     BiddingTransactionMapper INSTANCE = Mappers.getMapper(BiddingTransactionMapper.class);
