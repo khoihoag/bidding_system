@@ -6,8 +6,8 @@ import javax.annotation.processing.Generated;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-04-30T16:49:34+0700",
-    comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.46.0.v20260407-0427, environment: Java 21.0.10 (Eclipse Adoptium)"
+    date = "2026-05-02T16:29:58+0700",
+    comments = "version: 1.5.5.Final, compiler: javac, environment: Java 26.0.1 (Oracle Corporation)"
 )
 public class AuctionMapperImpl implements AuctionMapper {
 
@@ -23,13 +23,13 @@ public class AuctionMapperImpl implements AuctionMapper {
         auctionEntity.setId( auctionModel.getId() );
         auctionEntity.setCreatedAt( auctionModel.getCreatedAt() );
         auctionEntity.setUpdatedAt( auctionModel.getUpdatedAt() );
-        auctionEntity.setAntiSnipingSeconds( auctionModel.getAntiSnipingSeconds() );
-        auctionEntity.setCurrentWinner( auctionModel.getCurrentWinner() );
-        auctionEntity.setEndTime( auctionModel.getEndTime() );
-        auctionEntity.setExtensionSeconds( auctionModel.getExtensionSeconds() );
         auctionEntity.setItem( auctionModel.getItem() );
-        auctionEntity.setStartTime( auctionModel.getStartTime() );
         auctionEntity.setStatus( auctionModel.getStatus() );
+        auctionEntity.setStartTime( auctionModel.getStartTime() );
+        auctionEntity.setEndTime( auctionModel.getEndTime() );
+        auctionEntity.setCurrentWinner( auctionModel.getCurrentWinner() );
+        auctionEntity.setAntiSnipingSeconds( auctionModel.getAntiSnipingSeconds() );
+        auctionEntity.setExtensionSeconds( auctionModel.getExtensionSeconds() );
 
         return auctionEntity;
     }
@@ -46,13 +46,13 @@ public class AuctionMapperImpl implements AuctionMapper {
         auction.setId( entity.getId() );
         auction.setCreatedAt( entity.getCreatedAt() );
         auction.setUpdatedAt( entity.getUpdatedAt() );
-        auction.setAntiSnipingSeconds( entity.getAntiSnipingSeconds() );
-        auction.setCurrentWinner( entity.getCurrentWinner() );
-        auction.setEndTime( entity.getEndTime() );
-        auction.setExtensionSeconds( entity.getExtensionSeconds() );
         auction.setItem( entity.getItem() );
-        auction.setStartTime( entity.getStartTime() );
         auction.setStatus( entity.getStatus() );
+        auction.setStartTime( entity.getStartTime() );
+        auction.setEndTime( entity.getEndTime() );
+        auction.setCurrentWinner( entity.getCurrentWinner() );
+        auction.setAntiSnipingSeconds( entity.getAntiSnipingSeconds() );
+        auction.setExtensionSeconds( entity.getExtensionSeconds() );
 
         return auction;
     }
