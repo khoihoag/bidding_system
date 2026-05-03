@@ -1,7 +1,7 @@
 package com.bidding.server.service;
 
 import com.bidding.server.enums.UserRole;
-import com.bidding.server.model.Auction;
+import com.bidding.server.model.auction.Auction;
 import com.bidding.server.model.item.Item;
 import com.bidding.server.model.user.User;
 import com.bidding.server.repository.AuctionRepository;

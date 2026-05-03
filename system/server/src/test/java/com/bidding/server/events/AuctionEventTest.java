@@ -1,6 +1,6 @@
 package com.bidding.server.events;
 
-import com.bidding.server.model.Auction;
+import com.bidding.server.model.auction.Auction;
 import com.bidding.server.model.transaction.BiddingTransaction;
 import com.bidding.server.model.user.User;
 import org.junit.jupiter.api.DisplayName;

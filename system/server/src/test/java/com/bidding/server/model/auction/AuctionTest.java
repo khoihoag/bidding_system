@@ -1,4 +1,4 @@
-package com.bidding.server.model;
+package com.bidding.server.model.auction;
 
 import com.bidding.server.enums.AuctionStatus;
 import com.bidding.server.exception.AuctionClosedException;

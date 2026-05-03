@@ -1,6 +1,6 @@
 package com.bidding.server.repository;
 
-import com.bidding.server.model.AuctionEntity;
+import com.bidding.server.model.auction.AuctionEntity;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;

@@ -1,4 +1,4 @@
-package com.bidding.server.model;
+package com.bidding.server.model.auction;
 import java.util.List;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

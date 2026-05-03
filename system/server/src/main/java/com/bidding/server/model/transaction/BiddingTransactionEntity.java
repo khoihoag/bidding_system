@@ -1,7 +1,7 @@
 package com.bidding.server.model.transaction;
 
 import com.bidding.server.enums.BidStatus;
-import com.bidding.server.model.AuctionEntity;
+import com.bidding.server.model.auction.AuctionEntity;
 import com.bidding.server.model.user.User; // <--- THÊM IMPORT NÀY
 import jakarta.persistence.*;
 import java.time.LocalDateTime;

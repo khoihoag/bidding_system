@@ -1,4 +1,4 @@
-package com.bidding.server.model;
+package com.bidding.server.model.auction;
 
 import com.bidding.server.enums.BidStatus;
 import com.bidding.server.events.AuctionEvent;

@@ -1,4 +1,4 @@
-package com.bidding.server.model;
+package com.bidding.server.model.auction;
 import com.bidding.server.model.user.User;
 import com.bidding.server.enums.AuctionStatus;
 import com.bidding.server.model.core.Entity; // Class ông nội chứa @Id và @MappedSuperclass
