@@ -7,7 +7,16 @@ import com.bidding.server.enums.UserRole;
 import java.util.List;
 
 public class UserService {
-    private final UserRepository repository = new UserRepository();
+    private final UserRepository repository;
+
+    public UserService() {
+        this.repository = new UserRepository();
+    }
+
+    // Constructor dùng cho test (Mockito @InjectMocks sẽ dùng cái này)
+    UserService(UserRepository repository) {
+        this.repository = repository;
+    }
 
     // ================= XỬ LÝ LOGIN =================
     public User login(String username, String password) {

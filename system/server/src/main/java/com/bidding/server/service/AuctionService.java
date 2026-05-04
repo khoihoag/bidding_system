@@ -20,10 +20,19 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class AuctionService {
-    private final AuctionRepository repository = new AuctionRepository();
+    private final AuctionRepository repository;
     private final AuctionMapper mapper = AuctionMapper.INSTANCE;
     private final List<AuctionObserver> observers = new CopyOnWriteArrayList<>();
     private final ConcurrentHashMap<String, Auction> activeAuctions = new ConcurrentHashMap<>();
+
+    public AuctionService() {
+        this.repository = new AuctionRepository();
+    }
+
+    // Constructor dùng cho test (Mockito @InjectMocks sẽ dùng cái này)
+    AuctionService(AuctionRepository repository) {
+        this.repository = repository;
+    }
 
     // =======================================================
     // VŨ KHÍ MỚI: BỘ ĐẾM THỜI GIAN TỰ ĐỘNG ĐÓNG PHIÊN

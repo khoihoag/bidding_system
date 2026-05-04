@@ -12,7 +12,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,12 +30,7 @@ class UserServiceTest {
     private User activeUser;
 
     @BeforeEach
-    void setUp() throws Exception {
-        // TUYỆT CHIÊU REFLECTION: Ép UserRepository giả vào field private final
-        Field field = UserService.class.getDeclaredField("repository");
-        field.setAccessible(true);
-        field.set(userService, userRepository);
-
+    void setUp() {
         activeUser = new User("U001", "loi_uet", "loi@vnu.edu.vn", "pass123", "Trần Văn Lợi", UserRole.USER);
     }
 
