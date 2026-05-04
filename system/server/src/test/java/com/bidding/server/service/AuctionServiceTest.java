@@ -37,17 +37,12 @@ class AuctionServiceTest {
     private Item testItem;
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         seller = new User("U1", "seller", "email", "pass", "Seller Name", UserRole.USER);
         testItem = new com.bidding.server.model.item.Art();
         testItem.setId("ITEM_001");
         testItem.setName("Bức tranh quý");
         testItem.setSeller(seller);
-
-        // TUYỆT CHIÊU: Dùng Reflection để ép Repo Mock vào field final
-        java.lang.reflect.Field field = AuctionService.class.getDeclaredField("repository");
-        field.setAccessible(true);
-        field.set(auctionService, repository); // Ghi đè cái 'new AuctionRepository()' bằng bản @Mock
     }
 
     @Test
