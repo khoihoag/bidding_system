@@ -16,65 +16,33 @@ jobs:
         working-directory: system
 
     steps:
-    # 2. Checkout source code
-    - name: 2. Checkout source code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    # 3. Setup môi trường
-    - name: 3. Setup môi trường (Java 21)
-      uses: actions/setup-java@v4
-      with:
-        java-version: '21'
-        distribution: 'temurin'
-        cache: maven
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
 
-    # 4. Build project
-    - name: 4. Build project (Compile)
-      run: mvn clean compile
+      - name: Build + Test + Coverage
+        run: mvn clean verify
 
-    # 5. Chạy test (RẤT QUAN TRỌNG)
-    - name: 5. Chạy test
-      run: mvn test
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: surefire-test-results
+          path: target/surefire-reports/
 
-    # 6. Coverage (độ phủ test)
-    # Báo cáo được tạo tự động trong quá trình chạy `mvn test` nhờ plugin Jacoco
-    - name: Upload JaCoCo Coverage Report
-      uses: actions/upload-artifact@v4
-      if: always() # Luôn upload báo cáo kể cả khi build fail do không đủ coverage
-      with:
-        name: jacoco-coverage-report
-        path: target/site/jacoco/
-        retention-days: 7 # Giữ lại báo cáo trong 7 ngày
+      - name: Upload Coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/
 
-    # 9. Artifact build (đóng gói)
-    - name: 7. Artifact build (Đóng gói)
-      run: mvn package -DskipTests
-
-    # 11. Feedback (rất quan trọng)
-    - name: 8. Feedback - Upload Test Results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: surefire-test-results
-        path: system/target/surefire-reports/
-
-    - name: 9. Feedback - Upload Coverage Report
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: jacoco-coverage-report
-        path: system/target/site/jacoco/
-
-    - name: 10. Feedback - Upload Built Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: app-artifact
-        path: system/target/*.jar
-
-    - name: 11. Feedback - Đánh giá Job Summary
-      if: always()
-      run: |
-        echo "### CI Pipeline Completed 🚀" >> $GITHUB_STEP_SUMMARY
-        echo "- **Tests**: Đã hoàn thành, kết quả Surefire được upload." >> $GITHUB_STEP_SUMMARY
-        echo "- **Coverage**: Báo cáo độ phủ Jacoco đã được sinh ra và upload." >> $GITHUB_STEP_SUMMARY
-        echo "- **Artifact**: File JAR đã được đóng gói và upload." >> $GITHUB_STEP_SUMMARY
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-artifact
+          path: target/*.jar
