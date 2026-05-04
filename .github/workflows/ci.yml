@@ -42,25 +42,25 @@ jobs:
       run: ls -la target/site/jacoco
 
     # 9. Artifact build (đóng gói)
-    - name: 9. Artifact build (Đóng gói)
+    - name: 7. Artifact build (Đóng gói)
       run: mvn package -DskipTests
 
     # 11. Feedback (rất quan trọng)
-    - name: 11. Feedback - Upload Test Results
+    - name: 8. Feedback - Upload Test Results
       uses: actions/upload-artifact@v4
       if: always()
       with:
         name: surefire-test-results
         path: system/target/surefire-reports/
 
-    - name: 11. Feedback - Upload Coverage Report
+    - name: 9. Feedback - Upload Coverage Report
       uses: actions/upload-artifact@v4
       if: always()
       with:
         name: jacoco-coverage-report
         path: system/target/site/jacoco/
 
-    - name: 11. Feedback - Upload Built Artifact
+    - name: 10. Feedback - Upload Built Artifact
       uses: actions/upload-artifact@v4
       with:
         name: app-artifact
