@@ -1,5 +1,4 @@
 package com.bidding.server.model.network;
-import com.bidding.server.model.item.Art;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
