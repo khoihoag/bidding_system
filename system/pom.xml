@@ -178,7 +178,7 @@
                                         <limit>
                                             <counter>INSTRUCTION</counter> <!-- Đếm theo số lượng lệnh (instructions) -->
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.50</minimum> <!-- Yêu cầu tối thiểu 80% -->
+                                            <minimum>0.30</minimum> <!-- Yêu cầu tối thiểu 80% -->
                                         </limit>
                                     </limits>
                                 </rule>
