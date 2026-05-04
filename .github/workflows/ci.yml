@@ -38,8 +38,13 @@ jobs:
 
     # 6. Coverage (độ phủ test)
     # Báo cáo được tạo tự động trong quá trình chạy `mvn test` nhờ plugin Jacoco
-    - name: 6. Kiểm tra Coverage Report
-      run: ls -la target/site/jacoco
+    - name: Upload JaCoCo Coverage Report
+      uses: actions/upload-artifact@v4
+      if: always() # Luôn upload báo cáo kể cả khi build fail do không đủ coverage
+      with:
+        name: jacoco-coverage-report
+        path: target/site/jacoco/
+        retention-days: 7 # Giữ lại báo cáo trong 7 ngày
 
     # 9. Artifact build (đóng gói)
     - name: 7. Artifact build (Đóng gói)
