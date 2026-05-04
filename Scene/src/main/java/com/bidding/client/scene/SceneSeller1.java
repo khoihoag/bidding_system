@@ -6,6 +6,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import javafx.animation.Interpolator;
 import javafx.animation.TranslateTransition;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -65,7 +66,6 @@ public class SceneSeller1 implements Initializable {
     private ProductShared.ProductData productBeingViewed = null;
     private String currentFilter = "ALL";
     private final List<ProductShared.ProductData> allProducts = new ArrayList<>();
-    private int dummyIdCounter = 1;
 
     private static final DateTimeFormatter DT_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -78,7 +78,11 @@ public class SceneSeller1 implements Initializable {
         sideMenu.setManaged(false);
         sideMenu.setTranslateX(-300);
 
-        NetworkClient.sellerListener = this::handleSellerResponse;
+        // FIX: Bọc toàn bộ xử lý response trong Platform.runLater()
+        // vì NetworkClient gọi listener từ thread mạng, không phải JavaFX Thread
+        NetworkClient.sellerListener = response ->
+                Platform.runLater(() -> handleSellerResponse(response));
+
         lblSellerNote.setText("Đang tải sản phẩm từ server qua GET_ITEMS.");
         requestSellerItems();
     }
@@ -120,14 +124,12 @@ public class SceneSeller1 implements Initializable {
 
     // ─── Mở SceneAddItem (tách riêng) ─────────────────────────────────────────
 
-    /** Mở cửa sổ thêm sản phẩm mới */
     @FXML
     void showAddProductPopup(ActionEvent event) {
         if (isMenuOpen) toggleMenu(null);
         openAddItemWindow(null);
     }
 
-    /** Mở cửa sổ sửa từ popup xem */
     @FXML
     void handleEditFromView(ActionEvent event) {
         if (productBeingViewed == null) return;
@@ -136,10 +138,6 @@ public class SceneSeller1 implements Initializable {
         openAddItemWindow(productBeingViewed);
     }
 
-    /**
-     * Mở SceneAddItem trong một Stage riêng (modal).
-     * @param data null = chế độ thêm mới, non-null = chỉnh sửa
-     */
     private void openAddItemWindow(ProductShared.ProductData data) {
         try {
             FXMLLoader loader = new FXMLLoader(
@@ -156,19 +154,13 @@ public class SceneSeller1 implements Initializable {
 
             if (data == null) {
                 controller.initAdd(
-                        action -> {
-                            addStage.close();
-                            requestSellerItems();
-                        },
+                        action -> { addStage.close(); requestSellerItems(); },
                         addStage::close
                 );
             } else {
                 controller.initEdit(
                         data,
-                        action -> {
-                            addStage.close();
-                            requestSellerItems();
-                        },
+                        action -> { addStage.close(); requestSellerItems(); },
                         addStage::close
                 );
             }
@@ -182,39 +174,44 @@ public class SceneSeller1 implements Initializable {
     // ─── Server ───────────────────────────────────────────────────────────────
 
     private void requestSellerItems() {
+        // FIX: Đúng action theo Item.txt — GET_ITEMS
         NetworkClient.send("{\"action\":\"GET_ITEMS\"}");
     }
 
+    /**
+     * FIX: Toàn bộ hàm này đã được đảm bảo chạy trên JavaFX Thread
+     * nhờ Platform.runLater() trong initialize().
+     * Handler phân loại action theo đúng Item.txt và Auction_(2).txt.
+     */
     private void handleSellerResponse(JsonObject response) {
         String action = getString(response, "action");
         switch (action) {
-            case "ITEMS_LIST"      -> replaceProducts(getArray(response, "items"));
-            case "AUCTIONS_LIST"   -> replaceProducts(firstNonEmptyArray(
-                                         getArray(response, "data"),
-                                         getArray(response, "auctions"),
-                                         getArray(response, "items")));
-            case "DELETE_ITEM_REPLY" -> handleDeleteReply(response);
-            case "START_AUCTION_REPLY" -> handleStartAuctionReply(response);
-            case "GLOBAL_NOTIFY"   -> showInfoPopup(getString(response, "message", "Có thông báo mới."));
-            case "ERROR"           -> showInfoPopup("Lỗi: " + getString(response, "message", "Server trả về lỗi."));
+            // FIX: "ITEMS_LIST" với key "items" — đúng theo Item.txt GET_ITEMS response
+            case "ITEMS_LIST"            -> replaceProducts(getArray(response, "items"));
+            // "AUCTIONS_LIST" với key "data" — đúng theo Auction_(2).txt GET_AUCTIONS response
+            case "AUCTIONS_LIST"         -> replaceProducts(firstNonEmptyArray(
+                                               getArray(response, "data"),
+                                               getArray(response, "auctions"),
+                                               getArray(response, "items")));
+            case "DELETE_ITEM_REPLY"     -> handleDeleteReply(response);
+            case "START_AUCTION_REPLY"   -> handleStartAuctionReply(response);
+            case "GLOBAL_NOTIFY"         -> showInfoPopup(getString(response, "message", "Có thông báo mới."));
+            case "ERROR"                 -> showInfoPopup("Lỗi: " + getString(response, "message", "Server trả về lỗi."));
             default -> { /* ADD_ITEM_REPLY / UPDATE_ITEM_REPLY xử lý bởi SceneAddItem */ }
         }
     }
 
     private void handleDeleteReply(JsonObject response) {
-        // Tìm product đang pending delete qua trạng thái được lưu trước đó
-        // (pendingDelete đã được di chuyển vào hàm confirmAndDelete)
-        if (!"SUCCESS".equalsIgnoreCase(getString(response, "status", "SUCCESS"))) {
+        if (!"SUCCESS".equalsIgnoreCase(getString(response, "status", ""))) {
             showInfoPopup("Xóa sản phẩm thất bại: " + getString(response, "message", ""));
             return;
         }
-        // Reload từ server để chắc chắn đồng bộ
         requestSellerItems();
         showInfoPopup("Xóa sản phẩm thành công!");
     }
 
     private void handleStartAuctionReply(JsonObject response) {
-        if ("SUCCESS".equalsIgnoreCase(getString(response, "status", "SUCCESS"))) {
+        if ("SUCCESS".equalsIgnoreCase(getString(response, "status", ""))) {
             String auctionId = getString(response, "auctionId", "");
             if (productBeingViewed != null && !auctionId.isBlank())
                 productBeingViewed.auctionId = auctionId;
@@ -352,6 +349,8 @@ public class SceneSeller1 implements Initializable {
         }
         int durationMinutes = Math.max(1, (int) ChronoUnit.MINUTES.between(
                 LocalDateTime.now(), parseSafe(productBeingViewed.endTimeStr)));
+
+        // FIX: Đúng format theo Auction_(2).txt START_AUCTION
         NetworkClient.send(String.format(
                 "{\"action\":\"START_AUCTION\",\"itemId\":\"%s\",\"durationMinutes\":%d}",
                 escapeJson(itemId), durationMinutes));
@@ -382,9 +381,9 @@ public class SceneSeller1 implements Initializable {
         confirm.setContentText("Hành động này không thể hoàn tác.");
         confirm.showAndWait().ifPresent(resp -> {
             if (resp == ButtonType.OK) {
-                // Xóa lạc quan trong UI trước, server sẽ xác nhận qua DELETE_ITEM_REPLY
                 allProducts.removeIf(p -> sameProduct(p, data));
                 renderProducts();
+                // FIX: Đúng format theo Item.txt DELETE_ITEM
                 NetworkClient.send(String.format(
                         "{\"action\":\"DELETE_ITEM\",\"itemId\":\"%s\"}",
                         escapeJson(resolveItemId(data))));
@@ -476,7 +475,6 @@ public class SceneSeller1 implements Initializable {
     }
 
     private void showInfoPopup(String msg) {
-        // Dùng Alert thay vì lblErrorMsg (đã bị cắt sang SceneAddItem)
         Alert info = new Alert(Alert.AlertType.INFORMATION);
         info.setTitle("Thông báo");
         info.setHeaderText(null);
@@ -501,34 +499,82 @@ public class SceneSeller1 implements Initializable {
         };
     }
 
+    /**
+     * FIX CHÍNH: Parse product theo đúng JSON trả về từ GET_ITEMS (Item.txt):
+     *   "id"           → String ID của item (VD: "item123")
+     *   "name"         → Tên sản phẩm
+     *   "startingPrice"→ Giá khởi điểm (long)
+     *   "images"       → Mảng ảnh (key là "images", không phải "imagePaths")
+     *
+     * Không có các field: itemId, itemName, startPrice, currentPrice, endTime
+     * trong GET_ITEMS response → dùng fallback hợp lý.
+     */
     private ProductShared.ProductData parseProduct(JsonObject o) {
-        int id = getInt(o, "itemId", getInt(o, "id", dummyIdCounter++));
-        String itemIdRef = coalesce(getString(o, "itemId"), getString(o, "id"), String.valueOf(id));
+        // FIX: Server trả "id" dạng String ("item123"), không phải int
+        // Đọc bằng getString trước, sau mới lấy int nếu cần
+        String rawId     = coalesce(getString(o, "id"), getString(o, "itemId"), "0");
+        int    numericId = parseIdSafe(rawId);
+
+        // itemIdRef dùng để gửi lên server (itemId trong DELETE_ITEM, START_AUCTION, ...)
+        // FIX: Ưu tiên "id" đúng theo server, sau đó "itemId"
+        String itemIdRef = coalesce(getString(o, "id"), getString(o, "itemId"), rawId);
+
         String auctionId = coalesce(getString(o, "auctionId"), "");
-        String name      = coalesce(getString(o, "itemName"), getNestedStr(o, "item", "name"), getString(o, "name"), "Chưa đặt tên");
-        String startP    = String.valueOf(getLong(o, "startingPrice", getLong(o, "startPrice", getLong(o, "price", 0L))));
-        String curP      = String.valueOf(getLong(o, "currentPrice", getLong(o, "newPrice", Long.parseLong(startP))));
-        String desc      = coalesce(getString(o, "description"), getString(o, "desc"), "Chưa có mô tả");
-        String startT    = coalesce(getString(o, "startTime"), LocalDateTime.now().minusMinutes(5).format(DT_FORMATTER));
-        String endT      = coalesce(getString(o, "endTime"), LocalDateTime.now().plusDays(1).format(DT_FORMATTER));
+
+        // FIX: Server trả "name", không phải "itemName"
+        String name = coalesce(
+                getString(o, "name"),
+                getString(o, "itemName"),
+                getNestedStr(o, "item", "name"),
+                "Chưa đặt tên");
+
+        // FIX: Server trả "startingPrice" (đúng), fallback thêm cho trường hợp khác
+        String startP = String.valueOf(getLong(o, "startingPrice",
+                            getLong(o, "startPrice",
+                            getLong(o, "price", 0L))));
+
+        // GET_ITEMS không trả currentPrice → mặc định bằng startingPrice
+        String curP = String.valueOf(getLong(o, "currentPrice",
+                          getLong(o, "newPrice",
+                          Long.parseLong(startP))));
+
+        String desc = coalesce(getString(o, "description"), getString(o, "desc"), "Chưa có mô tả");
+
+        // GET_ITEMS không có startTime/endTime → fallback mặc định
+        String startT = coalesce(getString(o, "startTime"),
+                LocalDateTime.now().minusMinutes(5).format(DT_FORMATTER));
+        String endT   = coalesce(getString(o, "endTime"),
+                LocalDateTime.now().plusDays(1).format(DT_FORMATTER));
+
+        // FIX: Server trả key "images", không phải "imagePaths"
         List<String> imgs = new ArrayList<>();
-        for (JsonElement el : firstNonEmptyArray(getArray(o, "imagePaths"), getArray(o, "images")))
+        for (JsonElement el : firstNonEmptyArray(
+                getArray(o, "images"),       // đúng theo Item.txt
+                getArray(o, "imagePaths")))  // fallback cho AUCTIONS_LIST
             try { imgs.add(el.getAsString()); } catch (Exception ignored) {}
+
         int bidCount = getInt(o, "bidCount", 0);
-        return new ProductShared.ProductData(id, itemIdRef, auctionId, name, startP, curP, desc, startT, endT, imgs, bidCount);
+
+        return new ProductShared.ProductData(
+                numericId, itemIdRef, auctionId, name,
+                startP, curP, desc, startT, endT, imgs, bidCount);
     }
 
     private boolean sameProduct(ProductShared.ProductData a, ProductShared.ProductData b) {
         if (a == null || b == null) return false;
-        if (!resolveItemId(a).isBlank() && !resolveItemId(b).isBlank())
-            return resolveItemId(a).equals(resolveItemId(b));
-        if (a.auctionId != null && !a.auctionId.isBlank() && b.auctionId != null && !b.auctionId.isBlank())
+        String idA = resolveItemId(a);
+        String idB = resolveItemId(b);
+        if (!idA.isBlank() && !idB.isBlank()) return idA.equals(idB);
+        if (a.auctionId != null && !a.auctionId.isBlank()
+                && b.auctionId != null && !b.auctionId.isBlank())
             return a.auctionId.equals(b.auctionId);
         return a.id == b.id;
     }
 
     private String resolveItemId(ProductShared.ProductData p) {
-        return p == null ? "" : coalesce(p.itemIdRef, String.valueOf(p.id));
+        if (p == null) return "";
+        // FIX: itemIdRef đã được set đúng từ parseProduct (ưu tiên "id" của server)
+        return coalesce(p.itemIdRef, String.valueOf(p.id));
     }
 
     private String calcStatus(String endTimeStr) {
@@ -582,6 +628,20 @@ public class SceneSeller1 implements Initializable {
         return v == null ? "" : v.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
+    /**
+     * FIX: Parse String ID sang int an toàn — server có thể trả "item123" (String)
+     * Chỉ dùng để gán ProductData.id (int), không dùng để gửi lên server.
+     */
+    private int parseIdSafe(String rawId) {
+        if (rawId == null || rawId.isBlank()) return 0;
+        // Nếu là số thuần → parse thẳng
+        try { return Integer.parseInt(rawId); } catch (Exception ignored) {}
+        // Nếu là "item123" → lấy phần số cuối
+        String numOnly = rawId.replaceAll("[^0-9]", "");
+        try { return numOnly.isBlank() ? rawId.hashCode() : Integer.parseInt(numOnly); }
+        catch (Exception e) { return rawId.hashCode(); }
+    }
+
     private LocalDateTime parseSafe(String v) {
         try {
             if (v != null && v.contains("T"))
@@ -602,12 +662,18 @@ public class SceneSeller1 implements Initializable {
     private int getInt(JsonObject o, String key, int fb) {
         if (o == null || !o.has(key) || o.get(key).isJsonNull()) return fb;
         try { return o.get(key).getAsInt(); }
-        catch (Exception e) { try { return Integer.parseInt(o.get(key).getAsString().replaceAll("[^0-9-]","")); } catch (Exception ignored) { return fb; } }
+        catch (Exception e) {
+            try { return Integer.parseInt(o.get(key).getAsString().replaceAll("[^0-9-]", "")); }
+            catch (Exception ignored) { return fb; }
+        }
     }
     private long getLong(JsonObject o, String key, long fb) {
         if (o == null || !o.has(key) || o.get(key).isJsonNull()) return fb;
         try { return o.get(key).getAsLong(); }
-        catch (Exception e) { try { return Long.parseLong(o.get(key).getAsString().replace(".","").replace(",","").trim()); } catch (Exception ignored) { return fb; } }
+        catch (Exception e) {
+            try { return Long.parseLong(o.get(key).getAsString().replace(".", "").replace(",", "").trim()); }
+            catch (Exception ignored) { return fb; }
+        }
     }
     private JsonArray getArray(JsonObject o, String key) {
         if (o == null || !o.has(key) || !o.get(key).isJsonArray()) return new JsonArray();

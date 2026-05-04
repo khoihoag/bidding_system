@@ -2,84 +2,110 @@ package com.bidding.server.model.network;
 
 import com.bidding.server.events.AuctionEvent;
 import com.bidding.server.events.AuctionObserver;
+import com.bidding.server.model.auction.Auction;
+import com.bidding.server.model.item.Item;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import com.google.gson.Gson; // Thêm Gson để ép nguyên cục Auction sang JSON cho nhanh
 
 public class ClientManager implements AuctionObserver {
     private final List<ClientHandler> activeClients = new CopyOnWriteArrayList<>();
-    private final Gson gson = new Gson(); // Dùng để biến Object thành chuỗi JSON
 
     public void addClient(ClientHandler client) {
         activeClients.add(client);
-        System.out.println("Loa phường: Đã thêm 1 giang hồ. Tổng số: " + activeClients.size());
+        System.out.println("ClientManager: added client. Total: " + activeClients.size());
     }
 
     public void removeClient(ClientHandler client) {
         activeClients.remove(client);
-        System.out.println("Loa phường: 1 giang hồ đã sủi. Còn lại: " + activeClients.size());
+        System.out.println("ClientManager: removed client. Total: " + activeClients.size());
     }
 
-    // =========================================================
-    // 1. KHI CÓ PHIÊN ĐẤU GIÁ MỚI LÊN SÀN (VỪA START)
-    // =========================================================
     @Override
     public void onAuctionStarted(AuctionEvent event) {
-        // Tận dụng Gson để biến Object Auction thành JSON
-        // event.getAuction() sẽ trả về toàn bộ thông tin món hàng đang lên sàn
-        String auctionJson = new com.google.gson.Gson().toJson(event.getAuction());
-
-        String jsonMessage = String.format(
-                "{\"action\": \"NEW_AUCTION_POSTED\", \"data\": %s}",
-                auctionJson
-        );
-
-        // Bắn tin cho toàn thể anh em đang online
-        for (ClientHandler client : activeClients) {
-            client.sendMessage(jsonMessage);
-        }
+        JsonObject message = new JsonObject();
+        message.addProperty("action", "NEW_AUCTION_POSTED");
+        message.add("data", buildAuctionJson(event.getAuction()));
+        broadcast(message.toString());
     }
 
-    // =========================================================
-    // 2. KHI CÓ NGƯỜI VỪA ĐẶT GIÁ MỚI
-    // =========================================================
     @Override
     public void onBidPlaced(AuctionEvent event) {
-        String jsonMessage = String.format(
-                "{\"action\": \"NEW_BID\", \"auctionId\": \"%s\", \"newPrice\": %f, \"winnerId\": \"%s\"}",
-                event.getAuctionId(), event.getNewPrice(), event.getWinnerId()
-        );
-
-        broadcast(jsonMessage);
+        JsonObject message = new JsonObject();
+        message.addProperty("action", "NEW_BID");
+        message.addProperty("auctionId", event.getAuctionId());
+        message.addProperty("newPrice", event.getNewPrice());
+        message.addProperty("winnerId", event.getWinnerId() == null ? "" : event.getWinnerId());
+        broadcast(message.toString());
     }
 
-    // =========================================================
-    // 3. KHI PHIÊN ĐẤU GIÁ KẾT THÚC (HẾT GIỜ HOẶC ADMIN ĐÓNG)
-    // =========================================================
     @Override
     public void onAuctionClosed(AuctionEvent event) {
-        // Hoàn thiện luôn hàm này cho ông
-        String jsonMessage = String.format(
-                "{\"action\": \"AUCTION_CLOSED\", \"auctionId\": \"%s\", \"winnerId\": \"%s\", \"finalPrice\": %f}",
-                event.getAuctionId(),
-                event.getWinnerId() != null ? event.getWinnerId() : "NONE",
-                event.getNewPrice()
-        );
-
-        for (ClientHandler client : activeClients) {
-            client.sendMessage(jsonMessage);
-        }
+        JsonObject message = new JsonObject();
+        message.addProperty("action", "AUCTION_END");
+        message.addProperty("auctionId", event.getAuctionId());
+        message.addProperty("winnerId", event.getWinnerId() == null ? "NONE" : event.getWinnerId());
+        message.addProperty("finalPrice", event.getNewPrice());
+        broadcast(message.toString());
     }
 
     @Override
     public void onPriceChanged(AuctionEvent event) {
-        // Có thể dùng cho các tính năng cập nhật giá nhanh nếu cần
     }
 
-    // TIỆN ÍCH: Hàm bổ trợ để hú cho tất cả anh em online
     public void broadcast(String message) {
         for (ClientHandler client : activeClients) {
             client.sendMessage(message);
         }
+    }
+
+    private JsonObject buildAuctionJson(Auction auction) {
+        JsonObject json = new JsonObject();
+        if (auction == null) {
+            return json;
+        }
+
+        json.addProperty("id", auction.getId());
+        json.addProperty("auctionId", auction.getId());
+        json.addProperty("status", auction.getStatus() == null ? "" : auction.getStatus().name());
+        json.addProperty("startTime", auction.getStartTime() == null ? "" : auction.getStartTime().toString());
+        json.addProperty("endTime", auction.getEndTime() == null ? "" : auction.getEndTime().toString());
+        json.addProperty("currentPrice", auction.getCurrentPrice() == null ? 0.0 : auction.getCurrentPrice().get());
+        json.addProperty("winnerId", auction.getCurrentWinner() == null ? "" : auction.getCurrentWinner().getUsername());
+
+        Item item = auction.getItem();
+        if (item != null) {
+            json.addProperty("itemId", item.getId());
+            json.add("item", buildItemJson(item));
+        }
+        return json;
+    }
+
+    private JsonObject buildItemJson(Item item) {
+        JsonObject json = new JsonObject();
+        json.addProperty("id", item.getId());
+        json.addProperty("itemId", item.getId());
+        json.addProperty("name", item.getName());
+        json.addProperty("description", item.getDescription());
+        json.addProperty("startingPrice", item.getStartingPrice());
+        json.addProperty("category", item.getCategory());
+        json.addProperty("item_type", item.getCategory());
+        json.addProperty("seller", item.getSeller() == null ? "" : item.getSeller().getUsername());
+        json.addProperty("condition", item.getCondition() == null ? "" : item.getCondition().name());
+
+        JsonArray images = new JsonArray();
+        if (item.getImages() != null) {
+            for (String image : item.getImages()) {
+                images.add(image);
+            }
+        }
+        json.add("images", images);
+
+        JsonObject specs = new JsonObject();
+        item.getSpecifications().forEach(specs::addProperty);
+        json.add("specifications", specs);
+        return json;
     }
 }

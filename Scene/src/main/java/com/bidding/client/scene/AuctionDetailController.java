@@ -225,7 +225,7 @@ public class AuctionDetailController {
     }
 
     @FXML
-    void btnJoinBid(ActionEvent event) {
+    void btnJoinBid(ActionEvent event) throws Exception {
         handleJoinBid(event);
     }
 
@@ -238,7 +238,7 @@ public class AuctionDetailController {
     }
 
     @FXML
-    void handleJoinBid(ActionEvent event) {
+    void handleJoinBid(ActionEvent event) throws Exception {
         if (currentProduct == null) return;
 
         try {

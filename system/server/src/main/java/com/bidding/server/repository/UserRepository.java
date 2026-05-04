@@ -24,7 +24,7 @@ public class UserRepository {
             transaction.commit();
         } catch (Exception e) {
             if (transaction != null) transaction.rollback();
-            e.printStackTrace();
+            throw new RuntimeException("Khong luu duoc user vao database", e);
         }
     }
 
@@ -41,12 +41,31 @@ public class UserRepository {
     public User findByUsernameAndPassword(String username, String password) {
         try (Session session = factory.openSession()) {
             // Câu lệnh HQL chọc thẳng vào bảng users
-            String hql = "FROM User WHERE username = :u AND passwordHash = :p";
+            String hql = "FROM User WHERE username = :u";
             Query<User> query = session.createQuery(hql, User.class);
             query.setParameter("u", username);
-            query.setParameter("p", password); // Thực tế nếu code bảo mật thì phải Hash cái password này ra trước
+            List<User> users = query.list();
 
-            return query.uniqueResult(); // Trả về 1 thằng duy nhất, hoặc null nếu sai pass
+            if (users.isEmpty()) {
+                return null;
+            }
+            if (users.size() > 1) {
+                throw new RuntimeException("Database co " + users.size() + " tai khoan trung username '" + username + "'. Hay xoa ban ghi trung trong bang users.");
+            }
+
+            User user = users.get(0);
+            return password.equals(user.getPasswordHash()) ? user : null;
+        }
+    }
+
+    public boolean existsByUsername(String username) {
+        try (Session session = factory.openSession()) {
+            Long count = session.createQuery(
+                            "SELECT COUNT(u) FROM User u WHERE u.username = :username",
+                            Long.class)
+                    .setParameter("username", username)
+                    .uniqueResult();
+            return count != null && count > 0;
         }
     }
 

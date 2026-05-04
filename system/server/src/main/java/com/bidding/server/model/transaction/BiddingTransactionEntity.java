@@ -19,11 +19,11 @@ public class BiddingTransactionEntity {
     private Long id;
 
     // <--- Đổi Bidder thành User
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "bidder_id", nullable = false)
     private User bidder;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "auction_id", nullable = false)
     private AuctionEntity auction;
 

@@ -35,13 +35,13 @@ public class ItemRepository {
             transaction.commit();
         } catch (Exception e) {
             if (transaction != null) transaction.rollback();
-            e.printStackTrace();
+            throw new RuntimeException("Khong luu duoc san pham vao database", e);
         }
     }
     public List<Item> findBySellerId(String sellerId) {
         try (Session session = factory.openSession()) {
             // HQL: Tìm tất cả Item mà có seller.id khớp với id truyền vào
-            String hql = "FROM Item i WHERE i.seller.id = :sid";
+            String hql = "SELECT DISTINCT i FROM Item i LEFT JOIN FETCH i.images WHERE i.seller.id = :sid";
             return session.createQuery(hql, Item.class)
                     .setParameter("sid", sellerId)
                     .list();
@@ -50,7 +50,7 @@ public class ItemRepository {
     // Hàm lấy tất cả vật phẩm (Ví dụ để hiển thị lên trang chủ)
     public List<Item> findAll() {
         try (Session session = factory.openSession()) {
-            return session.createQuery("FROM Item", Item.class).list();
+            return session.createQuery("SELECT DISTINCT i FROM Item i LEFT JOIN FETCH i.images", Item.class).list();
         }
     }
     public void delete(Item item) {
@@ -62,7 +62,7 @@ public class ItemRepository {
             transaction.commit();
         } catch (Exception e) {
             if (transaction != null) transaction.rollback();
-            e.printStackTrace();
+            throw new RuntimeException("Khong xoa duoc san pham khoi database", e);
         }
     }
 }

@@ -22,13 +22,11 @@ public class Scene1 {
     @FXML
     void handleLogin(ActionEvent event) {
 
-        showError("ohh");
-
         String username = usernameField.getText().trim();
 
         String password = passwordField.getText();
 
-        if (username == null || username.trim().isEmpty()) {
+        if (username.isEmpty()) {
             showError("Ban dang de trong Username.");
             return;
         }
@@ -36,32 +34,27 @@ public class Scene1 {
             showError("Vui long nhap Password.");
             return;
         }
-        if (username.length() < 6 || username.length() > 15) {
-            showError("Username tu 6 den 15 ky tu.");
-            return;
-        }
-        if (!username.matches("^[a-zA-Z][a-zA-Z0-9]+$")) {
-            showError("Username phai bat dau bang chu va khong co ky tu dac biet.");
-            return;
-        }
-        if (password.length() < 6 || password.length() > 15) {
-            showError("Mat khau tu 6 den 15 ky tu.");
-            return;
-        }
-        if (!password.matches("^[a-zA-Z0-9]+$")) {
-            showError("Mat khau chi gom chu va so.");
+
+        if (!NetworkClient.isConnected()) {
+            showError("Chua ket noi server. Hay chay server truoc khi dang nhap.");
             return;
         }
 
         try {
-            String json = String.format("{\"action\":\"LOGIN\", \"username\":\"%s\", \"password\":\"%s\"}",username, password);
-            NetworkClient.send(json);
-            showSuccess("Dang dang nhap...");
+            com.google.gson.JsonObject json = new com.google.gson.JsonObject();
+            json.addProperty("action", "LOGIN");
+            json.addProperty("username", username);
+            json.addProperty("password", password);
+
+            if (NetworkClient.send(json.toString())) {
+                showSuccess("Dang dang nhap...");
+            } else {
+                showError("Khong gui duoc yeu cau dang nhap. Kiem tra server.");
+            }
 
         } catch (Exception exception) {
             exception.printStackTrace();
-            showError("Khong mo duoc man hinh sau dang nhap. Loi: " + exception.getClass().getSimpleName());
-            return;
+            showError("Khong gui duoc yeu cau dang nhap. Loi: " + exception.getClass().getSimpleName());
         }
     }
 
@@ -149,6 +142,7 @@ public void initialize() {
     };
 }
 }
+
 
 
 

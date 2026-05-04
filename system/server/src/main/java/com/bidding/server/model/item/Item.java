@@ -10,6 +10,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @jakarta.persistence.Entity
+@Table(name = "item")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE) // Ép chung 1 bảng
 @DiscriminatorColumn(
         name = "item_type", // Tên cột phân biệt dưới DB
@@ -20,11 +21,15 @@ public abstract class Item extends Entity {
     private String name;
     private String description;
     private double startingPrice;
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "item_images", joinColumns = @JoinColumn(name = "item_id"))
+    @Column(name = "image")
     private List<String> images;
     @ManyToOne
     @JoinColumn(name = "seller_id", nullable = false)
     private User seller;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "item_condition", nullable = false)
     private ItemCondition condition;
 
     public Item() {

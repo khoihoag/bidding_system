@@ -6,7 +6,9 @@ import org.mapstruct.factory.Mappers;
 
 import java.util.concurrent.atomic.AtomicReference;
 import org.mapstruct.Named;
-@Mapper
+import com.bidding.server.model.user.User;
+import com.bidding.server.model.item.Item;
+@Mapper(imports = {User.class, Item.class})
 public interface AuctionMapper {
     AuctionMapper INSTANCE = Mappers.getMapper(AuctionMapper.class);
 
@@ -18,6 +20,9 @@ public interface AuctionMapper {
 
     // --- CHIỀU VỀ: DATABASE -> RAM (Để load lại dữ liệu) ---
     @Mapping(target = "currentPrice", source = "currentPrice", qualifiedByName = "wrapAtomic")
+    @Mapping(target = "bidHistory", ignore = true)
+    @Mapping(target = "observers", ignore = true)
+    @Mapping(target = "lock", ignore = true)
     // Lưu ý: Lúc này target là Model, source là Entity
     Auction toModel(AuctionEntity entity);
 

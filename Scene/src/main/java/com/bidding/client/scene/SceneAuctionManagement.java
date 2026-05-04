@@ -8,6 +8,7 @@ import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.animation.TranslateTransition;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -36,14 +37,11 @@ import java.util.ResourceBundle;
  * SceneAuctionManagement – màn hình Quản lý Phiên Đấu Giá (Seller)
  *
  * Tab 1 – Quản lý sản phẩm:
- *   - Hiển thị card sản phẩm (lớn hơn SceneSeller1)
- *   - Nút "Đấu giá" trên mỗi card mở popup chọn:
- *       (A) Đấu giá ngay  → gửi START_AUCTION  {"action":"START_AUCTION","itemId":"...","durationMinutes":N}
- *       (B) Lên lịch       → gửi SCHEDULE_AUCTION {"action":"SCHEDULE_AUCTION","itemId":"...","startTime":"yyyy-MM-ddTHH:mm:ss","endTime":"yyyy-MM-ddTHH:mm:ss"}
+ *   - Hiển thị card sản phẩm, nút "Đấu giá" mở popup chọn:
+ *       (A) Đấu giá ngay  → START_AUCTION  {"action":"START_AUCTION","itemId":"...","durationMinutes":N}
+ *       (B) Lên lịch       → SCHEDULE_AUCTION {"action":"SCHEDULE_AUCTION","itemId":"...","startTime":"yyyy-MM-ddTHH:mm:ss","endTime":"yyyy-MM-ddTHH:mm:ss"}
  *
- * Tab 2 – Quan sát phiên (placeholder, sẽ phát triển sau)
- *
- * JSON chính xác tuyệt đối theo Auction_(2).txt và NetworkClient.java
+ * JSON chính xác theo Auction_(2).txt và Item.txt
  */
 public class SceneAuctionManagement implements Initializable {
 
@@ -88,7 +86,6 @@ public class SceneAuctionManagement implements Initializable {
     private String  currentFilter = "ALL";
     private final List<ProductShared.ProductData> allProducts = new ArrayList<>();
     private ProductShared.ProductData productBeingActioned = null;
-    private int dummyIdCounter = 1;
 
     private static final DateTimeFormatter DT_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -104,8 +101,10 @@ public class SceneAuctionManagement implements Initializable {
         sideMenu.setManaged(false);
         sideMenu.setTranslateX(-300);
 
-        // Đăng ký listener nhận response từ server
-        NetworkClient.sellerListener = this::handleServerResponse;
+        // FIX: Bọc toàn bộ xử lý response trong Platform.runLater()
+        // vì NetworkClient gọi listener từ thread mạng, không phải JavaFX Thread
+        NetworkClient.sellerListener = response ->
+                Platform.runLater(() -> handleServerResponse(response));
 
         startClock();
         requestItems();
@@ -123,14 +122,18 @@ public class SceneAuctionManagement implements Initializable {
 
     // ─── Network ──────────────────────────────────────────────────────────────
 
-    /** Yêu cầu danh sách sản phẩm – action GET_ITEMS */
+    /**
+     * FIX: Đúng action theo Item.txt — GET_ITEMS
+     * Response sẽ là ITEMS_LIST với key "items"
+     */
     private void requestItems() {
         NetworkClient.send("{\"action\":\"GET_ITEMS\"}");
     }
 
     /**
      * Gửi START_AUCTION lên server.
-     * JSON chính xác: {"action":"START_AUCTION","itemId":"...","durationMinutes":N}
+     * FIX: JSON chính xác theo Auction_(2).txt:
+     * {"action":"START_AUCTION","itemId":"...","durationMinutes":N}
      */
     private void sendStartAuction(String itemId, int durationMinutes) {
         String json = String.format(
@@ -141,10 +144,11 @@ public class SceneAuctionManagement implements Initializable {
 
     /**
      * Gửi SCHEDULE_AUCTION lên server.
-     * JSON chính xác: {"action":"SCHEDULE_AUCTION","itemId":"...","startTime":"yyyy-MM-ddTHH:mm:ss","endTime":"yyyy-MM-ddTHH:mm:ss"}
+     * FIX: JSON chính xác theo Auction_(2).txt:
+     * {"action":"SCHEDULE_AUCTION","itemId":"...","startTime":"yyyy-MM-ddTHH:mm:ss","endTime":"yyyy-MM-ddTHH:mm:ss"}
      */
     private void sendScheduleAuction(String itemId, String startTime, String endTime) {
-        // Chuyển từ "yyyy-MM-dd HH:mm:ss" sang "yyyy-MM-ddTHH:mm:ss" (ISO) theo yêu cầu server
+        // Chuyển "yyyy-MM-dd HH:mm:ss" → "yyyy-MM-ddTHH:mm:ss" (ISO) theo yêu cầu server
         String isoStart = toIso(startTime);
         String isoEnd   = toIso(endTime);
         String json = String.format(
@@ -155,21 +159,28 @@ public class SceneAuctionManagement implements Initializable {
 
     // ─── Server Response Handler ───────────────────────────────────────────────
 
+    /**
+     * FIX: Toàn bộ hàm này đã được đảm bảo chạy trên JavaFX Thread
+     * nhờ Platform.runLater() trong initialize().
+     * Handler phân loại action theo đúng Item.txt và Auction_(2).txt.
+     */
     private void handleServerResponse(JsonObject response) {
         String action = getString(response, "action");
         switch (action) {
-            case "ITEMS_LIST"           -> replaceProducts(getArray(response, "items"));
-            case "AUCTIONS_LIST"        -> replaceProducts(firstNonEmpty(
-                                               getArray(response, "data"),
-                                               getArray(response, "auctions"),
-                                               getArray(response, "items")));
-            case "START_AUCTION_REPLY"  -> handleStartAuctionReply(response);
-            case "SCHEDULE_AUCTION_REPLY" -> handleScheduleAuctionReply(response);
-            case "DELETE_ITEM_REPLY"    -> requestItems(); // refresh
-            case "GLOBAL_NOTIFY"        -> showPopupResult(
-                                               getString(response, "message", "Có thông báo mới."), true);
-            case "ERROR"                -> showPopupResult(
-                                               "Lỗi: " + getString(response, "message", "Không rõ lỗi."), false);
+            // FIX: "ITEMS_LIST" với key "items" — đúng theo Item.txt GET_ITEMS response
+            case "ITEMS_LIST"              -> replaceProducts(getArray(response, "items"));
+            // "AUCTIONS_LIST" với key "data" — đúng theo Auction_(2).txt GET_AUCTIONS response
+            case "AUCTIONS_LIST"           -> replaceProducts(firstNonEmpty(
+                                                 getArray(response, "data"),
+                                                 getArray(response, "auctions"),
+                                                 getArray(response, "items")));
+            case "START_AUCTION_REPLY"     -> handleStartAuctionReply(response);
+            case "SCHEDULE_AUCTION_REPLY"  -> handleScheduleAuctionReply(response);
+            case "DELETE_ITEM_REPLY"       -> requestItems();
+            case "GLOBAL_NOTIFY"           -> showPopupResult(
+                                                 getString(response, "message", "Có thông báo mới."), true);
+            case "ERROR"                   -> showPopupResult(
+                                                 "Lỗi: " + getString(response, "message", "Không rõ lỗi."), false);
         }
     }
 
@@ -287,16 +298,12 @@ public class SceneAuctionManagement implements Initializable {
         updateCountLabel();
     }
 
-    /**
-     * Card sản phẩm lớn hơn SceneSeller1, có thêm nút "Đấu giá"
-     */
     private VBox createProductCard(ProductShared.ProductData data) {
         VBox card = new VBox(10);
         card.setStyle("-fx-background-color:white;-fx-padding:0;-fx-background-radius:12;"
                 + "-fx-effect:dropshadow(three-pass-box,rgba(0,0,0,0.10),14,0,0,3);");
         card.setPrefWidth(310);
 
-        // Ảnh
         ImageView imgView = new ImageView();
         if (!data.imagePaths.isEmpty()) loadImg(imgView, data.imagePaths.get(0));
         imgView.setFitHeight(200);
@@ -323,7 +330,6 @@ public class SceneAuctionManagement implements Initializable {
         String statusColor = "Đã kết thúc".equals(status) ? "#e74c3c" : "#27ae60";
         lblStatus.setStyle("-fx-text-fill:" + statusColor + ";-fx-font-size:12px;-fx-font-weight:bold;");
 
-        // Nút hành động
         HBox btnBox = new HBox(8);
         btnBox.setStyle("-fx-padding:6 0 0 0;");
 
@@ -348,7 +354,6 @@ public class SceneAuctionManagement implements Initializable {
     private void openAuctionActionPopup(ProductShared.ProductData data) {
         productBeingActioned = data;
 
-        // Điền thông tin
         popupTitle.setText("Chi tiết: " + data.name);
         popupLblName.setText(data.name);
         popupLblStartPrice.setText(formatPrice(data.startPrice) + " đ");
@@ -356,13 +361,11 @@ public class SceneAuctionManagement implements Initializable {
         popupLblStatus.setText(calcStatus(data.endTimeStr));
         popupLblDesc.setText(data.description);
 
-        // Điền giá trị gợi ý cho lên lịch
         LocalDateTime now = LocalDateTime.now();
         txtStartTime.setText(now.plusMinutes(5).format(DT_FORMATTER));
         txtEndTime.setText(now.plusHours(2).format(DT_FORMATTER));
         txtDurationMinutes.setText("60");
 
-        // Ảnh
         popupImageContainer.getChildren().clear();
         if (data.imagePaths.isEmpty()) {
             Label noImg = new Label("Không có ảnh");
@@ -382,7 +385,6 @@ public class SceneAuctionManagement implements Initializable {
         popupResultMsg.setVisible(false);
         popupResultMsg.setText("");
 
-        // Căn giữa popup
         double w = 580, h = 640;
         AnchorPane root = (AnchorPane) productContainer.getScene().getRoot();
         double cx = root.getWidth() / 2 - w / 2;
@@ -502,7 +504,6 @@ public class SceneAuctionManagement implements Initializable {
 
     @FXML
     void goToItemManagement(ActionEvent event) {
-        // Đây chính là màn hình này, không cần navigate lại
         if (isMenuOpen) toggleMenu(null);
     }
 
@@ -538,7 +539,6 @@ public class SceneAuctionManagement implements Initializable {
             dimOverlay.setVisible(false);
         } else {
             if (isMenuOpen) toggleMenu(null);
-            // Đặt vị trí popup tài khoản góc trên phải
             AnchorPane.setRightAnchor(accountPopup, 16.0);
             AnchorPane.setTopAnchor(accountPopup, 72.0);
             dimOverlay.setVisible(true);
@@ -585,25 +585,70 @@ public class SceneAuctionManagement implements Initializable {
         } catch (Exception e) { return "Không xác định"; }
     }
 
+    /**
+     * FIX CHÍNH: Parse product theo đúng JSON trả về từ GET_ITEMS (Item.txt):
+     *   "id"           → String ID của item (VD: "item123")
+     *   "name"         → Tên sản phẩm
+     *   "startingPrice"→ Giá khởi điểm (long)
+     *   "images"       → Mảng ảnh (key là "images", không phải "imagePaths")
+     *
+     * Khi nhận AUCTIONS_LIST, item nằm trong "item": {...} với key "name",
+     * currentPrice nằm ngoài object item.
+     */
     private ProductShared.ProductData parseProduct(JsonObject o) {
-        int id = getInt(o, "itemId", getInt(o, "id", dummyIdCounter++));
-        String itemIdRef = coalesce(getString(o, "itemId"), getString(o, "id"), String.valueOf(id));
+        // FIX: Server trả "id" dạng String ("item123"), không phải int
+        String rawId     = coalesce(getString(o, "id"), getString(o, "itemId"), "0");
+        int    numericId = parseIdSafe(rawId);
+
+        // itemIdRef dùng để gửi lên server
+        // FIX: Ưu tiên "id" đúng theo server GET_ITEMS, sau đó "itemId"
+        String itemIdRef = coalesce(getString(o, "id"), getString(o, "itemId"), rawId);
+
         String auctionId = coalesce(getString(o, "auctionId"), "");
-        String name      = coalesce(getString(o, "itemName"), getNestedStr(o, "item", "name"), getString(o, "name"), "Chưa đặt tên");
-        String startP    = String.valueOf(getLong(o, "startingPrice", getLong(o, "startPrice", getLong(o, "price", 0L))));
-        String curP      = String.valueOf(getLong(o, "currentPrice", getLong(o, "newPrice", Long.parseLong(startP))));
-        String desc      = coalesce(getString(o, "description"), getString(o, "desc"), "Chưa có mô tả");
-        String startT    = coalesce(getString(o, "startTime"), LocalDateTime.now().minusMinutes(5).format(DT_FORMATTER));
-        String endT      = coalesce(getString(o, "endTime"), LocalDateTime.now().plusDays(1).format(DT_FORMATTER));
+
+        // FIX: Server trả "name" (GET_ITEMS), hoặc item.name (AUCTIONS_LIST)
+        String name = coalesce(
+                getString(o, "name"),
+                getString(o, "itemName"),
+                getNestedStr(o, "item", "name"),
+                "Chưa đặt tên");
+
+        // FIX: Server trả "startingPrice" (đúng key theo Item.txt)
+        String startP = String.valueOf(getLong(o, "startingPrice",
+                            getLong(o, "startPrice",
+                            getLong(o, "price", 0L))));
+
+        // GET_ITEMS không trả currentPrice → mặc định bằng startingPrice
+        // AUCTIONS_LIST trả "currentPrice" ở ngoài object item
+        String curP = String.valueOf(getLong(o, "currentPrice",
+                          getLong(o, "newPrice",
+                          Long.parseLong(startP))));
+
+        String desc = coalesce(getString(o, "description"), getString(o, "desc"), "Chưa có mô tả");
+
+        String startT = coalesce(getString(o, "startTime"),
+                LocalDateTime.now().minusMinutes(5).format(DT_FORMATTER));
+        String endT   = coalesce(getString(o, "endTime"),
+                LocalDateTime.now().plusDays(1).format(DT_FORMATTER));
+
+        // FIX: Server trả key "images" (Item.txt), không phải "imagePaths"
         List<String> imgs = new ArrayList<>();
-        for (JsonElement el : firstNonEmpty(getArray(o, "imagePaths"), getArray(o, "images")))
+        for (JsonElement el : firstNonEmpty(
+                getArray(o, "images"),       // đúng theo Item.txt
+                getArray(o, "imagePaths")))  // fallback cho các response khác
             try { imgs.add(el.getAsString()); } catch (Exception ignored) {}
+
         int bidCount = getInt(o, "bidCount", 0);
-        return new ProductShared.ProductData(id, itemIdRef, auctionId, name, startP, curP, desc, startT, endT, imgs, bidCount);
+
+        return new ProductShared.ProductData(
+                numericId, itemIdRef, auctionId, name,
+                startP, curP, desc, startT, endT, imgs, bidCount);
     }
 
     private String resolveItemId(ProductShared.ProductData p) {
-        return p == null ? "" : coalesce(p.itemIdRef, String.valueOf(p.id));
+        if (p == null) return "";
+        // FIX: itemIdRef đã được set đúng từ parseProduct (ưu tiên "id" của server)
+        return coalesce(p.itemIdRef, String.valueOf(p.id));
     }
 
     private String formatPrice(String raw) {
@@ -637,9 +682,7 @@ public class SceneAuctionManagement implements Initializable {
      */
     private String toIso(String input) {
         if (input == null) return "";
-        // Đã là ISO format
         if (input.contains("T")) return input;
-        // Chuyển dấu cách → T
         return input.replace(" ", "T");
     }
 
@@ -651,6 +694,17 @@ public class SceneAuctionManagement implements Initializable {
 
     private String escapeJson(String v) {
         return v == null ? "" : v.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
+    /**
+     * FIX: Parse String ID sang int an toàn — server có thể trả "item123" (String)
+     */
+    private int parseIdSafe(String rawId) {
+        if (rawId == null || rawId.isBlank()) return 0;
+        try { return Integer.parseInt(rawId); } catch (Exception ignored) {}
+        String numOnly = rawId.replaceAll("[^0-9]", "");
+        try { return numOnly.isBlank() ? rawId.hashCode() : Integer.parseInt(numOnly); }
+        catch (Exception e) { return rawId.hashCode(); }
     }
 
     private LocalDateTime parseSafe(String v) {
@@ -673,12 +727,18 @@ public class SceneAuctionManagement implements Initializable {
     private int getInt(JsonObject o, String key, int fb) {
         if (o == null || !o.has(key) || o.get(key).isJsonNull()) return fb;
         try { return o.get(key).getAsInt(); }
-        catch (Exception e) { try { return Integer.parseInt(o.get(key).getAsString().replaceAll("[^0-9-]","")); } catch (Exception ignored2) { return fb; } }
+        catch (Exception e) {
+            try { return Integer.parseInt(o.get(key).getAsString().replaceAll("[^0-9-]", "")); }
+            catch (Exception ignored2) { return fb; }
+        }
     }
     private long getLong(JsonObject o, String key, long fb) {
         if (o == null || !o.has(key) || o.get(key).isJsonNull()) return fb;
         try { return o.get(key).getAsLong(); }
-        catch (Exception e) { try { return Long.parseLong(o.get(key).getAsString().replace(".","").replace(",","").trim()); } catch (Exception ignored2) { return fb; } }
+        catch (Exception e) {
+            try { return Long.parseLong(o.get(key).getAsString().replace(".", "").replace(",", "").trim()); }
+            catch (Exception ignored2) { return fb; }
+        }
     }
     private JsonArray getArray(JsonObject o, String key) {
         if (o == null || !o.has(key) || !o.get(key).isJsonArray()) return new JsonArray();

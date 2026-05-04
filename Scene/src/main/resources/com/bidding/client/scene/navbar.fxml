@@ -10,7 +10,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.Circle?>
 
-<HBox alignment="CENTER_LEFT" spacing="14" style="-fx-background-color: #ffffff; -fx-padding: 12 18; -fx-border-color: #e5e7eb; -fx-border-width: 0 0 1 0;" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.bidding.client.scene.NavBarController">
+<HBox alignment="CENTER_LEFT" spacing="14" style="-fx-background-color: #ffffff; -fx-padding: 12 18; -fx-border-color: #e5e7eb; -fx-border-width: 0 0 1 0;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.bidding.client.scene.NavBarController">
     <Button onAction="#handleMenu" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-cursor: hand; -fx-background-color: #eff4fa; -fx-text-fill: #111827; -fx-padding: 8 12; -fx-background-radius: 12;" text="Trình đơn" />
     <VBox spacing="2">
         <Label style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #111827;" text="TManhdtrai" />

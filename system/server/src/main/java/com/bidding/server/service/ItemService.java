@@ -64,4 +64,9 @@ public class ItemService {
         // Chỉ đơn giản là gọi xuống Repo để lấy đồ
         return itemRepository.findById(itemId);
     }
+
+    // Lấy toàn bộ items trên sàn (dành cho Buyer, không lọc theo seller)
+    public List<Item> getAllItems() {
+        return itemRepository.findAll();
+    }
 }

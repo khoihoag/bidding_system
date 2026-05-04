@@ -5,7 +5,8 @@ import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 import java.util.List;
 import com.bidding.server.model.auction.AuctionMapper;
-@Mapper(uses = {AuctionMapper.class}) // <--- CHIÊU NÀY QUAN TRỌNG
+import com.bidding.server.model.user.User;
+@Mapper(uses = {AuctionMapper.class}, imports = {User.class}) // <--- CHIÊU NÀY QUAN TRỌNG
 public interface BiddingTransactionMapper {
     BiddingTransactionMapper INSTANCE = Mappers.getMapper(BiddingTransactionMapper.class);
 

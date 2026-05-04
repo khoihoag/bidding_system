@@ -90,7 +90,6 @@ public class BidderNotifications implements Initializable {
         String action = getString(response, "action", "");
         
         if ("GLOBAL_NOTIFY".equals(action)) {
-            // QUAN TRỌNG: Đẩy việc cập nhật giao diện (UI) vào luồng của JavaFX
             Platform.runLater(() -> {
                 notificationList.add(0, new Notification(
                         "Chua doc",

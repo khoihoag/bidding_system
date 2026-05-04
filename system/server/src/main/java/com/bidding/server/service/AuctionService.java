@@ -142,7 +142,8 @@ public class AuctionService {
     // HÀM MỚI: LẤY DANH SÁCH PHIÊN ĐẤU GIÁ CHO CLIENT
     // =======================================================
     public List<Auction> getActiveAuctions() {
-        // Lôi tất cả các value (Auction) từ trong ConcurrentHashMap ra rồi tống vào 1 cái ArrayList
+        // Trả tất cả phiên đang quản lý (RUNNING + OPEN/UPCOMING)
+        // Client sẽ tự phân loại theo status
         return new ArrayList<>(activeAuctions.values());
     }
     // Thêm hàm này vào AuctionService.java
@@ -187,6 +188,49 @@ public class AuctionService {
         scheduleAuctionEnd(newAuction);
 
         System.out.println("[Service] Đã mở phiên đấu giá cho: " + item.getName() + " (Status: RUNNING)");
+        return newAuction;
+    }
+
+    /**
+     * Lên lịch phiên đấu giá bắt đầu tại thời điểm cụ thể trong tương lai.
+     * Auction được tạo với status=OPEN, sẽ tự chuyển sang RUNNING khi đến startTime.
+     */
+    public Auction scheduleAuction(Item item, java.time.LocalDateTime startTime, java.time.LocalDateTime endTime) {
+        if (isItemInActiveAuction(item.getId())) {
+            throw new RuntimeException("Sản phẩm này đang được đấu giá hoặc đã lên lịch rồi!");
+        }
+
+        // Tạo Auction với trạng thái OPEN (chưa bắt đầu)
+        Auction newAuction = new Auction(null, item, startTime, endTime, 30, 60);
+        // Không gọi start() — giữ status=OPEN (UPCOMING)
+
+        AuctionEntity entityToSave = AuctionMapper.INSTANCE.toEntity(newAuction);
+        repository.saveOrUpdate(entityToSave);
+        newAuction.setId(entityToSave.getId());
+
+        // Nạp lên RAM
+        activeAuctions.put(newAuction.getId(), newAuction);
+
+        // Lên lịch tự động START và END
+        long delayToStart = java.time.temporal.ChronoUnit.SECONDS.between(java.time.LocalDateTime.now(), startTime);
+        if (delayToStart > 0) {
+            scheduler.schedule(() -> {
+                newAuction.start();
+                // Lưu DB khi bắt đầu
+                AuctionEntity e2 = AuctionMapper.INSTANCE.toEntity(newAuction);
+                repository.saveOrUpdate(e2);
+                System.out.println("[Service] Phiên lên lịch đã BẮT ĐẦU: " + newAuction.getId());
+                // Gài đồng hồ kết thúc
+                scheduleAuctionEnd(newAuction);
+            }, delayToStart, java.util.concurrent.TimeUnit.SECONDS);
+        } else {
+            // Nếu startTime đã qua → bắt đầu ngay
+            newAuction.start();
+            scheduleAuctionEnd(newAuction);
+        }
+
+        System.out.println("[Service] Đã lên lịch phiên đấu giá cho: " + item.getName()
+                + " | Bắt đầu: " + startTime + " | Kết thúc: " + endTime);
         return newAuction;
     }
 }

@@ -1,6 +1,8 @@
 package com.bidding.server.model.network;
 import com.bidding.server.model.item.Art;
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.bidding.server.model.user.User;
@@ -13,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.List;
 import com.bidding.server.model.item.Item;
 import com.bidding.server.service.ItemService;
@@ -91,6 +94,12 @@ public class ClientHandler implements Runnable {
                         case "GET_ITEMS":
                             handleGetItems();
                             break;
+                        case "GET_ALL_ITEMS": // Lấy tất cả item trên sàn (cho Buyer)
+                            handleGetAllItems();
+                            break;
+                        case "SCHEDULE_AUCTION": // Lên lịch đấu giá
+                            handleScheduleAuction(request);
+                            break;
                         case "BID":
                             handleBid(request);
                             break;
@@ -101,7 +110,9 @@ public class ClientHandler implements Runnable {
                             sendError("Lệnh action không tồn tại trên Server!");
                     }
                 } catch (Exception e) {
-                    sendError("Gửi JSON sai format hoặc lỗi Server!");
+                    System.err.println("[SERVER ERROR] Khong xu ly duoc request: " + clientMessage);
+                    e.printStackTrace();
+                    sendError("Server loi khi xu ly request: " + e.getClass().getSimpleName() + " - " + e.getMessage());
                 }
             }
         } catch (IOException e) {
@@ -147,11 +158,69 @@ public class ClientHandler implements Runnable {
         try {
             // Xin Tổng quản danh sách các phiên đang chạy trên RAM
             List<Auction> activeAuctions = tongQuan.getActiveAuctions();
-            String jsonAuctions = gson.toJson(activeAuctions);
-            sendMessage("{\"action\": \"AUCTIONS_LIST\", \"data\": " + jsonAuctions + "}");
+            sendMessage("{\"action\": \"AUCTIONS_LIST\", \"data\": " + buildAuctionsJson(activeAuctions) + "}");
         } catch (Exception e) {
-            sendError("Lỗi khi tải danh sách đấu giá: " + e.getMessage());
+            e.printStackTrace();
+            sendError("Loi khi tai danh sach dau gia: " + e.getMessage());
         }
+    }
+
+    // Tra toan bo items tren san cho Buyer (khong loc theo seller)
+    private void handleGetAllItems() {
+        try {
+            List<Item> allItems = quanLyKho.getAllItems();
+            sendMessage("{\"action\": \"ITEMS_LIST\", \"items\": " + buildItemsJson(allItems) + "}");
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendError("Loi khi tai toan bo san pham: " + e.getMessage());
+        }
+    }
+
+    // Len lich dau gia: tao Auction voi startTime/endTime cu the
+    private void handleScheduleAuction(JsonObject request) {
+        if (this.loggedInUser == null) {
+            sendError("Phai dang nhap moi duoc len lich dau gia!");
+            return;
+        }
+        try {
+            String itemId    = request.get("itemId").getAsString();
+            String startTime = request.get("startTime").getAsString();
+            String endTime   = request.get("endTime").getAsString();
+
+            Item item = quanLyKho.findById(itemId);
+            if (item == null) { sendError("Khong tim thay san pham!"); return; }
+            if (!item.getSeller().getId().equals(this.loggedInUser.getId())) {
+                sendError("Ban khong the dua do cua nguoi khac len lich!"); return;
+            }
+
+            // Parse startTime / endTime (ISO: yyyy-MM-ddTHH:mm:ss hoac co space)
+            java.time.LocalDateTime dtStart = parseDateTime(startTime);
+            java.time.LocalDateTime dtEnd   = parseDateTime(endTime);
+            if (dtEnd == null || dtStart == null) {
+                sendError("Dinh dang thoi gian khong hop le. Dung: yyyy-MM-ddTHH:mm:ss"); return;
+            }
+            if (!dtEnd.isAfter(dtStart)) {
+                sendError("Thoi gian ket thuc phai sau thoi gian bat dau!"); return;
+            }
+
+            Auction newAuction = tongQuan.scheduleAuction(item, dtStart, dtEnd);
+            sendMessage("{\"action\": \"SCHEDULE_AUCTION_REPLY\", \"status\": \"SUCCESS\", \"auctionId\": \"" + newAuction.getId() + "\"}");
+
+            String notifyJson = String.format(
+                    "{\"action\": \"GLOBAL_NOTIFY\", \"message\": \"Da len lich dau gia cho: %s!\"}",
+                    item.getName());
+            loaPhuong.broadcast(notifyJson);
+        } catch (Exception e) {
+            sendError("Loi khi len lich dau gia: " + e.getMessage());
+        }
+    }
+
+    private java.time.LocalDateTime parseDateTime(String s) {
+        if (s == null || s.isBlank()) return null;
+        try {
+            return java.time.LocalDateTime.parse(s.replace(" ", "T"),
+                    java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        } catch (Exception e) { return null; }
     }
 
     private void handleGetHistory() {
@@ -169,9 +238,13 @@ public class ClientHandler implements Runnable {
             sendError("Vui lòng đăng nhập để xem kho đồ!");
             return;
         }
-        List<Item> myItems = quanLyKho.getMyItems(this.loggedInUser);
-        String jsonItems = gson.toJson(myItems);
-        sendMessage("{\"action\": \"ITEMS_LIST\", \"items\": " + jsonItems + "}");
+        try {
+            List<Item> myItems = quanLyKho.getMyItems(this.loggedInUser);
+            sendMessage("{\"action\": \"ITEMS_LIST\", \"items\": " + buildItemsJson(myItems) + "}");
+        } catch (Exception e) {
+            e.printStackTrace();
+            sendError("Loi khi tai danh sach san pham: " + e.getMessage());
+        }
     }
 
     private void handleBid(JsonObject request) {
@@ -196,8 +269,15 @@ public class ClientHandler implements Runnable {
         if (out != null) out.println(message);
     }
 
+    private void sendMessage(JsonObject jsonObject) {
+        if (out != null) out.println(jsonObject.toString());
+    }
+
     private void sendError(String errorMsg) {
-        sendMessage("{\"action\": \"ERROR\", \"message\": \"" + errorMsg + "\"}");
+        JsonObject error = new JsonObject();        
+        error.addProperty("action", "ERROR");
+        error.addProperty("message", errorMsg);
+        sendMessage(error);
     }
 
     private void closeEverything() {
@@ -282,7 +362,7 @@ public class ClientHandler implements Runnable {
                     String dimensions = request.get("dimensions").getAsString();
 
                     newItem = new com.bidding.server.model.item.Art(
-                            null, name, desc, price, null, this.loggedInUser, condition,
+                            null, name, desc, price, readImages(request), this.loggedInUser, condition,
                             artist, medium, yearCreated, dimensions
                     );
                     break;
@@ -294,7 +374,7 @@ public class ClientHandler implements Runnable {
                     int watts = request.get("powerWatts").getAsInt();
 
                     newItem = new com.bidding.server.model.item.Electronics(
-                            null, name, desc, price, null, this.loggedInUser, condition,
+                            null, name, desc, price, readImages(request), this.loggedInUser, condition,
                             brand, modelE, warranty, watts
                     );
                     break;
@@ -307,7 +387,7 @@ public class ClientHandler implements Runnable {
                     String fuelType = request.get("fuelType").getAsString();
 
                     newItem = new com.bidding.server.model.item.Vehicle(
-                            null, name, desc, price, null, this.loggedInUser, condition,
+                            null, name, desc, price, readImages(request), this.loggedInUser, condition,
                             make, modelV, yearV, mileage, fuelType
                     );
                     break;
@@ -329,6 +409,77 @@ public class ClientHandler implements Runnable {
             sendError("Lỗi khi đăng bán vật phẩm: Kiểm tra lại các trường JSON đã gửi đủ chưa. " + e.getMessage());
         }
     }
+    private List<String> readImages(JsonObject request) {
+        List<String> images = new ArrayList<>();
+        if (!request.has("images") || !request.get("images").isJsonArray()) {
+            return images;
+        }
+
+        for (JsonElement image : request.getAsJsonArray("images")) {
+            if (!image.isJsonNull()) {
+                images.add(image.getAsString());
+            }
+        }
+        return images;
+    }
+
+    private String buildItemsJson(List<Item> items) {
+        JsonArray array = new JsonArray();
+        for (Item item : items) {
+            array.add(buildItemJson(item));
+        }
+        return array.toString();
+    }
+
+    private String buildAuctionsJson(List<Auction> auctions) {
+        JsonArray array = new JsonArray();
+        for (Auction auction : auctions) {
+            JsonObject json = new JsonObject();
+            json.addProperty("id", auction.getId());
+            json.addProperty("auctionId", auction.getId());
+            json.addProperty("status", auction.getStatus() == null ? "" : auction.getStatus().name());
+            json.addProperty("startTime", auction.getStartTime() == null ? "" : auction.getStartTime().toString());
+            json.addProperty("endTime", auction.getEndTime() == null ? "" : auction.getEndTime().toString());
+            json.addProperty("currentPrice", auction.getCurrentPrice() == null ? 0.0 : auction.getCurrentPrice().get());
+            json.addProperty("winnerId", auction.getCurrentWinner() == null ? "" : auction.getCurrentWinner().getUsername());
+
+            Item item = auction.getItem();
+            if (item != null) {
+                json.addProperty("itemId", item.getId());
+                json.add("item", buildItemJson(item));
+            }
+            array.add(json);
+        }
+        return array.toString();
+    }
+
+    private JsonObject buildItemJson(Item item) {
+        JsonObject json = new JsonObject();
+        json.addProperty("id", item.getId());
+        json.addProperty("itemId", item.getId());
+        json.addProperty("name", item.getName());
+        json.addProperty("description", item.getDescription());
+        json.addProperty("startingPrice", item.getStartingPrice());
+        json.addProperty("type", item.getCategory());
+        json.addProperty("category", item.getCategory());
+        json.addProperty("item_type", item.getCategory());
+        json.addProperty("seller", item.getSeller() == null ? "" : item.getSeller().getUsername());
+        json.addProperty("condition", item.getCondition() == null ? "" : item.getCondition().name());
+
+        JsonArray images = new JsonArray();
+        if (item.getImages() != null) {
+            for (String image : item.getImages()) {
+                images.add(image);
+            }
+        }
+        json.add("images", images);
+
+        JsonObject specs = new JsonObject();
+        item.getSpecifications().forEach(specs::addProperty);
+        json.add("specifications", specs);
+        return json;
+    }
+
     private void handleDeleteItem(JsonObject request) {
         if (this.loggedInUser == null) {
             sendError("Đăng nhập đi rồi mới cho xóa đồ!");

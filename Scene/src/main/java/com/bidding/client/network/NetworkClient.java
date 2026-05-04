@@ -43,12 +43,18 @@ public class NetworkClient {
     }
 
     // Gui chuoi JSON len server.
-    public static void send(String jsonMessage) {
-        if (out != null) {
-            out.println(jsonMessage);
-        } else {
+    public static boolean send(String jsonMessage) {
+        if (!isConnected()) {
             System.err.println("Chua connect server nen khong gui duoc du lieu.");
+            return false;
         }
+
+        out.println(jsonMessage);
+        return !out.checkError();
+    }
+
+    public static boolean isConnected() {
+        return socket != null && socket.isConnected() && !socket.isClosed() && out != null;
     }
 
     // Tao luong nen de nghe server.
@@ -83,11 +89,19 @@ public class NetworkClient {
             case "LOGIN_REPLY" -> dispatch(loginListener, response);
             case "REGISTER_REPLY" -> dispatch(registerListener, response);
             case "MY_BIDS_LIST" -> dispatch(myBidsListener, response);
-            case "ITEMS_LIST", "UPDATE_PRICE", "NEW_BID", "NEW_AUCTION_POSTED", "BID_REPLY", "AUCTION_END" ->
+            case "ITEMS_LIST" -> {
+                dispatch(itemsListener, response);
+                dispatch(sellerListener, response);
+            }
+            case "UPDATE_PRICE", "NEW_BID", "NEW_AUCTION_POSTED", "BID_REPLY", "AUCTION_END" ->
                     dispatch(itemsListener, response);
             case "REGISTER_AUTO_BID_REPLY" -> dispatch(autoBidListener, response);
             case "HISTORY_REPLY" -> dispatch(historyListener, response);
-            case "AUCTIONS_LIST", "DELETE_ITEM_REPLY", "START_AUCTION_REPLY" -> dispatch(sellerListener, response);
+            case "AUCTIONS_LIST" -> {
+                dispatch(itemsListener, response);
+                dispatch(sellerListener, response);
+            }
+            case "DELETE_ITEM_REPLY", "START_AUCTION_REPLY" -> dispatch(sellerListener, response);
             case "ADD_ITEM_REPLY", "UPDATE_ITEM_REPLY", "SCHEDULE_AUCTION_REPLY" -> {
                 dispatch(sellerListener, response);
                 dispatch(addItemListener, response);

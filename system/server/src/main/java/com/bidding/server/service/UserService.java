@@ -27,6 +27,10 @@ public class UserService {
     }
     // ================= XỬ LÝ ĐĂNG KÝ =================
     public void register(String username, String password, String email, String fullName) {
+        if (repository.existsByUsername(username)) {
+            throw new RuntimeException("Ten dang nhap da ton tai!");
+        }
+
         // Tạo một Object User mới toanh.
         // Truyền null vào vị trí ID để Entity cha tự động đẻ ra UUID mới.
         // Role mặc định chắc chắn là USER thường rồi.
