@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<HBox spacing="20" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.bidding.controller.InventoryController" stylesheets="@../css/style.css">
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <VBox styleClass="auction-card" HBox.hgrow="ALWAYS" spacing="10" minWidth="300">
+        <Label text="📦 Kho Đồ Của Tôi" styleClass="card-name"/>
+        <Label text="Chọn một món đồ để thao tác" styleClass="card-id"/>
+        <ListView fx:id="inventoryListView" VBox.vgrow="ALWAYS" style="-fx-background-radius: 5;"/>
+        <Button text="🔍 Xem Chi Tiết Vật Phẩm" onAction="#handleViewDetails" styleClass="action-button" maxWidth="Infinity" style="-fx-background-color: #8e44ad;"/>
+        <Button text="🔄 Làm mới kho đồ" onAction="#handleRefreshInventory" styleClass="card-view-btn" maxWidth="Infinity"/>
+    </VBox>
+
+    <VBox styleClass="auction-card" minWidth="450" spacing="10">
+        <Label text="⚙️ Bảng Thao Tác" styleClass="card-name"/>
+
+        <TabPane tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS" style="-fx-background-color: white;">
+
+            <Tab text="Mở Phiên Đấu Giá">
+                <TabPane tabClosingPolicy="UNAVAILABLE" style="-fx-tab-header-background: #ecf0f1;">
+                    <Tab text="Mở Ngay (Bán ngay)">
+                        <VBox spacing="15" style="-fx-padding: 20;">
+                            <Label text="Mã vật phẩm:" style="-fx-font-weight: bold;"/>
+                            <TextField fx:id="txtItemIdNow" promptText="ID vật phẩm (Chọn từ list trái)"/>
+
+                            <Label text="Thời gian đấu giá (Phút):" style="-fx-font-weight: bold;"/>
+                            <TextField fx:id="txtDuration" promptText="VD: 60"/>
+
+                            <Button text="🚀 Bắt Đầu Ngay" onAction="#handleStartNow" styleClass="action-button" maxWidth="Infinity"/>
+                        </VBox>
+                    </Tab>
+
+                    <Tab text="Đặt Lịch Hẹn Giờ">
+                        <VBox spacing="12" style="-fx-padding: 20;">
+                            <Label text="Mã vật phẩm:" style="-fx-font-weight: bold;"/>
+                            <TextField fx:id="txtItemIdSchedule" promptText="ID vật phẩm"/>
+
+                            <Label text="Thời gian bắt đầu (*):" style="-fx-font-weight: bold;"/>
+                            <TextField fx:id="txtStartTime" promptText="yyyy-MM-ddTHH:mm:ss (VD: 2026-05-01T08:00:00)"/>
+
+                            <Label text="Thời gian kết thúc (*):" style="-fx-font-weight: bold;"/>
+                            <TextField fx:id="txtEndTime" promptText="yyyy-MM-ddTHH:mm:ss"/>
+
+                            <Label text="Ghi chú: Định dạng ISO 8601 là bắt buộc." style="-fx-font-size: 11px; -fx-text-fill: #e67e22; -fx-font-style: italic;"/>
+
+                            <Button text="📅 Đặt Lịch Đấu Giá" onAction="#handleSchedule" styleClass="secondary-button" maxWidth="Infinity" style="-fx-background-color: #3498db; -fx-text-fill: white;"/>
+                        </VBox>
+                    </Tab>
+                </TabPane>
+            </Tab>
+
+            <Tab text="Nhập Đồ Mới">
+                <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;">
+                    <VBox spacing="12" style="-fx-padding: 15;">
+                        <Label text="Tên món đồ (*)"/>
+                        <TextField fx:id="txtNewName" promptText="VD: Bức tranh mùa thu"/>
+
+                        <Label text="Mô tả"/>
+                        <TextField fx:id="txtNewDesc" promptText="Tranh vẽ sơn dầu siêu đẹp..."/>
+
+                        <Label text="Giá khởi điểm (*)"/>
+                        <TextField fx:id="txtNewPrice" promptText="VD: 1500000"/>
+
+                        <HBox spacing="10">
+                            <VBox HBox.hgrow="ALWAYS">
+                                <Label text="Loại (*)"/>
+                                <ComboBox fx:id="comboType" promptText="Chọn loại" maxWidth="Infinity"/>
+                            </VBox>
+                            <VBox HBox.hgrow="ALWAYS">
+                                <Label text="Tình trạng"/>
+                                <ComboBox fx:id="comboCondition" promptText="Chọn tình trạng" maxWidth="Infinity"/>
+                            </VBox>
+                        </HBox>
+
+                        <Separator/>
+                        <Label text="Thuộc tính riêng biệt:" style="-fx-font-weight: bold; -fx-text-fill: #2980b9;"/>
+
+                        <VBox fx:id="vboxArt" spacing="10">
+                            <TextField fx:id="txtArtArtist" promptText="Tên tác giả (VD: Nguyễn Văn A)"/>
+                            <TextField fx:id="txtArtMedium" promptText="Chất liệu (VD: Sơn Dầu)"/>
+                            <TextField fx:id="txtArtYear" promptText="Năm sáng tác (VD: 2023)"/>
+                            <TextField fx:id="txtArtDimensions" promptText="Kích thước (VD: 60x80)"/>
+                        </VBox>
+
+                        <VBox fx:id="vboxVehicle" spacing="10" visible="false" managed="false">
+                            <TextField fx:id="txtVehMake" promptText="Hãng xe (VD: Mercedes)"/>
+                            <TextField fx:id="txtVehModel" promptText="Mẫu xe (VD: S450)"/>
+                            <TextField fx:id="txtVehYear" promptText="Năm sản xuất (VD: 2022)"/>
+                            <TextField fx:id="txtVehMileage" promptText="Số KM đã đi (VD: 50000)"/>
+                            <TextField fx:id="txtVehFuel" promptText="Loại nhiên liệu (VD: Xăng)"/>
+                        </VBox>
+
+                        <VBox fx:id="vboxElectronics" spacing="10" visible="false" managed="false">
+                            <TextField fx:id="txtElecBrand" promptText="Thương hiệu (VD: Sony)"/>
+                            <TextField fx:id="txtElecModel" promptText="Model (VD: PS5)"/>
+                            <TextField fx:id="txtElecWarranty" promptText="Bảo hành (tháng) (VD: 12)"/>
+                            <TextField fx:id="txtElecPower" promptText="Công suất (W) (VD: 350)"/>
+                        </VBox>
+                        <Separator/>
+                        <HBox spacing="10" alignment="CENTER_LEFT">
+                            <Label text="Hình ảnh:" style="-fx-font-weight: bold;"/>
+                            <Button text="📁 Chọn ảnh từ máy" onAction="#handleSelectImages" styleClass="secondary-button"/>
+                        </HBox>
+                        <ListView fx:id="listSelectedImages" prefHeight="80" style="-fx-font-size: 11px;"/>
+                        <Button text="➕ Thêm Vào Kho" onAction="#handleAddNewItem" styleClass="action-button" maxWidth="Infinity">
+                            <VBox.margin><Insets top="10"/></VBox.margin>
+                        </Button>
+                    </VBox>
+                </ScrollPane>
+            </Tab>
+
+        </TabPane>
+    </VBox>
+</HBox>

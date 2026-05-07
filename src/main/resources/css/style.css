@@ -1,0 +1,147 @@
+/* ─── CÀI ĐẶT CHUNG (Global) ─── */
+.root {
+    -fx-font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+    -fx-background-color: #f4f6f9; /* Màu nền xám nhạt hiện đại */
+}
+
+/* ─── SIDEBAR & MENU ─── */
+.sidebar {
+    -fx-background-color: #2c3e50; /* Xám đen quyền lực */
+}
+
+.menu-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #ecf0f1;
+    -fx-alignment: center-left;
+    -fx-padding: 12 15 12 15;
+    -fx-font-size: 14px;
+    -fx-cursor: hand;
+}
+
+.menu-button:hover {
+    -fx-background-color: #34495e; /* Sáng lên tí khi hover */
+}
+
+.menu-btn-active {
+    -fx-background-color: #2980b9; /* Xanh dương nổi bật khi đang ở tab đó */
+    -fx-font-weight: bold;
+}
+
+.logout-button {
+    -fx-background-color: #c0392b;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 10 15 10 15;
+    -fx-cursor: hand;
+}
+
+.logout-button:hover {
+    -fx-background-color: #e74c3c;
+}
+
+/* ─── AUCTION CARD (Thẻ sản phẩm) ─── */
+.auction-card {
+    -fx-background-color: white;
+    -fx-background-radius: 10;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 10, 0, 0, 3); /* Đổ bóng 3D */
+    -fx-padding: 15;
+}
+
+.card-name {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2c3e50;
+}
+
+.card-price {
+    -fx-font-size: 16px;
+    -fx-text-fill: #27ae60; /* Màu xanh lá tiền bạc */
+    -fx-font-weight: bold;
+}
+
+.card-id {
+    -fx-font-size: 11px;
+    -fx-text-fill: #7f8c8d; /* Màu xám mờ */
+}
+
+.card-view-btn {
+    -fx-background-color: #3498db;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 5;
+    -fx-cursor: hand;
+    -fx-padding: 8 0 8 0;
+}
+
+.card-view-btn:hover {
+    -fx-background-color: #2980b9;
+}
+
+/* ─── BADGES (Nhãn trạng thái) ─── */
+.status-badge {
+    -fx-padding: 4 10 4 10;
+    -fx-background-radius: 12;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.badge-running { -fx-background-color: #2ecc71; }   /* Xanh lá - Đang chạy */
+.badge-scheduled { -fx-background-color: #f39c12; } /* Cam - Sắp diễn ra */
+.badge-closed { -fx-background-color: #e74c3c; }    /* Đỏ - Kết thúc */
+.badge-default { -fx-background-color: #95a5a6; }   /* Xám - Lỗi/Không xác định */
+
+/* ─── CÁC NÚT BẤM CHUNG (Action Buttons) ─── */
+.action-button {
+    -fx-background-color: #2ecc71;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 5;
+    -fx-cursor: hand;
+    -fx-padding: 8 15 8 15;
+}
+
+.action-button:hover {
+    -fx-background-color: #27ae60;
+}
+
+/* Label báo khi không có đồ */
+.empty-state-label {
+    -fx-font-size: 14px;
+    -fx-text-fill: #7f8c8d;
+    -fx-font-style: italic;
+    -fx-padding: 20;
+}
+/* ─── CHI TIẾT PHIÊN ĐẤU GIÁ (AUCTION DETAIL) ─── */
+
+/* Làm mượt ô nhập tiền (TextField) */
+.detail-input {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-border-color: #bdc3c7;
+    -fx-border-width: 1;
+    -fx-padding: 8 12 8 12;
+    -fx-font-size: 14px;
+}
+
+/* Hiệu ứng phát sáng màu xanh khi sếp click vào ô nhập tiền */
+.detail-input:focused {
+    -fx-border-color: #3498db;
+    -fx-effect: dropshadow(three-pass-box, rgba(52,152,219,0.3), 5, 0, 0, 0);
+}
+
+/* Biến cái khung chia đôi màn hình (SplitPane) cho nó chìm đi, đỡ vướng mắt */
+.split-pane {
+    -fx-background-color: transparent;
+    -fx-padding: 10;
+}
+.split-pane *.split-pane-divider {
+    -fx-padding: 0 1 0 1;
+    -fx-background-color: #ecf0f1; /* Đường kẻ mờ mờ ở giữa */
+}
+
+/* Xóa cái nền trắng vô duyên của Biểu đồ */
+.custom-chart {
+    -fx-background-color: transparent;
+}
