@@ -7,13 +7,12 @@ import com.bidding.server.service.AuctionService;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import java.util.List;
-
+import com.bidding.server.utils.GsonUtil;
 public class AdminController {
     private final ClientHandler client;
     private final AdminService adminService;
     private final AuctionService tongQuan;
-    private final Gson gson = new Gson();
-
+    Gson gson = GsonUtil.getInstance();
     public AdminController(ClientHandler client, AdminService adminService, AuctionService tongQuan) {
         this.client = client;
         this.adminService = adminService;

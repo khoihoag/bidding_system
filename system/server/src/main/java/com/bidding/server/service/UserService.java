@@ -66,5 +66,12 @@ public class UserService {
         System.out.println("[Ví Tiền] Đã hoàn/cộng " + amount + " vào tài khoản " + user.getUsername());
     }
 
+    // ================= XỬ LÝ ĐỒNG BỘ TIỀN =================
+    public double getFreshBalance(String userId) {
+        // Nhờ Kho xuống tận Database lấy thông tin user tươi rói lên
+        User u = repository.findById(userId);
+        return u != null ? u.getBalance() : 0.0;
+    }
+
     // Sau này ông có thể thêm các hàm như: register(User user), changePassword()... vào đây
 }

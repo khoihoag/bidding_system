@@ -13,6 +13,6 @@ public interface BiddingTransactionMapper {
     // Vì tên thuộc tính cùng là 'auction' (nhưng khác kiểu dữ liệu), 
     // MapStruct sẽ tự dùng AuctionMapper để chuyển đổi.
     BiddingTransactionEntity toEntity(BiddingTransaction model);
-
+    @Mapping(target = "auction", ignore = true)
     BiddingTransaction toModel(BiddingTransactionEntity entity);
 }

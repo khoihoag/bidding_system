@@ -92,3 +92,36 @@ Nhóm Auction (Đấu Giá):
                          }
                      ]
                    }
+-case "GET_AUCTION_HISTORY":
+    + Mô tả: Dùng để lấy toàn bộ lịch sử giá của 1 phiên đấu giá (để vẽ Line Chart lúc vừa mở màn hình lên).
+    + Json nhận vào :{
+                       "action": "GET_AUCTION_HISTORY",
+                       "auctionId": "auc789"
+                     }
+    + Json trả về :{
+                     "action": "AUCTION_HISTORY_REPLY",
+                     "data": [
+                         {
+                             "timestamp": "2026-04-29T20:00:01",
+                             "price": 1000000
+                         },
+                         {
+                             "timestamp": "2026-04-29T20:05:30",
+                             "price": 1200000
+                         }
+                     ]
+                   }
+    + Tr hợp thất bại :{
+                         "action": "ERROR",
+                         "message": "Không tìm thấy lịch sử cho phiên đấu giá này!"
+                       }
+    + Luồng chạy: ClientHandler ---> AuctionController ---> UserService (hoặc AuctionService) ---> Repository ---> ClientHandler
+
+-case "REALTIME_BID_UPDATE":
+    + Mô tả: Mọi Client không cần gửi gì lên. Cứ hễ có ai Bid thành công, Server sẽ chủ động BẮN LOA cái JSON này về. UI bắt được thì tự động vẽ thêm 1 điểm nối tiếp vào biểu đồ Line Chart.
+    + Json Server chủ động bắn về (Broadcast): {
+                                                 "action": "REALTIME_BID_UPDATE",
+                                                 "auctionId": "auc789",
+                                                 "newPrice": 1500000,
+                                                 "timestamp": "2026-04-29T20:10:00"
+                                               }

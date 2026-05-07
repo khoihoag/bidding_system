@@ -5,7 +5,7 @@ import javax.annotation.processing.Generated;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-04-27T12:48:34+0700",
+    date = "2026-05-07T02:05:02+0700",
     comments = "version: 1.5.5.Final, compiler: javac, environment: Java 21.0.9 (Oracle Corporation)"
 )
 public class BiddingTransactionMapperImpl implements BiddingTransactionMapper {
@@ -42,7 +42,6 @@ public class BiddingTransactionMapperImpl implements BiddingTransactionMapper {
 
         biddingTransaction.setId( entity.getId() );
         biddingTransaction.setBidder( entity.getBidder() );
-        biddingTransaction.setAuction( auctionMapper.toModel( entity.getAuction() ) );
         biddingTransaction.setBidAmount( entity.getBidAmount() );
         biddingTransaction.setBidTime( entity.getBidTime() );
         biddingTransaction.setStatus( entity.getStatus() );

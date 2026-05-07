@@ -1,5 +1,9 @@
 package com.bidding.server.controller;
-
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializer;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import com.bidding.server.network.ClientHandler;
 import com.bidding.server.model.item.Item;
 import com.bidding.server.service.ItemService;
@@ -11,12 +15,18 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import com.bidding.server.utils.GsonUtil;
+import java.util.Map;
+import java.util.HashMap;
+import com.bidding.server.model.item.Item;
+import com.bidding.server.model.item.Art;
+import com.bidding.server.model.item.Vehicle;
+import com.bidding.server.model.item.Electronics;
 public class ItemController {
     private final ClientHandler client;
     private final ItemService quanLyKho;
     private final AuctionService tongQuan;
-    private final Gson gson = new Gson();
-
+    Gson gson = GsonUtil.getInstance();
     public ItemController(ClientHandler client, ItemService quanLyKho, AuctionService tongQuan) {
         this.client = client;
         this.quanLyKho = quanLyKho;
@@ -28,8 +38,55 @@ public class ItemController {
             client.sendError("Vui lòng đăng nhập để xem kho đồ!");
             return;
         }
-        List<Item> myItems = quanLyKho.getMyItems(client.getLoggedInUser());
-        client.sendMessage("{\"action\": \"ITEMS_LIST\", \"items\": " + gson.toJson(myItems) + "}");
+
+        try {
+            List<Item> myItems = quanLyKho.getMyItems(client.getLoggedInUser());
+            com.google.gson.JsonArray itemsArray = new com.google.gson.JsonArray();
+
+            for (Item item : myItems) {
+                JsonObject itemObj = new JsonObject();
+                itemObj.addProperty("id", item.getId());
+                itemObj.addProperty("name", item.getName());
+                itemObj.addProperty("startingPrice", item.getStartingPrice());
+                itemObj.addProperty("condition", item.getCondition() != null ? item.getCondition().toString() : "NEW");
+                itemObj.addProperty("type", item.getCategory());
+                itemObj.addProperty("description", item.getDescription());
+
+                if (item.getImages() != null && !item.getImages().isEmpty()) {
+                    com.google.gson.JsonArray imgArray = new com.google.gson.JsonArray();
+                    for(String img : item.getImages()){
+                        imgArray.add(img);
+                    }
+                    itemObj.add("images", imgArray);
+                }
+
+                // ================= VŨ KHÍ TỐI THƯỢNG CỦA SẾP =================
+                // Lấy toàn bộ Map thông số và đóng gói thành JSON tự động
+                JsonObject specsObj = new JsonObject();
+                Map<String, String> specs = item.getSpecifications();
+                if (specs != null) {
+                    for (Map.Entry<String, String> entry : specs.entrySet()) {
+                        if (entry.getValue() != null && !entry.getValue().isEmpty()) {
+                            specsObj.addProperty(entry.getKey(), entry.getValue());
+                        }
+                    }
+                }
+                itemObj.add("specifications", specsObj);
+                // =============================================================
+
+                itemsArray.add(itemObj);
+            }
+
+            JsonObject reply = new JsonObject();
+            reply.addProperty("action", "ITEMS_LIST");
+            reply.add("items", itemsArray);
+
+            client.sendMessage(reply.toString());
+
+        } catch (Exception e) {
+            System.err.println("Lỗi đóng gói JSON kho đồ: " + e.getMessage());
+            client.sendError("Lỗi hệ thống khi tải kho đồ!");
+        }
     }
 
     public void handleAddItem(JsonObject request) {

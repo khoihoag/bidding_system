@@ -1,13 +1,15 @@
 package com.bidding.server.network;
+
 import com.bidding.server.events.AuctionEvent;
 import com.bidding.server.events.AuctionObserver;
+import com.google.gson.JsonObject; // Xài JsonObject để bọc chuỗi cho an toàn
+
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import com.google.gson.Gson; // Thêm Gson để ép nguyên cục Auction sang JSON cho nhanh
 
 public class ClientManager implements AuctionObserver {
     private final List<ClientHandler> activeClients = new CopyOnWriteArrayList<>();
-    private final Gson gson = new Gson(); // Dùng để biến Object thành chuỗi JSON
+    // ĐÃ XÓA: private final Gson gson = new Gson(); (Bom nổ chậm)
 
     public void addClient(ClientHandler client) {
         activeClients.add(client);
@@ -24,32 +26,37 @@ public class ClientManager implements AuctionObserver {
     // =========================================================
     @Override
     public void onAuctionStarted(AuctionEvent event) {
-        // Tận dụng Gson để biến Object Auction thành JSON
-        // event.getAuction() sẽ trả về toàn bộ thông tin món hàng đang lên sàn
-        String auctionJson = new com.google.gson.Gson().toJson(event.getAuction());
+        // ĐÃ FIX: Bỏ Gson chay. Bắn GLOBAL_NOTIFY vừa nhẹ Server vừa khỏe UI
+        JsonObject notifyJson = new JsonObject();
+        notifyJson.addProperty("action", "GLOBAL_NOTIFY");
+        // Nếu event.getMessage() từ Service có nội dung thì xài, không thì tự ghép:
+        String msg = (event.getMessage() != null && !event.getMessage().isEmpty())
+                ? event.getMessage()
+                : "Món hàng mới lên sàn: " + event.getAuction().getItem().getName() + "!";
+        notifyJson.addProperty("message", msg);
 
-        String jsonMessage = String.format(
-                "{\"action\": \"NEW_AUCTION_POSTED\", \"data\": %s}",
-                auctionJson
-        );
-
-        // Bắn tin cho toàn thể anh em đang online
-        for (ClientHandler client : activeClients) {
-            client.sendMessage(jsonMessage);
-        }
+        broadcast(notifyJson.toString());
     }
 
     // =========================================================
-    // 2. KHI CÓ NGƯỜI VỪA ĐẶT GIÁ MỚI
+    // 2. KHI CÓ NGƯỜI VỪA ĐẶT GIÁ MỚI (PHỤC VỤ VẼ LINE CHART)
     // =========================================================
     @Override
     public void onBidPlaced(AuctionEvent event) {
-        String jsonMessage = String.format(
-                "{\"action\": \"NEW_BID\", \"auctionId\": \"%s\", \"newPrice\": %f, \"winnerId\": \"%s\"}",
-                event.getAuctionId(), event.getNewPrice(), event.getWinnerId()
-        );
+        JsonObject json = new JsonObject();
+        json.addProperty("action", "NEW_BID");
+        json.addProperty("auctionId", event.getAuctionId());
 
-        broadcast(jsonMessage);
+        // Đảm bảo event này lấy giá từ tx.getBidAmount()[cite: 15]
+        json.addProperty("newPrice", event.getNewPrice());
+
+        // Dùng chuẩn ISO cho thời gian để UI dễ parse[cite: 15]
+        json.addProperty("timestamp", event.getTimestampStr());
+        String winner = (event.getAuction().getCurrentWinner() != null)
+                ? event.getAuction().getCurrentWinner().getUsername()
+                : "---";
+        json.addProperty("winnerId", winner);
+        broadcast(json.toString());
     }
 
     // =========================================================
@@ -57,22 +64,29 @@ public class ClientManager implements AuctionObserver {
     // =========================================================
     @Override
     public void onAuctionClosed(AuctionEvent event) {
-        // Hoàn thiện luôn hàm này cho ông
-        String jsonMessage = String.format(
-                "{\"action\": \"AUCTION_CLOSED\", \"auctionId\": \"%s\", \"winnerId\": \"%s\", \"finalPrice\": %f}",
-                event.getAuctionId(),
-                event.getWinnerId() != null ? event.getWinnerId() : "NONE",
-                event.getNewPrice()
-        );
+        // 1. Vẫn giữ cái thông báo chung cho cả làng cùng biết[cite: 10]
+        JsonObject notifyJson = new JsonObject();
+        notifyJson.addProperty("action", "GLOBAL_NOTIFY");
+        notifyJson.addProperty("message", "Phiên đấu giá [" + event.getAuction().getItem().getName() + "] đã kết thúc!");
+        broadcast(notifyJson.toString());
 
-        for (ClientHandler client : activeClients) {
-            client.sendMessage(jsonMessage);
-        }
+        // 2. Bắn thêm gói tin CHI TIẾT để UI "khóa sổ" và hiện người thắng
+        JsonObject endJson = new JsonObject();
+        endJson.addProperty("action", "AUCTION_FINISHED");
+        endJson.addProperty("auctionId", event.getAuctionId());
+
+        // Lấy tên người thắng cuối cùng từ Auction
+        String winnerName = (event.getAuction().getCurrentWinner() != null)
+                ? event.getAuction().getCurrentWinner().getUsername()
+                : "Không có người đặt giá";
+
+        endJson.addProperty("winnerId", winnerName);
+        broadcast(endJson.toString());
     }
 
     @Override
     public void onPriceChanged(AuctionEvent event) {
-        // Có thể dùng cho các tính năng cập nhật giá nhanh nếu cần
+        // Hàm này dư thừa, để trống
     }
 
     // TIỆN ÍCH: Hàm bổ trợ để hú cho tất cả anh em online

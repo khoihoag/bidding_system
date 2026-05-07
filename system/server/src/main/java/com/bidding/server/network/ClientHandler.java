@@ -57,7 +57,7 @@ public class ClientHandler implements Runnable {
                         // Nhóm Auth
                         case "LOGIN": authController.handleLogin(request); break;
                         case "REGISTER": authController.handleRegister(request); break;
-
+                        case "DEPOSIT": authController.handleDeposit(request);break;
                         // Nhóm Kho Đồ (Item)
                         case "GET_ITEMS": itemController.handleGetItems(); break;
                         case "ADD_ITEM": itemController.handleAddItem(request); break;
@@ -70,7 +70,11 @@ public class ClientHandler implements Runnable {
                         case "GET_AUCTIONS": auctionController.handleGetAuctions(); break;
                         case "BID": auctionController.handleBid(request); break;
                         case "REGISTER_AUTO_BID": auctionController.handleRegisterAutoBid(request);break;
-                        case "HISTORY": auctionController.handleGetHistory(); break;
+                        //lich su ca nhan
+                        case "GET_HISTORY": auctionController.handleGetHistory(); break;
+                        // Thêm vào switch trong ClientHandler.java
+                        //lich su de vẽ biểu đồ
+                        case "GET_AUCTION_HISTORY": auctionController.handleGetAuctionHistory(request);break;
 
 
                         // Nhóm Quản Trị (Admin)
@@ -101,7 +105,11 @@ public class ClientHandler implements Runnable {
     }
 
     public void sendError(String errorMsg) {
-        sendMessage("{\"action\": \"ERROR\", \"message\": \"" + errorMsg + "\"}");
+        // Tự động xử lý ký tự ngoặc kép (") để không bao giờ bị gãy JSON
+        JsonObject errorJson = new JsonObject();
+        errorJson.addProperty("action", "ERROR");
+        errorJson.addProperty("message", errorMsg != null ? errorMsg : "Lỗi không xác định");
+        sendMessage(errorJson.toString());
     }
 
     private void closeEverything() {

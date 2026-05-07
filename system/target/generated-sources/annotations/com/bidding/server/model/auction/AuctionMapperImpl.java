@@ -1,15 +1,40 @@
 package com.bidding.server.model.auction;
 
+import com.bidding.server.model.transaction.BiddingTransaction;
+import com.bidding.server.model.transaction.BiddingTransactionEntity;
+import com.bidding.server.model.transaction.BiddingTransactionMapper;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import javax.annotation.processing.Generated;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-04-27T12:48:34+0700",
+    date = "2026-05-07T02:05:02+0700",
     comments = "version: 1.5.5.Final, compiler: javac, environment: Java 21.0.9 (Oracle Corporation)"
 )
 public class AuctionMapperImpl implements AuctionMapper {
+
+    private final BiddingTransactionMapper biddingTransactionMapper = BiddingTransactionMapper.INSTANCE;
+
+    @Override
+    public void updateEntityFromModel(Auction model, AuctionEntity entity) {
+        if ( model == null ) {
+            return;
+        }
+
+        entity.setCurrentPrice( unwrapAtomic( model.getCurrentPrice() ) );
+        entity.setId( model.getId() );
+        entity.setCreatedAt( model.getCreatedAt() );
+        entity.setUpdatedAt( model.getUpdatedAt() );
+        entity.setItem( model.getItem() );
+        entity.setStatus( model.getStatus() );
+        entity.setStartTime( model.getStartTime() );
+        entity.setEndTime( model.getEndTime() );
+        entity.setCurrentWinner( model.getCurrentWinner() );
+        entity.setAntiSnipingSeconds( model.getAntiSnipingSeconds() );
+        entity.setExtensionSeconds( model.getExtensionSeconds() );
+    }
 
     @Override
     public AuctionEntity toEntity(Auction auctionModel) {
@@ -43,6 +68,7 @@ public class AuctionMapperImpl implements AuctionMapper {
         Auction auction = new Auction();
 
         auction.setCurrentPrice( wrapAtomic( entity.getCurrentPrice() ) );
+        auction.setBidHistory( biddingTransactionEntityListToBiddingTransactionCopyOnWriteArrayList( entity.getTransactions() ) );
         auction.setId( entity.getId() );
         auction.setCreatedAt( entity.getCreatedAt() );
         auction.setUpdatedAt( entity.getUpdatedAt() );
@@ -83,5 +109,18 @@ public class AuctionMapperImpl implements AuctionMapper {
         }
 
         return list;
+    }
+
+    protected CopyOnWriteArrayList<BiddingTransaction> biddingTransactionEntityListToBiddingTransactionCopyOnWriteArrayList(List<BiddingTransactionEntity> list) {
+        if ( list == null ) {
+            return null;
+        }
+
+        CopyOnWriteArrayList<BiddingTransaction> copyOnWriteArrayList = new CopyOnWriteArrayList<BiddingTransaction>();
+        for ( BiddingTransactionEntity biddingTransactionEntity : list ) {
+            copyOnWriteArrayList.add( biddingTransactionMapper.toModel( biddingTransactionEntity ) );
+        }
+
+        return copyOnWriteArrayList;
     }
 }

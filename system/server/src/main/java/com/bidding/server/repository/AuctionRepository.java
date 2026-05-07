@@ -46,10 +46,45 @@ public class AuctionRepository {
     /**
      * Hàm "Lấy TẤT CẢ đồ": Kéo toàn bộ từ dưới DB lên RAM
      */
+    // TÌM CHỖ NÀY TRONG AuctionRepository.java
     public List<AuctionEntity> findAll() {
+        // Dùng luôn cái "factory" sếp đã khai báo ở dòng 12 ấy
+        Session session = factory.openSession();
+        try {
+            String hql = "SELECT DISTINCT a FROM AuctionEntity a " +
+                    "LEFT JOIN FETCH a.transactions " +    // Lôi theo lịch sử đặt giá
+                    "LEFT JOIN FETCH a.currentWinner " +   // Lôi theo User (người thắng)
+                    "LEFT JOIN FETCH a.item";
+            return session.createQuery(hql, AuctionEntity.class).getResultList();
+        } finally {
+            session.close();
+        }
+    }
+    // Dán hàm này vào AuctionRepository.java
+    public void saveNewBid(String auctionId, double newPrice, com.bidding.server.model.user.User winner, java.time.LocalDateTime newEndTime, com.bidding.server.model.transaction.BiddingTransactionEntity newTx) {
+        Transaction transaction = null;
         try (Session session = factory.openSession()) {
-            // HQL: "FROM AuctionEntity" tương đương với "SELECT * FROM auctions"
-            return session.createQuery("FROM AuctionEntity", AuctionEntity.class).list();
+            transaction = session.beginTransaction();
+
+            // 1. Lấy Auction tươi rói từ DB lên
+            AuctionEntity auction = session.get(AuctionEntity.class, auctionId);
+
+            // 2. Chỉ cập nhật đúng 3 thứ thay đổi
+            auction.setCurrentPrice(newPrice);
+            auction.setEndTime(newEndTime);
+            auction.setCurrentWinner(winner);
+
+            // 3. Cho giao dịch nhận Cha và lưu trực tiếp xuống DB
+            newTx.setAuction(auction);
+            session.persist(newTx);
+
+            // 4. Trộn lại phiên đấu giá
+            session.merge(auction);
+
+            transaction.commit();
+        } catch (Exception e) {
+            if (transaction != null) transaction.rollback();
+            e.printStackTrace();
         }
     }
 }

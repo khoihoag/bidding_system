@@ -55,8 +55,8 @@ public class UserRepository {
     // ========================================================
     public List<BiddingTransactionEntity> getBidHistoryByUserId(String userId) {
         try (Session session = factory.openSession()) {
-            // Lôi tất cả giao dịch trong bảng bidding_transactions mà thằng User này tham gia, sắp xếp thời gian mới nhất lên đầu
-            String hql = "FROM BiddingTransactionEntity t WHERE t.bidder.id = :uid ORDER BY t.bidTime DESC";
+            // SỬA HQL: Ép nó lấy luôn thông tin Auction trong 1 lần query (LEFT JOIN FETCH)
+            String hql = "SELECT t FROM BiddingTransactionEntity t LEFT JOIN FETCH t.auction WHERE t.bidder.id = :uid ORDER BY t.bidTime DESC";
             Query<BiddingTransactionEntity> query = session.createQuery(hql, BiddingTransactionEntity.class);
             query.setParameter("uid", userId);
 
