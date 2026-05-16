@@ -31,7 +31,7 @@ public abstract class Item extends Entity {
 
     // 2. CẤU HÌNH RÕ RÀNG BẢNG CHỨA ẢNH ĐỂ KHÔNG BỊ LỖI KHÓA NGOẠI
     @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "item_images", joinColumns = @JoinColumn(name = "item_id"))
+    @CollectionTable(name = "item_image_paths", joinColumns = @JoinColumn(name = "item_id"))
     @Column(name = "image_url")
     private List<String> images;
 

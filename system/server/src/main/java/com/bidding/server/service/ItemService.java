@@ -15,6 +15,9 @@ public class ItemService {
     }
 
     public Item createItem(User actor, Item requestItem) {
+        if (actor == null || actor.getId() == null || actor.getId().isBlank()) {
+            throw new RuntimeException("Vui lòng đăng nhập lại trước khi thêm vật phẩm.");
+        }
         // FIX: Truyền nguyên Object User vào thay vì truyền String ID
         requestItem.setSeller(actor);
 

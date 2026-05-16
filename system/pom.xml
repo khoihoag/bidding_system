@@ -34,7 +34,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.30</version>
+            <version>1.18.44</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -50,6 +50,12 @@
     </dependencies>
 
     <build>
+        <sourceDirectory>server/src/main/java</sourceDirectory>
+        <resources>
+            <resource>
+                <directory>server/src/main/resources</directory>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -62,7 +68,7 @@
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
-                            <version>1.18.30</version>
+                            <version>1.18.44</version>
                         </path>
                         <path>
                             <groupId>org.projectlombok</groupId>

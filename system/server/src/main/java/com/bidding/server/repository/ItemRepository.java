@@ -1,10 +1,12 @@
 package com.bidding.server.repository;
 
 import com.bidding.server.model.item.Item;
+import com.bidding.server.model.user.User;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ItemRepository {
@@ -31,11 +33,27 @@ public class ItemRepository {
         Transaction transaction = null;
         try (Session session = factory.openSession()) {
             transaction = session.beginTransaction();
-            session.merge(item); // Vẫn dùng merge cho chuẩn ID tự sinh
+            if (item.getSeller() == null || item.getSeller().getId() == null) {
+                throw new IllegalArgumentException("Item must have a seller before saving.");
+            }
+            User managedSeller = session.get(User.class, item.getSeller().getId());
+            if (managedSeller == null) {
+                throw new IllegalArgumentException("Seller does not exist in database: " + item.getSeller().getId());
+            }
+            item.setSeller(managedSeller);
+            if (item.getImages() == null) {
+                item.setImages(new ArrayList<>());
+            }
+            Item existingItem = session.get(Item.class, item.getId());
+            if (existingItem == null) {
+                session.persist(item);
+            } else {
+                session.merge(item);
+            }
             transaction.commit();
         } catch (Exception e) {
             if (transaction != null) transaction.rollback();
-            e.printStackTrace();
+            throw new RuntimeException("Cannot save item: " + e.getMessage(), e);
         }
     }
     public List<Item> findBySellerId(String sellerId) {

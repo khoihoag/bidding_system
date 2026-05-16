@@ -64,7 +64,7 @@ public class AuctionService {
         List<Auction> models = mapper.toModelList(entities);
 
         for (Auction auction : models) {
-            if (auction.getStatus() == AuctionStatus.FINISHED) {
+            if (!isActiveAuctionStatus(auction.getStatus())) {
                 continue;
             }
             activeAuctions.put(auction.getId(), auction);
@@ -76,6 +76,10 @@ public class AuctionService {
             }
         }
         System.out.println("[Service] Đã nạp " + activeAuctions.size() + " phiên đấu giá và gài đồng hồ.");
+    }
+
+    private boolean isActiveAuctionStatus(AuctionStatus status) {
+        return status == AuctionStatus.OPEN || status == AuctionStatus.RUNNING;
     }
 
     // ================= LOGIC ĐẾM NGƯỢC =================
@@ -199,6 +203,7 @@ public class AuctionService {
 
             AuctionEvent closeEvent = new AuctionEvent(EventType.AUCTION_CLOSED, auction, null, LocalDateTime.now(), "Phiên đấu giá kết thúc");
             notifyObservers(closeEvent);
+            activeAuctions.remove(auction.getId());
 
         } catch (Exception e) {
             System.err.println("❌ LỖI CHỐT ĐƠN PHIÊN " + auction.getId() + ": " + e.getMessage());
@@ -372,13 +377,17 @@ public class AuctionService {
 
     public boolean isItemInActiveAuction(String itemId) {
         for (Auction auction : activeAuctions.values()) {
-            if (auction.getItem() != null && auction.getItem().getId().equals(itemId)) return true;
+            if (isActiveAuctionStatus(auction.getStatus())
+                    && auction.getItem() != null
+                    && auction.getItem().getId().equals(itemId)) return true;
         }
         return false;
     }
 
     public List<Auction> getActiveAuctions() {
-        return new ArrayList<>(activeAuctions.values());
+        return activeAuctions.values().stream()
+                .filter(auction -> isActiveAuctionStatus(auction.getStatus()))
+                .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
     }
 
     // ================= KHỞI TẠO PHIÊN =================

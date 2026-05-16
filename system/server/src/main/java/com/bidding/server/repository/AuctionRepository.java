@@ -1,6 +1,8 @@
 package com.bidding.server.repository;
 
 import com.bidding.server.model.auction.AuctionEntity;
+import com.bidding.server.model.item.Item;
+import com.bidding.server.model.user.User;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -23,13 +25,14 @@ public class AuctionRepository {
 
             // ĐÃ SỬA: Dùng merge() thay vì saveOrUpdate()
             // Vì ID (UUID) của ta tự sinh trên RAM, merge() sẽ xử lý mượt mà hơn
+            attachManagedReferences(session, entity);
             session.merge(entity);
 
             transaction.commit();
             System.out.println("Lưu Database thành công cho Auction ID: " + entity.getId());
         } catch (Exception e) {
             if (transaction != null) transaction.rollback();
-            e.printStackTrace();
+            throw new RuntimeException("Cannot save auction: " + e.getMessage(), e);
         }
     }
 
@@ -67,11 +70,15 @@ public class AuctionRepository {
             transaction = session.beginTransaction();
 
             AuctionEntity auction = session.get(AuctionEntity.class, auctionId);
+            if (auction == null) {
+                throw new IllegalArgumentException("Auction does not exist in database: " + auctionId);
+            }
             auction.setCurrentPrice(newPrice);
             auction.setEndTime(newEndTime);
-            auction.setCurrentWinner(winner);
+            auction.setCurrentWinner(resolveManagedUser(session, winner, false));
 
             newTx.setAuction(auction);
+            newTx.setBidder(resolveManagedUser(session, newTx.getBidder(), true));
 
             // ================= CHỮA BỆNH TẬN GỐC TẠI ĐÂY =================
             // Thay vì dùng session.persist(newTx); (Gây lỗi với Detached Entity)
@@ -97,7 +104,7 @@ public class AuctionRepository {
             AuctionEntity entity = session.get(AuctionEntity.class, auctionId);
             if (entity != null) {
                 entity.setStatus(status);
-                if (winner != null) entity.setCurrentWinner(winner);
+                if (winner != null) entity.setCurrentWinner(resolveManagedUser(session, winner, true));
                 session.merge(entity);
             }
             tx.commit();
@@ -105,5 +112,37 @@ public class AuctionRepository {
             if (tx != null) tx.rollback();
             throw e;
         }
+    }
+
+    private void attachManagedReferences(Session session, AuctionEntity entity) {
+        if (entity.getItem() == null || entity.getItem().getId() == null) {
+            throw new IllegalArgumentException("Auction must have an existing item before saving.");
+        }
+
+        Item managedItem = session.get(Item.class, entity.getItem().getId());
+        if (managedItem == null) {
+            throw new IllegalArgumentException("Item does not exist in database: " + entity.getItem().getId());
+        }
+
+        entity.setItem(managedItem);
+        entity.setCurrentWinner(resolveManagedUser(session, entity.getCurrentWinner(), false));
+    }
+
+    private User resolveManagedUser(Session session, User user, boolean required) {
+        if (user == null) {
+            if (required) {
+                throw new IllegalArgumentException("User reference is required.");
+            }
+            return null;
+        }
+        if (user.getId() == null) {
+            throw new IllegalArgumentException("User reference has no id.");
+        }
+
+        User managedUser = session.get(User.class, user.getId());
+        if (managedUser == null) {
+            throw new IllegalArgumentException("User does not exist in database: " + user.getId());
+        }
+        return managedUser;
     }
 }

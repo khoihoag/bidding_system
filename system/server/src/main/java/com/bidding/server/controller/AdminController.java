@@ -5,6 +5,7 @@ import com.bidding.server.model.user.User;
 import com.bidding.server.service.AdminService;
 import com.bidding.server.service.AuctionService;
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import java.util.List;
 import com.bidding.server.utils.GsonUtil;
@@ -26,7 +27,22 @@ public class AdminController {
         }
         try {
             List<User> userList = adminService.getAllUsers(client.getLoggedInUser());
-            client.sendMessage("{\"action\": \"USERS_LIST\", \"data\": " + gson.toJson(userList) + "}");
+            JsonArray data = new JsonArray();
+            for (User user : userList) {
+                JsonObject obj = new JsonObject();
+                obj.addProperty("id", user.getId());
+                obj.addProperty("username", user.getUsername());
+                obj.addProperty("email", user.getEmail() != null ? user.getEmail() : "");
+                obj.addProperty("role", user.getRole() != null ? user.getRole().name() : "USER");
+                obj.addProperty("balance", user.getBalance());
+                obj.addProperty("active", user.isActive());
+                data.add(obj);
+            }
+
+            JsonObject reply = new JsonObject();
+            reply.addProperty("action", "USERS_LIST");
+            reply.add("data", data);
+            client.sendMessage(reply.toString());
         } catch (SecurityException se) {
             client.sendError("Cảnh báo: Bạn không có quyền truy cập danh sách người dùng!");
         } catch (Exception e) {

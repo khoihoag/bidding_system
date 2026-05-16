@@ -19,7 +19,7 @@ public class UserService {
         }
 
         if (!user.isActive()) {
-            throw new RuntimeException("Tài khoản của bạn đã bị Admin khóa mõm!");
+            throw new RuntimeException("Tài khoản đã bị admin ban.");
         }
 
         System.out.println("[UserService.java] User đăng nhập thành công: " + username);
