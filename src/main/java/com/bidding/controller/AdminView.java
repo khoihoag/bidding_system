@@ -1,0 +1,942 @@
+package com.bidding.controller;
+
+import com.bidding.network.NetworkClient;
+import com.bidding.model.UserSession;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import javafx.animation.PauseTransition;
+import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+import javafx.scene.chart.*;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.util.Callback;
+import javafx.util.Duration;
+
+import java.net.URL;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.ResourceBundle;
+import java.util.Timer;
+import java.util.TimerTask;
+
+public class AdminView implements Initializable {
+
+    // ==================== SIDEBAR ====================
+    @FXML private Button navDashboard;
+    @FXML private Button navUsers;
+    @FXML private Button navAuctions;
+    @FXML private Button navAuditLog;
+    @FXML private Button navStats;
+    @FXML private Label  clockLabel;
+    @FXML private Label  connectionLabel;
+
+    // ==================== SECTIONS ====================
+    @FXML private VBox dashboardSection;
+    @FXML private VBox usersSection;
+    @FXML private VBox auctionsAdminSection;
+    @FXML private VBox auditLogSection;
+    @FXML private VBox statsSection;
+
+    // ==================== DASHBOARD LABELS ====================
+    @FXML private Label statTotalUsers;
+    @FXML private Label statUsersGrowth;
+    @FXML private Label statActiveSessions;
+    @FXML private Label statSessionsInfo;
+    @FXML private Label statTotalBids;
+    @FXML private Label statBidsToday;
+    @FXML private Label statTotalRevenue;
+    @FXML private Label statRevenueGrowth;
+
+    // ==================== DASHBOARD CHARTS ====================
+    @FXML private BarChart<String, Number> bidBarChart;
+    @FXML private PieChart                 categoryPieChart;
+
+    // ==================== USERS ====================
+    @FXML private TextField              userSearchField;
+    @FXML private ComboBox<String>       userRoleFilter;
+    @FXML private TableView<UserRow>     userTable;
+    @FXML private TableColumn<UserRow, String> colUserId;
+    @FXML private TableColumn<UserRow, String> colUserName;
+    @FXML private TableColumn<UserRow, String> colUserEmail;
+    @FXML private TableColumn<UserRow, String> colUserRole;
+    @FXML private TableColumn<UserRow, String> colUserBalance;
+    @FXML private TableColumn<UserRow, Void>   colUserActions;
+    @FXML private Label userPageInfo;
+    @FXML private Label userCountLabel;
+
+    // ==================== AUCTIONS ====================
+    @FXML private TextField                 aucSearchField;
+    @FXML private ComboBox<String>          aucStatusFilter;
+    @FXML private TableView<AuctionRow>     adminAucTable;
+    @FXML private TableColumn<AuctionRow, String> colAdminAucId;
+    @FXML private TableColumn<AuctionRow, String> colAdminAucTitle;
+    @FXML private TableColumn<AuctionRow, String> colAdminAucStatus;
+    @FXML private TableColumn<AuctionRow, String> colAdminAucPrice;
+    @FXML private TableColumn<AuctionRow, Void>   colAdminAucAction;
+    @FXML private Label aucPageInfo;
+    @FXML private Label aucCountLabel;
+
+    // ==================== AUDIT ====================
+    @FXML private DatePicker              auditDateFilter;
+    @FXML private TableView<AuditRow>     auditTable;
+    @FXML private TableColumn<AuditRow, String> colAuditTime;
+    @FXML private TableColumn<AuditRow, String> colAuditActor;
+    @FXML private TableColumn<AuditRow, String> colAuditAction;
+    @FXML private TableColumn<AuditRow, String> colAuditTarget;
+    @FXML private TableColumn<AuditRow, String> colAuditDetail;
+
+    // ==================== STATS ====================
+    @FXML private BarChart<String, Number>  revenueChart;
+    @FXML private LineChart<String, Number> usersGrowthChart;
+    @FXML private PieChart                  rolesPieChart;
+
+    // ==================== STATE ====================
+    private final ObservableList<UserRow>    allUsers         = FXCollections.observableArrayList();
+    private final ObservableList<AuctionRow> allAuctions      = FXCollections.observableArrayList();
+    private final ObservableList<AuditRow>   allAuditLogs     = FXCollections.observableArrayList();
+    private final ObservableList<UserRow>    filteredUsers    = FXCollections.observableArrayList();
+    private final ObservableList<AuctionRow> filteredAuctions = FXCollections.observableArrayList();
+
+    private int     userCurrentPage = 1;
+    private int     aucCurrentPage  = 1;
+    private static final int PAGE_SIZE = 20;
+    private boolean adminLoggedIn   = false;
+    private boolean connectionStarted = false;
+
+    // ==================== INIT ====================
+    @Override
+    public void initialize(URL url, ResourceBundle resourceBundle) {
+        startClock();
+        setupUserTable();
+        setupAuctionTable();
+        hideOutOfScopeAdminFeatures();
+        setupComboBoxes();
+        setupNetworkListeners();
+        connectToServer();
+        adminLoggedIn = "ADMIN".equals(UserSession.getInstance().getRole());
+        showUsers();
+    }
+
+    private void hideOutOfScopeAdminFeatures() {
+        for (Button btn : new Button[]{navDashboard, navAuditLog, navStats}) {
+            if (btn != null) {
+                btn.setVisible(false);
+                btn.setManaged(false);
+            }
+        }
+        for (VBox section : new VBox[]{dashboardSection, auditLogSection, statsSection}) {
+            if (section != null) {
+                section.setVisible(false);
+                section.setManaged(false);
+            }
+        }
+    }
+
+
+    // ==================== CLOCK ====================
+    private void startClock() {
+        Timer timer = new Timer(true);
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                String time = LocalDateTime.now()
+                        .format(DateTimeFormatter.ofPattern("dd/MM/yyyy  HH:mm:ss"));
+                Platform.runLater(() -> clockLabel.setText(time));
+            }
+        }, 0, 1000);
+    }
+
+    // ==================== CONNECTION STATUS ====================
+    private void updateConnectionStatus() {
+        connectionLabel.setText("● Đang kết nối");
+        connectionLabel.setStyle("-fx-text-fill: #E0B44C; -fx-font-size: 11px; -fx-padding: 0 0 8 4;");
+    }
+
+    private void connectToServer() {
+        if (!connectionStarted) {
+            connectionStarted = true;
+            NetworkClient.getInstance().connect();
+        }
+        updateConnectionStatus();
+    }
+
+    private void scheduleAdminLogin() {
+        PauseTransition delay = new PauseTransition(Duration.millis(700));
+        delay.setOnFinished(event -> loginAdmin());
+        delay.play();
+    }
+
+    // ==================== ADMIN LOGIN ====================
+    /**
+     * Báº¯t buá»™c Ä‘Äƒng nháº­p báº±ng tÃ i khoáº£n ADMIN trÆ°á»›c.
+     * Server kiá»ƒm tra quyá»n dá»±a vÃ o user Ä‘ang login trong socket.
+     *
+     * Request:
+     * {
+     *   "action":   "LOGIN",
+     *   "username": "admin",
+     *   "password": "admin123"
+     * }
+     */
+    private void loginAdmin() {
+        JsonObject req = new JsonObject();
+        req.addProperty("action",   "LOGIN");
+        req.addProperty("username", "admin");
+        req.addProperty("password", "admin123");
+        sendRequest(req);
+    }
+
+    // ==================== NAVIGATION ====================
+    @FXML public void showDashboard() {
+        showSection(dashboardSection);
+        highlightNav(navDashboard);
+        if (adminLoggedIn) requestDashboardData();
+    }
+
+    @FXML public void showUsers() {
+        showSection(usersSection);
+        highlightNav(navUsers);
+        if (adminLoggedIn) requestAllUsers();
+        else warnNotLoggedIn();
+    }
+
+    @FXML public void showAuctions() {
+        showSection(auctionsAdminSection);
+        highlightNav(navAuctions);
+        if (adminLoggedIn) requestAllAuctions();
+        else warnNotLoggedIn();
+    }
+
+    @FXML public void showAuditLog() {
+        showSection(auditLogSection);
+        highlightNav(navAuditLog);
+        auditTable.setItems(allAuditLogs);
+    }
+
+    @FXML public void showStats() {
+        showSection(statsSection);
+        highlightNav(navStats);
+        if (adminLoggedIn) requestStatsData();
+        else warnNotLoggedIn();
+    }
+
+    private void showSection(VBox target) {
+        dashboardSection.setVisible(false);
+        usersSection.setVisible(false);
+        auctionsAdminSection.setVisible(false);
+        auditLogSection.setVisible(false);
+        statsSection.setVisible(false);
+        target.setVisible(true);
+    }
+
+    private void highlightNav(Button active) {
+        for (Button btn : new Button[]{navDashboard, navUsers, navAuctions, navAuditLog, navStats}) {
+            btn.getStyleClass().remove("nav-btn-active");
+            if (!btn.getStyleClass().contains("nav-btn")) btn.getStyleClass().add("nav-btn");
+        }
+        active.getStyleClass().add("nav-btn-active");
+    }
+
+    private void warnNotLoggedIn() {
+        showAlert(Alert.AlertType.WARNING, "Chưa xác thực",
+                "Đang chờ đăng nhập admin...\nVui lòng thử lại sau vài giây.");
+    }
+
+    @FXML public void handleLogout() {
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Đăng xuất");
+        confirm.setHeaderText("Bạn có chắc muốn đăng xuất?");
+        confirm.showAndWait().ifPresent(btn -> {
+            if (btn == ButtonType.OK) { adminLoggedIn = false; Platform.exit(); }
+        });
+    }
+
+    // ==================== TABLE SETUP ====================
+    private void setupUserTable() {
+        colUserId.setCellValueFactory(new PropertyValueFactory<>("id"));
+        colUserName.setCellValueFactory(new PropertyValueFactory<>("username"));
+        colUserEmail.setCellValueFactory(new PropertyValueFactory<>("email"));
+        colUserRole.setCellValueFactory(new PropertyValueFactory<>("role"));
+        colUserBalance.setCellValueFactory(new PropertyValueFactory<>("balanceFormatted"));
+        colUserActions.setCellFactory(buildBanButtonColumn());
+        userTable.setItems(filteredUsers);
+    }
+
+    private void setupAuctionTable() {
+        colAdminAucId.setCellValueFactory(new PropertyValueFactory<>("id"));
+        colAdminAucTitle.setCellValueFactory(new PropertyValueFactory<>("title"));
+        colAdminAucStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
+        colAdminAucPrice.setCellValueFactory(new PropertyValueFactory<>("priceFormatted"));
+        colAdminAucAction.setCellFactory(buildForceCloseButtonColumn());
+        adminAucTable.setItems(filteredAuctions);
+    }
+
+    private void setupAuditTable() {
+        colAuditTime.setCellValueFactory(new PropertyValueFactory<>("time"));
+        colAuditActor.setCellValueFactory(new PropertyValueFactory<>("actor"));
+        colAuditAction.setCellValueFactory(new PropertyValueFactory<>("action"));
+        colAuditTarget.setCellValueFactory(new PropertyValueFactory<>("target"));
+        colAuditDetail.setCellValueFactory(new PropertyValueFactory<>("detail"));
+        auditTable.setItems(allAuditLogs);
+    }
+
+    private void setupComboBoxes() {
+        userRoleFilter.setItems(FXCollections.observableArrayList("Tất cả", "USER", "SELLER", "ADMIN"));
+        userRoleFilter.getSelectionModel().selectFirst();
+        aucStatusFilter.setItems(FXCollections.observableArrayList(
+                "Tất cả", "RUNNING", "OPEN", "FINISHED", "FAILED", "PAID", "CANCELED"));
+        aucStatusFilter.getSelectionModel().selectFirst();
+    }
+
+    // ==================== BAN USER BUTTON ====================
+    private Callback<TableColumn<UserRow, Void>, TableCell<UserRow, Void>> buildBanButtonColumn() {
+        return param -> new TableCell<>() {
+            private final Button banBtn = new Button("Khóa");
+            { banBtn.getStyleClass().add("btn-danger"); }
+
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) { setGraphic(null); return; }
+                UserRow row = getTableView().getItems().get(getIndex());
+                banBtn.setText(row.isActive() ? "Ban" : "Da ban");
+                banBtn.setDisable(!row.isActive());
+                banBtn.setOnAction(e -> confirmBanUser(row));
+                setGraphic(banBtn);
+            }
+        };
+    }
+
+    private void confirmBanUser(UserRow user) {
+        if (user == null) return;
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Xác nhận khóa tài khoản");
+        confirm.setHeaderText("Khóa: " + user.getUsername());
+        confirm.setContentText("ID: " + user.getId() + "  |  Role: " + user.getRole()
+                + "\n\nHành động này sẽ khóa tài khoản ngay lập tức.");
+        confirm.showAndWait().ifPresent(btn -> {
+            if (btn == ButtonType.OK) sendBanUser(user.getId(), user.getUsername());
+        });
+    }
+
+    // ==================== FORCE CLOSE BUTTON ====================
+    private Callback<TableColumn<AuctionRow, Void>, TableCell<AuctionRow, Void>> buildForceCloseButtonColumn() {
+        return param -> new TableCell<>() {
+            private final Button closeBtn = new Button("Đóng phiên");
+            private final Button viewBtn = new Button("Xem SP");
+            private final HBox actions = new HBox(8, viewBtn, closeBtn);
+            {
+                viewBtn.getStyleClass().add("btn-outline");
+                closeBtn.getStyleClass().add("btn-warn");
+            }
+
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) { setGraphic(null); return; }
+                AuctionRow row = getTableView().getItems().get(getIndex());
+                viewBtn.setOnAction(e -> showAuctionItemDetails(row));
+                if ("RUNNING".equals(row.getStatus())) {
+                    closeBtn.setOnAction(e -> confirmForceClose(row));
+                    closeBtn.setVisible(true);
+                    closeBtn.setManaged(true);
+                } else {
+                    closeBtn.setVisible(false);
+                    closeBtn.setManaged(false);
+                }
+                setGraphic(actions);
+            }
+        };
+    }
+
+    private void showAuctionItemDetails(AuctionRow auction) {
+        JsonObject item = auction.getItemJson();
+        if (item == null) {
+            showAlert(Alert.AlertType.WARNING, "Không có dữ liệu", "Không tìm thấy thông tin sản phẩm của phiên này.");
+            return;
+        }
+
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Chi Tiết Vật Phẩm");
+        dialog.setHeaderText(getStr(item, "name"));
+        try {
+            dialog.getDialogPane().getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
+            dialog.getDialogPane().setStyle("-fx-background-color: #05070a;");
+        } catch (Exception ignored) {}
+
+        VBox content = new VBox(12);
+        content.setPrefWidth(580);
+        content.setStyle("-fx-padding: 20; -fx-font-size: 15px;");
+
+        javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView();
+        imageView.setFitWidth(540);
+        imageView.setFitHeight(300);
+        imageView.setPreserveRatio(false);
+        if (item.has("images") && item.get("images").isJsonArray() && item.getAsJsonArray("images").size() > 0) {
+            String imagePath = item.getAsJsonArray("images").get(0).getAsString();
+            java.io.File file = new java.io.File(imagePath);
+            if (file.exists()) {
+                imageView.setImage(new javafx.scene.image.Image(file.toURI().toString()));
+                content.getChildren().add(imageView);
+            } else {
+                content.getChildren().add(new Label("(Không tìm thấy ảnh)"));
+            }
+        } else {
+            content.getChildren().add(new Label("(Chưa có hình ảnh)"));
+        }
+
+        Label type = new Label("Loại: " + getStr(item, "type"));
+        String conditionText = getStr(item, "condition");
+        if ("NEW".equals(conditionText)) conditionText = "Mới 100%";
+        else if ("USED".equals(conditionText)) conditionText = "Đã sử dụng";
+        Label condition = new Label("Tình trạng: " + conditionText);
+        condition.setStyle("-fx-font-style: italic; -fx-text-fill: #8aa0bd;");
+
+        double startingPrice = item.has("startingPrice") && !item.get("startingPrice").isJsonNull()
+                ? item.get("startingPrice").getAsDouble() : 0.0;
+        Label price = new Label(String.format("Giá khởi điểm: %,.0f đ", startingPrice));
+        price.setStyle("-fx-text-fill: #f0c040; -fx-font-weight: bold; -fx-font-size: 16px;");
+
+        Label desc = new Label("Mô tả: " + getStr(item, "description"));
+        desc.setWrapText(true);
+        content.getChildren().addAll(type, condition, price, new Separator(), desc);
+
+        if (item.has("specifications") && item.get("specifications").isJsonObject()) {
+            VBox specsBox = new VBox(8);
+            specsBox.setStyle("-fx-padding: 16; -fx-background-color: #111820; -fx-background-radius: 12; -fx-border-color: #3a3522; -fx-border-radius: 12;");
+            specsBox.getChildren().add(new Label("Thông số chi tiết:"));
+            JsonObject specs = item.getAsJsonObject("specifications");
+            for (String key : specs.keySet()) {
+                specsBox.getChildren().add(new Label("• " + key + ": " + specs.get(key).getAsString()));
+            }
+            content.getChildren().add(specsBox);
+        }
+
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        dialog.showAndWait();
+    }
+
+    private void confirmForceClose(AuctionRow auction) {
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Xác nhận đóng phiên");
+        confirm.setHeaderText("Ép đóng: " + auction.getTitle());
+        confirm.setContentText("ID phiên: " + auction.getId()
+                + "\nGiá hiện tại: " + auction.getPriceFormatted()
+                + "\n\nHành động này kết thúc phiên ngay lập tức!");
+        confirm.showAndWait().ifPresent(btn -> {
+            if (btn == ButtonType.OK) sendForceClose(auction.getId(), auction.getTitle());
+        });
+    }
+
+    // ==================== NETWORK REQUESTS ====================
+
+    private void requestDashboardData() {
+        requestAllUsers();
+    }
+
+    private void requestAllUsers() {
+        sendAction("GET_ALL_USERS");
+    }
+
+    private void requestAllAuctions() {
+        sendAction("GET_AUCTIONS");
+    }
+
+    private void requestStatsData() {
+        sendAction("GET_ALL_USERS");
+        sendAction("GET_AUCTIONS");
+    }
+
+    /**
+     * BAN_USER
+     * {
+     *   "action":       "BAN_USER",
+     *   "targetUserId": "u1"         â† field báº¯t buá»™c Ä‘Ãºng tÃªn
+     * }
+     */
+    private void sendBanUser(String userId, String username) {
+        if (!checkConnected()) return;
+        JsonObject req = new JsonObject();
+        req.addProperty("action",       "BAN_USER");
+        req.addProperty("targetUserId", userId);
+        sendRequest(req);
+        appendAuditRow("BAN_USER", "admin", username + " (ID: " + userId + ")", "Đang chờ...");
+    }
+
+    /**
+     * FORCE_CLOSE
+     * {
+     *   "action":    "FORCE_CLOSE",
+     *   "auctionId": "auc789"
+     * }
+     */
+    private void sendForceClose(String auctionId, String title) {
+        if (!checkConnected()) return;
+        JsonObject req = new JsonObject();
+        req.addProperty("action",    "FORCE_CLOSE");
+        req.addProperty("auctionId", auctionId);
+        sendRequest(req);
+        appendAuditRow("FORCE_CLOSE", "admin", title + " (ID: " + auctionId + ")", "Đang chờ...");
+    }
+
+    private void sendAction(String action) {
+        if (!checkConnected()) return;
+        JsonObject req = new JsonObject();
+        req.addProperty("action", action);
+        sendRequest(req);
+    }
+
+    private boolean checkConnected() {
+        connectToServer();
+        return true;
+    }
+
+    private void sendRequest(JsonObject req) {
+        connectToServer();
+        NetworkClient.getInstance().sendJson(req);
+        connectionLabel.setText("● Đã gửi yêu cầu");
+        connectionLabel.setStyle("-fx-text-fill: #40DD80; -fx-font-size: 11px; -fx-padding: 0 0 8 4;");
+    }
+
+    // ==================== NETWORK LISTENERS ====================
+    /*
+     * NetworkClient hiện tại chỉ có một messageHandler.
+     * AdminView gom toàn bộ response admin vào handler này.
+     */
+    private void setupNetworkListeners() {
+        NetworkClient.getInstance().setMessageHandler(response -> {
+            Platform.runLater(() -> handleServerMessage(response));
+        });
+    }
+
+    private void handleServerMessage(JsonObject response) {
+        String action = getStr(response, "action");
+        switch (action) {
+            case "LOGIN_REPLY"       -> handleLoginReply(response);
+            case "USERS_LIST"        -> handleUsersList(response);
+            case "BAN_USER_REPLY"    -> handleBanUserReply(response);
+            case "FORCE_CLOSE_REPLY" -> handleForceCloseReply(response);
+            case "AUCTIONS_LIST"     -> handleAuctionsList(response);
+            case "HISTORY_REPLY"     -> handleHistoryReply(response);
+            case "GLOBAL_NOTIFY"     -> handleGlobalNotify(response);
+            case "ERROR"             -> handleError(response);
+        }
+    }
+    // ==================== RESPONSE HANDLERS ====================
+
+    /**
+     * LOGIN_REPLY
+     * Response: { "action": "LOGIN_REPLY", "status": "SUCCESS", "myId": "...", "role": "ADMIN" }
+     */
+    private void handleLoginReply(JsonObject res) {
+        String status = getStr(res, "status");
+        String role   = getStr(res, "role");
+
+        if ("SUCCESS".equals(status) && "ADMIN".equals(role)) {
+            adminLoggedIn = true;
+            appendAuditRow("LOGIN", "admin", "Hệ thống", "Đăng nhập admin thành công");
+            requestDashboardData();
+        } else {
+            adminLoggedIn = false;
+            showAlert(Alert.AlertType.ERROR, "Lỗi xác thực",
+                    "Đăng nhập admin thất bại.\nStatus: " + status + "  |  Role nhận: " + role
+                    + "\nVui lòng kiểm tra credentials.");
+        }
+    }
+
+    /**
+     * USERS_LIST
+     * Response: { "action": "USERS_LIST", "data": [ { "id", "username", "role", "balance" } ] }
+     */
+    private void handleUsersList(JsonObject res) {
+        allUsers.clear();
+        if (!res.has("data") || res.get("data").isJsonNull()) return;
+
+        for (JsonElement el : res.getAsJsonArray("data")) {
+            JsonObject o = el.getAsJsonObject();
+            allUsers.add(new UserRow(
+                    getStr(o, "id"),
+                    getStr(o, "username"),
+                    getStr(o, "email"),
+                    getStr(o, "role"),
+                    o.has("balance") && !o.get("balance").isJsonNull()
+                            ? o.get("balance").getAsDouble() : 0.0,
+                    !o.has("active") || o.get("active").isJsonNull() || o.get("active").getAsBoolean()
+            ));
+        }
+
+        statTotalUsers.setText(String.valueOf(allUsers.size()));
+        statUsersGrowth.setText("Tổng tài khoản: " + allUsers.size());
+        applyUserFilter();
+        updateRolesPieChart();
+    }
+
+    /**
+     * AUCTIONS_LIST
+     * Response: { "action": "AUCTIONS_LIST", "data": [ { "id", "item": {...}, "currentPrice", "status" } ] }
+     */
+    private void handleAuctionsList(JsonObject res) {
+        allAuctions.clear();
+        if (!res.has("data") || res.get("data").isJsonNull()) return;
+
+        int running = 0, ended = 0, other = 0;
+        double totalRevenue = 0.0;
+
+        for (JsonElement el : res.getAsJsonArray("data")) {
+            JsonObject o      = el.getAsJsonObject();
+            String id         = getStr(o, "id");
+            String status     = getStr(o, "status");
+            double price      = o.has("currentPrice") && !o.get("currentPrice").isJsonNull()
+                    ? o.get("currentPrice").getAsDouble() : 0.0;
+
+            String title = "(Không có tên)";
+            JsonObject itemJson = null;
+            if (o.has("item") && !o.get("item").isJsonNull() && o.get("item").isJsonObject()) {
+                itemJson = o.getAsJsonObject("item");
+                String n = getStr(itemJson, "name");
+                if (!n.isEmpty()) title = n;
+            }
+
+            allAuctions.add(new AuctionRow(id, title, status, price, itemJson));
+            switch (status) {
+                case "RUNNING" -> running++;
+                case "ENDED"   -> { ended++; totalRevenue += price; }
+                default        -> other++;
+            }
+        }
+
+        statActiveSessions.setText(String.valueOf(running));
+        statSessionsInfo.setText("Phiên đang chạy");
+        statTotalRevenue.setText(String.format("VNĐ %,.0f", totalRevenue));
+        statRevenueGrowth.setText("Từ " + ended + " phiên đã kết thúc");
+
+        categoryPieChart.getData().clear();
+        if (running > 0) categoryPieChart.getData().add(new PieChart.Data("RUNNING (" + running + ")", running));
+        if (ended > 0)   categoryPieChart.getData().add(new PieChart.Data("ENDED (" + ended + ")", ended));
+        if (other > 0)   categoryPieChart.getData().add(new PieChart.Data("Khác (" + other + ")", other));
+
+        applyAucFilter();
+        updateRevenueChart();
+    }
+
+    /**
+     * HISTORY_REPLY
+     * Response: { "action": "HISTORY_REPLY", "data": [ { "auctionId", "bidAmount", "status" } ] }
+     */
+    private void handleHistoryReply(JsonObject res) {
+        if (!res.has("data") || res.get("data").isJsonNull()) return;
+        JsonArray data = res.getAsJsonArray("data");
+
+        statTotalBids.setText(String.valueOf(data.size()));
+        statBidsToday.setText("Tổng lượt đặt giá");
+
+        LinkedHashMap<String, Integer> bidCount = new LinkedHashMap<>();
+        for (JsonElement el : data) {
+            String aucId = getStr(el.getAsJsonObject(), "auctionId");
+            if (!aucId.isEmpty()) bidCount.merge(aucId, 1, Integer::sum);
+        }
+
+        XYChart.Series<String, Number> series = new XYChart.Series<>();
+        series.setName("Lượt bid");
+        int count = 0;
+        for (Map.Entry<String, Integer> entry : bidCount.entrySet()) {
+            if (count++ >= 10) break;
+            String lbl = entry.getKey().length() > 10
+                    ? entry.getKey().substring(0, 10) + "..." : entry.getKey();
+            series.getData().add(new XYChart.Data<>(lbl, entry.getValue()));
+        }
+        bidBarChart.getData().clear();
+        if (!series.getData().isEmpty()) bidBarChart.getData().add(series);
+    }
+
+    /**
+     * BAN_USER_REPLY
+     * Response: { "action": "BAN_USER_REPLY", "status": "SUCCESS", "message": "Đã khóa..." }
+     */
+    private void handleBanUserReply(JsonObject res) {
+        String status  = getStr(res, "status");
+        String message = getStr(res, "message");
+
+        updateLastAuditDetail("BAN_USER",
+                "SUCCESS".equals(status) ? "OK " + message : "Lỗi: " + message);
+
+        if ("SUCCESS".equals(status)) {
+            showAlert(Alert.AlertType.INFORMATION, "ThÃ nh cÃ´ng",
+                    message.isEmpty() ? "Đã khóa tài khoản thành công!" : message);
+            requestAllUsers();
+        } else {
+            showAlert(Alert.AlertType.ERROR, "Lá»—i khÃ³a tÃ i khoáº£n",
+                    message.isEmpty() ? "Không thể khóa tài khoản." : message);
+        }
+    }
+
+    /**
+     * FORCE_CLOSE_REPLY
+     * Response: { "action": "FORCE_CLOSE_REPLY", "status": "SUCCESS" }
+     */
+    private void handleForceCloseReply(JsonObject res) {
+        String status = getStr(res, "status");
+
+        updateLastAuditDetail("FORCE_CLOSE",
+                "SUCCESS".equals(status) ? "OK Đóng phiên thành công" : "Lỗi");
+
+        if ("SUCCESS".equals(status)) {
+            showAlert(Alert.AlertType.INFORMATION, "Thành công", "Đã ép đóng phiên đấu giá thành công!");
+            requestAllAuctions();
+        } else {
+            showAlert(Alert.AlertType.ERROR, "Lỗi", "Không thể đóng phiên đấu giá.");
+        }
+    }
+
+    /**
+     * GLOBAL_NOTIFY â€” server broadcast khi phiÃªn má»›i má»Ÿ
+     * { "action": "GLOBAL_NOTIFY", "message": "MÃ³n hÃ ng má»›i lÃªn sÃ n: ..." }
+     */
+    private void handleGlobalNotify(JsonObject res) {
+        String message = getStr(res, "message");
+        appendAuditRow("GLOBAL_NOTIFY", "system", "Broadcast", message);
+        if (adminLoggedIn) requestAllAuctions();
+    }
+
+    private void handleError(JsonObject res) {
+        String msg = getStr(res, "message");
+        if (!msg.isEmpty()) showAlert(Alert.AlertType.ERROR, "Lỗi từ server", msg);
+    }
+
+    // ==================== CHART UPDATES ====================
+
+    private void updateRolesPieChart() {
+        int u = 0, s = 0, a = 0, o = 0;
+        for (UserRow row : allUsers) {
+            switch (row.getRole()) {
+                case "USER"   -> u++;
+                case "SELLER" -> s++;
+                case "ADMIN"  -> a++;
+                default       -> o++;
+            }
+        }
+        rolesPieChart.getData().clear();
+        if (u > 0) rolesPieChart.getData().add(new PieChart.Data("USER (" + u + ")", u));
+        if (s > 0) rolesPieChart.getData().add(new PieChart.Data("SELLER (" + s + ")", s));
+        if (a > 0) rolesPieChart.getData().add(new PieChart.Data("ADMIN (" + a + ")", a));
+        if (o > 0) rolesPieChart.getData().add(new PieChart.Data("Khác (" + o + ")", o));
+
+        XYChart.Series<String, Number> series = new XYChart.Series<>();
+        series.setName("Số lượng");
+        if (u > 0) series.getData().add(new XYChart.Data<>("USER", u));
+        if (s > 0) series.getData().add(new XYChart.Data<>("SELLER", s));
+        if (a > 0) series.getData().add(new XYChart.Data<>("ADMIN", a));
+        usersGrowthChart.getData().clear();
+        if (!series.getData().isEmpty()) usersGrowthChart.getData().add(series);
+    }
+
+    private void updateRevenueChart() {
+        LinkedHashMap<String, Double> rev = new LinkedHashMap<>();
+        for (AuctionRow r : allAuctions) rev.merge(r.getStatus(), r.getCurrentPrice(), Double::sum);
+
+        XYChart.Series<String, Number> series = new XYChart.Series<>();
+        series.setName("Tổng giá trị (VNĐ)");
+        for (Map.Entry<String, Double> e : rev.entrySet()) {
+            if (e.getValue() > 0) series.getData().add(new XYChart.Data<>(e.getKey(), e.getValue()));
+        }
+        revenueChart.getData().clear();
+        if (!series.getData().isEmpty()) revenueChart.getData().add(series);
+    }
+
+    // ==================== SEARCH + FILTER ====================
+
+    @FXML public void handleUserSearch() { applyUserFilter(); }
+
+    @FXML public void clearUserSearch() {
+        userSearchField.clear();
+        userRoleFilter.getSelectionModel().selectFirst();
+        applyUserFilter();
+    }
+
+    private void applyUserFilter() {
+        String keyword = userSearchField != null ? userSearchField.getText().trim().toLowerCase() : "";
+        String role    = userRoleFilter  != null ? userRoleFilter.getValue() : "Tất cả";
+        filteredUsers.clear();
+        for (UserRow u : allUsers) {
+            boolean ok = (keyword.isEmpty()
+                    || u.getUsername().toLowerCase().contains(keyword)
+                    || u.getEmail().toLowerCase().contains(keyword)
+                    || u.getId().toLowerCase().contains(keyword))
+                    && (role == null || role.equals("Tất cả") || u.getRole().equals(role));
+            if (ok) filteredUsers.add(u);
+        }
+        userCurrentPage = 1;
+        updateUserPageInfo();
+    }
+
+    @FXML public void handleAucSearch() { applyAucFilter(); }
+
+    @FXML public void clearAucSearch() {
+        aucSearchField.clear();
+        aucStatusFilter.getSelectionModel().selectFirst();
+        applyAucFilter();
+    }
+
+    private void applyAucFilter() {
+        String keyword = aucSearchField  != null ? aucSearchField.getText().trim().toLowerCase() : "";
+        String status  = aucStatusFilter != null ? aucStatusFilter.getValue() : "Tất cả";
+        filteredAuctions.clear();
+        for (AuctionRow a : allAuctions) {
+            boolean ok = (keyword.isEmpty()
+                    || a.getTitle().toLowerCase().contains(keyword)
+                    || a.getId().toLowerCase().contains(keyword))
+                    && (status == null || status.equals("Tất cả") || a.getStatus().equals(status));
+            if (ok) filteredAuctions.add(a);
+        }
+        aucCurrentPage = 1;
+        updateAucPageInfo();
+    }
+
+    // ==================== AUDIT FILTER ====================
+
+    @FXML public void filterAuditLog() {
+        if (auditDateFilter.getValue() == null) return;
+        String date = auditDateFilter.getValue().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        ObservableList<AuditRow> f = FXCollections.observableArrayList();
+        for (AuditRow a : allAuditLogs) if (a.getTime().startsWith(date)) f.add(a);
+        auditTable.setItems(f);
+    }
+
+    @FXML public void resetAuditFilter() {
+        auditDateFilter.setValue(null);
+        auditTable.setItems(allAuditLogs);
+    }
+
+    // ==================== PAGINATION ====================
+
+    @FXML public void userPrevPage() {
+        if (userCurrentPage > 1) { userCurrentPage--; updateUserPageInfo(); }
+    }
+
+    @FXML public void userNextPage() {
+        int tp = (int) Math.ceil((double) filteredUsers.size() / PAGE_SIZE);
+        if (userCurrentPage < tp) { userCurrentPage++; updateUserPageInfo(); }
+    }
+
+    @FXML public void aucPrevPage() {
+        if (aucCurrentPage > 1) { aucCurrentPage--; updateAucPageInfo(); }
+    }
+
+    @FXML public void aucNextPage() {
+        int tp = (int) Math.ceil((double) filteredAuctions.size() / PAGE_SIZE);
+        if (aucCurrentPage < tp) { aucCurrentPage++; updateAucPageInfo(); }
+    }
+
+    private void updateUserPageInfo() {
+        int total = filteredUsers.size();
+        int tp    = Math.max(1, (int) Math.ceil((double) total / PAGE_SIZE));
+        userPageInfo.setText("Trang " + userCurrentPage + " / " + tp);
+        userCountLabel.setText(total + " người dùng");
+    }
+
+    private void updateAucPageInfo() {
+        int total = filteredAuctions.size();
+        int tp    = Math.max(1, (int) Math.ceil((double) total / PAGE_SIZE));
+        aucPageInfo.setText("Trang " + aucCurrentPage + " / " + tp);
+        aucCountLabel.setText(total + " phiên");
+    }
+
+    // ==================== AUDIT LOG ====================
+
+    private void appendAuditRow(String action, String actor, String target, String detail) {
+        String time = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
+        allAuditLogs.add(0, new AuditRow(time, actor, action, target, detail));
+    }
+
+    /** Cáº­p nháº­t dÃ²ng audit log gáº§n nháº¥t theo action type */
+    private void updateLastAuditDetail(String actionType, String newDetail) {
+        for (int i = 0; i < Math.min(5, allAuditLogs.size()); i++) {
+            AuditRow r = allAuditLogs.get(i);
+            if (actionType.equals(r.getAction())) {
+                allAuditLogs.set(i, new AuditRow(r.getTime(), r.getActor(), r.getAction(), r.getTarget(), newDetail));
+                break;
+            }
+        }
+    }
+
+    // ==================== HELPERS ====================
+
+    private String getStr(JsonObject obj, String key) {
+        return (obj.has(key) && !obj.get(key).isJsonNull()) ? obj.get(key).getAsString() : "";
+    }
+
+    private void showAlert(Alert.AlertType type, String title, String message) {
+        Platform.runLater(() -> {
+            Alert alert = new Alert(type);
+            alert.setTitle(title);
+            alert.setHeaderText(null);
+            alert.setContentText(message);
+            alert.showAndWait();
+        });
+    }
+
+    // ==================== MODEL CLASSES ====================
+
+    public static class UserRow {
+        private final String id, username, email, role;
+        private final double balance;
+        private final boolean active;
+
+        public UserRow(String id, String username, String email, String role, double balance, boolean active) {
+            this.id = id; this.username = username; this.email = email;
+            this.role = role; this.balance = balance; this.active = active;
+        }
+
+        public String getId()               { return id; }
+        public String getUsername()         { return username; }
+        public String getEmail()            { return email; }
+        public String getRole()             { return role; }
+        public double getBalance()          { return balance; }
+        public String getBalanceFormatted() { return String.format("VNĐ %,.0f", balance); }
+        public boolean isActive()           { return active; }
+    }
+
+    public static class AuctionRow {
+        private final String id, title, status;
+        private final double currentPrice;
+        private final JsonObject itemJson;
+
+        public AuctionRow(String id, String title, String status, double currentPrice, JsonObject itemJson) {
+            this.id = id; this.title = title; this.status = status; this.currentPrice = currentPrice;
+            this.itemJson = itemJson;
+        }
+
+        public String getId()             { return id; }
+        public String getTitle()          { return title; }
+        public String getStatus()         { return status; }
+        public double getCurrentPrice()   { return currentPrice; }
+        public String getPriceFormatted() { return String.format("VNĐ %,.0f", currentPrice); }
+        public JsonObject getItemJson()   { return itemJson; }
+    }
+
+    public static class AuditRow {
+        private final String time, actor, action, target, detail;
+
+        public AuditRow(String time, String actor, String action, String target, String detail) {
+            this.time = time; this.actor = actor; this.action = action;
+            this.target = target; this.detail = detail;
+        }
+
+        public String getTime()   { return time; }
+        public String getActor()  { return actor; }
+        public String getAction() { return action; }
+        public String getTarget() { return target; }
+        public String getDetail() { return detail; }
+    }
+}
+

@@ -78,7 +78,7 @@ public class DashboardController {
 
         switch (action) {
             case "AUCTIONS_LIST" -> handleAuctionsList(json);
-            case "REALTIME_BID_UPDATE" -> handleRealtimeBidUpdate(json);
+            case "REALTIME_BID_UPDATE", "NEW_BID" -> handleRealtimeBidUpdate(json);
 
             // QUAN TRỌNG: Nghe loa phát thanh để tự refresh khi có hàng mới!
             case "GLOBAL_NOTIFY" -> {
@@ -136,7 +136,8 @@ public class DashboardController {
                     String endTimeStr = getStringSafe(auction, "endTime");
 
                     // Bỏ qua các phiên đã chốt sổ
-                    if ("FINISHED".equals(status) || "CLOSED".equals(status) || "CANCELLED".equals(status) || "FAILED".equals(status)) {
+                    if ("FINISHED".equals(status) || "CLOSED".equals(status) || "CANCELED".equals(status)
+                            || "CANCELLED".equals(status) || "PAID".equals(status) || "FAILED".equals(status)) {
                         continue;
                     }
 
