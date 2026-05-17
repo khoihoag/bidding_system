@@ -64,4 +64,17 @@ public class ItemService {
         // Chỉ đơn giản là gọi xuống Repo để lấy đồ
         return itemRepository.findById(itemId);
     }
+
+    // Trong ItemService.java
+    public List<Item> getWonItems(User actor) {
+        return itemRepository.findWonItemsByUserId(actor.getId());
+    }
+    // Trong ItemService.java
+    public void changeItemOwner(String itemId, User newOwner) {
+        Item item = itemRepository.findById(itemId);
+        if (item != null) {
+            item.setSeller(newOwner);
+            itemRepository.saveOrUpdate(item);
+        }
+    }
 }

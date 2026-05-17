@@ -6,7 +6,6 @@ import com.bidding.server.model.transaction.BiddingTransaction;
 import java.time.LocalDateTime;
 import lombok.Setter;
 import lombok.Getter;
-
 @Getter
 @Setter
 public class AuctionEvent {
@@ -59,4 +58,14 @@ public class AuctionEvent {
         }
         return null;
     }
+    // ... code cũ của ông (getWinnerId) ...
+
+    public String getTimestampStr() {
+        if (this.timestamp != null) {
+            return this.timestamp.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        }
+        // Backup an toàn lỡ timestamp bị null
+        return LocalDateTime.now().format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+    }
 }
+

@@ -16,9 +16,11 @@ import lombok.Getter;
 @jakarta.persistence.Entity
 @Table(name = "auctions")
 public class AuctionEntity extends Entity {
+    private boolean isReverse = false; // Đánh dấu đây là đấu giá ngược
+    private double dropStep = 0.0;
 
     // Giả định 1 món đồ (Item) chỉ được đấu giá 1 lần duy nhất trong đời
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "item_id", nullable = false)
     private Item item;
 

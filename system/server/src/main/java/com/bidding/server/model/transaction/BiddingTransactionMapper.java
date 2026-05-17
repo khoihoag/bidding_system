@@ -1,7 +1,9 @@
 package com.bidding.server.model.transaction;
 
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
+import java.util.List;
 import com.bidding.server.model.auction.AuctionMapper;
 @Mapper(uses = {AuctionMapper.class}) // <--- CHIÊU NÀY QUAN TRỌNG
 public interface BiddingTransactionMapper {
@@ -11,6 +13,6 @@ public interface BiddingTransactionMapper {
     // Vì tên thuộc tính cùng là 'auction' (nhưng khác kiểu dữ liệu), 
     // MapStruct sẽ tự dùng AuctionMapper để chuyển đổi.
     BiddingTransactionEntity toEntity(BiddingTransaction model);
-
+    @Mapping(target = "auction", ignore = true)
     BiddingTransaction toModel(BiddingTransactionEntity entity);
 }

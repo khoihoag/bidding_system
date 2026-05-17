@@ -10,22 +10,15 @@ import org.hibernate.query.Query;
 import java.util.List;
 
 public class UserRepository {
-    // Lazy initialization: chỉ khởi tạo khi lần đầu tiên gọi getFactory()
-    private static SessionFactory factory;
-
-    private static synchronized SessionFactory getFactory() {
-        if (factory == null) {
-            factory = new Configuration()
-                    .configure("hibernate.cfg.xml")
-                    .buildSessionFactory();
-        }
-        return factory;
-    }
+    // Vẫn xài chung cấu hình Hibernate
+    private static final SessionFactory factory = new Configuration()
+            .configure("hibernate.cfg.xml")
+            .buildSessionFactory();
 
     // Lưu hoặc cập nhật User
     public void saveOrUpdate(User user) {
         Transaction transaction = null;
-        try (Session session = getFactory().openSession()) {
+        try (Session session = factory.openSession()) {
             transaction = session.beginTransaction();
             session.merge(user); // Dùng merge cho an toàn với ID tự sinh
             transaction.commit();
@@ -37,7 +30,7 @@ public class UserRepository {
 
     // Tìm User bằng ID
     public User findById(String id) {
-        try (Session session = getFactory().openSession()) {
+        try (Session session = factory.openSession()) {
             return session.get(User.class, id);
         }
     }
@@ -46,7 +39,7 @@ public class UserRepository {
     // VŨ KHÍ MỚI: TÌM USER ĐỂ LOGIN
     // ========================================================
     public User findByUsernameAndPassword(String username, String password) {
-        try (Session session = getFactory().openSession()) {
+        try (Session session = factory.openSession()) {
             // Câu lệnh HQL chọc thẳng vào bảng users
             String hql = "FROM User WHERE username = :u AND passwordHash = :p";
             Query<User> query = session.createQuery(hql, User.class);
@@ -61,9 +54,9 @@ public class UserRepository {
     // VŨ KHÍ MỚI: LẤY LỊCH SỬ ĐẶT GIÁ CỦA 1 USER
     // ========================================================
     public List<BiddingTransactionEntity> getBidHistoryByUserId(String userId) {
-        try (Session session = getFactory().openSession()) {
-            // Lôi tất cả giao dịch trong bảng bidding_transactions mà thằng User này tham gia, sắp xếp thời gian mới nhất lên đầu
-            String hql = "FROM BiddingTransactionEntity t WHERE t.bidder.id = :uid ORDER BY t.bidTime DESC";
+        try (Session session = factory.openSession()) {
+            // SỬA HQL: Ép nó lấy luôn thông tin Auction trong 1 lần query (LEFT JOIN FETCH)
+            String hql = "SELECT t FROM BiddingTransactionEntity t LEFT JOIN FETCH t.auction WHERE t.bidder.id = :uid ORDER BY t.bidTime DESC";
             Query<BiddingTransactionEntity> query = session.createQuery(hql, BiddingTransactionEntity.class);
             query.setParameter("uid", userId);
 
@@ -71,7 +64,7 @@ public class UserRepository {
         }
     }
     public List<User> findAll() {
-        try (Session session = getFactory().openSession()) {
+        try (Session session = factory.openSession()) {
             // Câu lệnh HQL đơn giản nhất thế giới: Lấy tất cả từ bảng User
             String hql = "FROM User";
             Query<User> query = session.createQuery(hql, User.class);

@@ -1,0 +1,122 @@
+Nhóm Item:
+
+-case "GET_ITEMS":
+    +Json nhận vào :{
+                      "action": "GET_ITEMS"
+                    }
+    +Json trả về :{
+                    "action": "ITEMS_LIST",
+                    "items": [
+                      {
+                        "id": "item123",
+                        "name": "Bức tranh Mona Lisa",
+                        "startingPrice": 5000000,
+                        "condition": "NEW",
+                        "item_type": "Art",
+                        "artist": "Da Vinci",
+                        "images": ["C:\\path\\to\\image.jpg"]
+                      },
+                      {
+                        "id": "item456",
+                        "name": "Xe Mercedes",
+                        "startingPrice": 1000000000,
+                        "condition": "USED",
+                        "item_type": "Vehicle",
+                        "mileage": 50000,
+                        "images": []
+                      }
+                    ]
+                  }
+    + Thất bại : {
+                   "action": "ERROR",
+                   "message": "Vui lòng đăng nhập để xem kho đồ!"
+                 }
+
+    + luồng chạy : CLiendHandler--->Itemcontroller--->ItemService---->Itemrepository---->clienthandler
+
+-case "ADD_ITEM":
+    + Json nhận vào :{
+                       "action": "ADD_ITEM",
+
+                       // --- CÁC TRƯỜNG CHUNG (BẮT BUỘC) ---
+                       "name": "Bức tranh mùa thu",
+                       "description": "Tranh vẽ sơn dầu siêu đẹp",
+                       "startingPrice": 1500000,
+                       "type": "Art",
+                       "condition": "NEW",
+                       "images": [
+                           "C:\\Users\\Admin\\Pictures\\tranh1.jpg",
+                           "C:\\Users\\Admin\\Pictures\\tranh2.jpg"
+                       ],
+
+                       // --- CÁC TRƯỜNG RIÊNG (TÙY THEO TYPE) ---
+                       // Vì type = "Art" nên bắt buộc phải có 4 trường này:
+                       "artist": "Nguyễn Văn A",
+                       "medium": "Sơn Dầu",
+                       "yearCreated": 2023,
+                       "dimensions": "60x80"
+                     }
+    +Json trả về :{
+                    "action": "ADD_ITEM_REPLY",
+                    "status": "SUCCESS"
+                  }
+    + tr hợp thất bại :{
+                         "action": "ERROR",
+                         "message": "Phải đăng nhập mới được đăng bán đồ chứ!" // Hoặc lỗi hệ thống tương ứng
+                       }
+    + luồng chạy : CLientHandler--->Itemcontroller---->ItemService----->Itemrepository----->ClientHandler
+-case "UPDATE_ITEM":
+    + Json nhận vào :{
+                       "action": "UPDATE_ITEM",
+                       "itemId": "item123",
+                       "name": "Tên mới của món đồ",
+                       "description": "Mô tả mới"
+                     }
+    + Json trả về :{
+                     "action": "UPDATE_ITEM_REPLY",
+                     "status": "SUCCESS"
+                   }
+    + Tr hợp thất bại :{
+                         "action": "ERROR",
+                         "message": "Món hàng này đang được đấu giá, không được phép sửa đổi thông tin!"
+                       }
+    + Luồng chạy: ClientHandler ---> ItemController ---> ItemService ---> ItemRepository ---> ClientHandler
+
+-case "DELETE_ITEM":
+    + Json nhận vào :{
+                       "action": "DELETE_ITEM",
+                       "itemId": "item123"
+                     }
+    + Json trả về :{
+                     "action": "DELETE_ITEM_REPLY",
+                     "status": "SUCCESS"
+                   }
+    + Tr hợp thất bại :{
+                         "action": "ERROR",
+                         "message": "Đồ đang đấu giá, xóa là ăn phạt đấy! Không cho xóa."
+                       }
+    + Luồng chạy: ClientHandler ---> ItemController ---> ItemService ---> ItemRepository ---> ClientHandler
+
+-case "GET_AI_PRICE":
+    + Json nhận vào :{
+                       "action": "GET_AI_PRICE",
+                       "item_type": "Art",
+                       "starting_price": 1000000,
+                       "condition": "NEW",
+                       "artist": "Da Vinci",
+                       "medium": "Sơn dầu",
+                       "year_created": 1500,
+                       "dimensions": "50x50"
+                     }
+    + Json trả về :{
+                     "action": "AI_PRICE_REPLY",
+                     "data": {
+                         "item_name": "Art",
+                         "estimated_final_price": 5400000.0
+                     }
+                   }
+    + Tr hợp thất bại :{
+                         "action": "ERROR",
+                         "message": "Hệ thống AI hiện đang bảo trì, vui lòng thử lại sau!"
+                       }
+    + Luồng chạy: ClientHandler ---> ItemController ---> HttpClient (Java) ---> FastAPI (Python) ---> ClientHandler

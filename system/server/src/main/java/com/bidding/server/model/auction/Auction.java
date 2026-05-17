@@ -1,5 +1,5 @@
 package com.bidding.server.model.auction;
-
+import java.util.concurrent.PriorityBlockingQueue;
 import com.bidding.server.enums.BidStatus;
 import com.bidding.server.events.AuctionEvent;
 import com.bidding.server.events.AuctionObserver;
@@ -17,10 +17,11 @@ import java.util.concurrent.locks.ReentrantLock;
 import com.bidding.server.model.user.User;
 import lombok.Setter;
 import lombok.Getter;
-
 @Getter
 @Setter
 public class Auction extends Entity {
+    private boolean isReverse = false; // Đánh dấu đây là đấu giá ngược
+    private double dropStep = 0.0;
     private Item item;
     private AuctionStatus status;
     private volatile LocalDateTime startTime;
@@ -28,7 +29,7 @@ public class Auction extends Entity {
     private AtomicReference<Double> currentPrice;
     private User currentWinner;
     private CopyOnWriteArrayList<BiddingTransaction> bidHistory;
-    private CopyOnWriteArrayList<AuctionObserver> observers;
+    private PriorityBlockingQueue<AutoBidConfig> autoBidQueue;
     private int antiSnipingSeconds;
     private int extensionSeconds; // Đã sửa lỗi chính tả từ ectensionSeconds
     private ReentrantLock lock;
@@ -37,7 +38,7 @@ public class Auction extends Entity {
         this.status = AuctionStatus.OPEN;
         this.currentPrice = new AtomicReference<>(0.0);
         this.bidHistory = new CopyOnWriteArrayList<>();
-        this.observers = new CopyOnWriteArrayList<>();
+        this.autoBidQueue = new PriorityBlockingQueue<>();
         this.lock = new ReentrantLock();
     }
 
@@ -53,21 +54,21 @@ public class Auction extends Entity {
         this.status = AuctionStatus.OPEN; // Mặc định là OPEN
         this.currentPrice = new AtomicReference<>(item != null ? item.getStartingPrice() : 0.0);
         this.bidHistory = new CopyOnWriteArrayList<>();
-        this.observers = new CopyOnWriteArrayList<>();
         this.lock = new ReentrantLock();
         this.antiSnipingSeconds = antiSnipingSeconds;
         this.extensionSeconds = extensionSeconds;
+        this.autoBidQueue = new PriorityBlockingQueue<>();
     }
 
     // Đặt giá
-    public synchronized BiddingTransaction placeBid(User bidder, double amount) {
+    // ĐÃ XÓA CHỮ 'synchronized' Ở ĐÂY
+    public BiddingTransaction placeBid(User bidder, double amount,boolean isAutoBid) {
         // 1. Kiểm tra trạng thái phiên (Fail-fast validation)
         if (this.status != AuctionStatus.RUNNING) {
             throw new AuctionClosedException("Phiên đấu giá đã đóng hoặc chưa bắt đầu.");
         }
 
         BiddingTransaction newTransaction = null;
-        AuctionEvent eventToNotify = null;
 
         // 2. Bắt đầu vùng găng (Critical Section) bằng ReentrantLock
         lock.lock();
@@ -75,7 +76,7 @@ public class Auction extends Entity {
             // Đọc giá trị hiện tại
             Double expectedPrice = currentPrice.get();
 
-            // Kiểm tra giá đặt có hợp lệ không (phải lớn hơn giá hiện tại)
+            // Kiểm tra giá đặt có hợp lệ không
             if (!isValidBid(amount)) {
                 throw new InvalidBidAmountException("Giá đặt thấp hơn hoặc bằng giá hiện tại.");
             }
@@ -86,15 +87,16 @@ public class Auction extends Entity {
                 // Cập nhật người thắng tạm thời
                 this.currentWinner = bidder;
 
+                // Kiểm tra Anti-snipe
+                boolean isExtended = checkAntiSnipe();
+
                 // Tạo giao dịch và lưu vào lịch sử
-                newTransaction = new BiddingTransaction(bidder, this, amount, LocalDateTime.now(), BidStatus.ACCEPTED, false);
+                newTransaction = new BiddingTransaction(
+                        bidder, this, amount, LocalDateTime.now(), BidStatus.ACCEPTED, isAutoBid, isExtended
+                );
+
                 this.bidHistory.add(newTransaction);
 
-                // Kiểm tra và kích hoạt Anti-sniping
-                checkAntiSnipe();
-
-                // Tạo sự kiện để thông báo
-                eventToNotify = new AuctionEvent(EventType.BID_PLACED, this, newTransaction, LocalDateTime.now(), "Có lượt đặt giá mới: $" + amount);
             } else {
                 throw new InvalidBidAmountException("Giá đã bị thay đổi bởi luồng khác. Vui lòng tải lại và thử lại.");
             }
@@ -102,13 +104,6 @@ public class Auction extends Entity {
             // 4. Luôn luôn giải phóng khóa
             lock.unlock();
         }
-
-        /* TODO: Fix
-        // 5. Notify Observers NGOÀI khối lock để tránh Deadlock
-        if (eventToNotify != null) {
-            notifyObservers(eventToNotify);
-        }
-        */
 
         return newTransaction;
     }
@@ -124,8 +119,6 @@ public class Auction extends Entity {
 
         System.out.println("[AUDIT] Phiên đấu giá [" + this.getId() + "] đã CHÍNH THỨC BẮT ĐẦU lúc " + this.startTime);
 
-        AuctionEvent event = new AuctionEvent(EventType.AUCTION_STARTED, this, null, LocalDateTime.now(), "Phiên đấu giá bắt đầu");
-        //notifyObservers(event);
     }
 
     public void end() {
@@ -144,12 +137,8 @@ public class Auction extends Entity {
                 System.out.println(">>> Người chiến thắng: " + this.currentWinner.getUsername());
             }
 
-            closeEvent = new AuctionEvent(EventType.AUCTION_CLOSED, this, null, LocalDateTime.now(), "Phiên đấu giá kết thúc");
         }
 
-        if (closeEvent != null) {
-            //notifyObservers(closeEvent);
-        }
     }
 
     // Gia hạn phiên (Đã sửa tên hàm cho đúng chính tả)
@@ -157,32 +146,51 @@ public class Auction extends Entity {
         // TODO: Implement extendTime logic
     }
 
-    // Quản lý các observer
-    public void addObserver(AuctionObserver observer) {
-        if (observer != null && !this.observers.contains(observer)) {
-            this.observers.add(observer);
-        }
-    }
-
-    public void removeObserver(AuctionObserver observer) {
-        if (observer != null) {
-            this.observers.remove(observer);
-        }
-    }
-
-    // Thông báo AutionEvent đến tất cả observer
-    private void notifyObserver(AuctionEvent event) {
-        // TODO: Implement notifyObserver logic
-    }
 
     // Kiểm tra giá đặt hợp lệ
     private boolean isValidBid(double amount) {
         return amount > currentPrice.get();
     }
 
-    private void checkAntiSnipe() {
-        // TODO: Implement checkAntiSnipe logic
+    private boolean checkAntiSnipe() {
+        // Nếu không cấu hình thời gian chống bắn tỉa thì bỏ qua
+        if (this.antiSnipingSeconds <= 0 || this.extensionSeconds <= 0) {
+            return false;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        // Tính toán "Vùng Đỏ"
+        LocalDateTime snipeThreshold = this.endTime.minusSeconds(this.antiSnipingSeconds);
+
+        // Nếu thời điểm hiện tại nằm trong Vùng Đỏ và phiên chưa thực sự kết thúc
+        if (now.isAfter(snipeThreshold) && now.isBefore(this.endTime)) {
+            // Gia hạn thời gian kết thúc
+            this.endTime = this.endTime.plusSeconds(this.extensionSeconds);
+            System.out.println("[ANTI-SNIPE] Phát hiện bắn tỉa! Gia hạn thêm " + this.extensionSeconds + " giây.");
+            return true;
+        }
+
+        return false;
     }
+    public void registerAutoBid(User user, double maxBid, double increment) {
+        if (this.status != AuctionStatus.RUNNING && this.status != AuctionStatus.OPEN) {
+            throw new RuntimeException("Chỉ được cài Auto-Bid khi phiên chưa kết thúc!");
+        }
+
+        // Tạo cấu hình mới
+        AutoBidConfig config = new AutoBidConfig(user, maxBid, increment);
+
+        // Ném vào hàng đợi, nó sẽ tự nhảy vào đúng vị trí theo thời gian registeredAt
+        autoBidQueue.put(config);
+
+        System.out.println("[Auto-Bid] User " + user.getUsername() + " đã cài Bot thành công!");
+    }
+
+    // Getter để Service có thể lôi đống Bot ra xử lý
+    public PriorityBlockingQueue<AutoBidConfig> getAutoBidQueue() {
+        return autoBidQueue;
+    }
+
 
     public void validate() {
         // TODO: Implement validate logic
@@ -196,4 +204,5 @@ public class Auction extends Entity {
     public boolean hasBids() {
         return this.bidHistory != null && !this.bidHistory.isEmpty();
     }
+
 }

@@ -5,8 +5,8 @@ import javax.annotation.processing.Generated;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-05-04T00:17:19+0700",
-    comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.46.0.v20260407-0427, environment: Java 21.0.10 (Eclipse Adoptium)"
+    date = "2026-05-11T13:50:02+0700",
+    comments = "version: 1.5.5.Final, compiler: javac, environment: Java 21.0.9 (Oracle Corporation)"
 )
 public class BiddingTransactionMapperImpl implements BiddingTransactionMapper {
 
@@ -20,13 +20,14 @@ public class BiddingTransactionMapperImpl implements BiddingTransactionMapper {
 
         BiddingTransactionEntity biddingTransactionEntity = new BiddingTransactionEntity();
 
+        biddingTransactionEntity.setId( model.getId() );
+        biddingTransactionEntity.setBidder( model.getBidder() );
         biddingTransactionEntity.setAuction( auctionMapper.toEntity( model.getAuction() ) );
-        biddingTransactionEntity.setAutoBid( model.isAutoBid() );
         biddingTransactionEntity.setBidAmount( model.getBidAmount() );
         biddingTransactionEntity.setBidTime( model.getBidTime() );
-        biddingTransactionEntity.setBidder( model.getBidder() );
-        biddingTransactionEntity.setId( model.getId() );
         biddingTransactionEntity.setStatus( model.getStatus() );
+        biddingTransactionEntity.setAutoBid( model.isAutoBid() );
+        biddingTransactionEntity.setExtended( model.isExtended() );
 
         return biddingTransactionEntity;
     }
@@ -39,13 +40,13 @@ public class BiddingTransactionMapperImpl implements BiddingTransactionMapper {
 
         BiddingTransaction biddingTransaction = new BiddingTransaction();
 
-        biddingTransaction.setAuction( auctionMapper.toModel( entity.getAuction() ) );
-        biddingTransaction.setAutoBid( entity.isAutoBid() );
+        biddingTransaction.setId( entity.getId() );
+        biddingTransaction.setBidder( entity.getBidder() );
         biddingTransaction.setBidAmount( entity.getBidAmount() );
         biddingTransaction.setBidTime( entity.getBidTime() );
-        biddingTransaction.setBidder( entity.getBidder() );
-        biddingTransaction.setId( entity.getId() );
         biddingTransaction.setStatus( entity.getStatus() );
+        biddingTransaction.setAutoBid( entity.isAutoBid() );
+        biddingTransaction.setExtended( entity.isExtended() );
 
         return biddingTransaction;
     }
