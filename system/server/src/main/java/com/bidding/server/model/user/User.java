@@ -2,13 +2,9 @@ package com.bidding.server.model.user;
 
 import com.bidding.server.model.core.Entity;
 import com.bidding.server.enums.UserRole;
-import com.bidding.server.model.item.Item;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Getter
 @Setter
@@ -32,10 +28,6 @@ public class User extends Entity {
 
     private double balance;
     private double totalRevenue;
-
-    // Giữ lại để Hibernate tự động dọn rác (xóa Item) nếu User này bị Admin xóa khỏi DB
-    @OneToMany(mappedBy = "seller", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Item> items = new ArrayList<>();
 
     // ==========================================
     // HÀM KHỞI TẠO

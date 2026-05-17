@@ -1,7 +1,6 @@
 package com.bidding.server.model.item;
 
 import com.bidding.server.enums.ItemCondition;
-import com.bidding.server.model.user.User;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,8 +17,8 @@ public class Electronics extends Item {
         super();
     }
 
-    public Electronics(String id, String name, String description, double startingPrice, List<String> images, User seller, ItemCondition condition, String brand, String model, int warrantyMonths, int powerWatts) {
-        super(id, name, description, startingPrice, images, seller, condition);
+    public Electronics(String id, String name, String description, double startingPrice, List<String> images, String sellerId, String sellerFullName, ItemCondition condition, String brand, String model, int warrantyMonths, int powerWatts) {
+        super(id, name, description, startingPrice, images, sellerId, sellerFullName, condition);
         this.brand = brand;
         this.model = model;
         this.warrantyMonths = warrantyMonths;

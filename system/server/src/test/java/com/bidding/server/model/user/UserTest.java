@@ -9,16 +9,12 @@ import static org.junit.jupiter.api.Assertions.*;
 class UserTest {
 
     @Test
-    @DisplayName("Khởi tạo rỗng (Default Constructor) phải có sẵn ID và danh sách Item không bị null")
+    @DisplayName("Khởi tạo rỗng (Default Constructor) phải có sẵn ID")
     void testDefaultConstructor() {
         User user = new User();
 
         // ID được kế thừa từ Entity cha, phải tự sinh ra ngay trên RAM
         assertNotNull(user.getId(), "ID không được để trống");
-
-        // Danh sách items phải được khởi tạo sẵn (ArrayList rỗng) chứ không phải null
-        assertNotNull(user.getItems());
-        assertTrue(user.getItems().isEmpty());
     }
 
     @Test

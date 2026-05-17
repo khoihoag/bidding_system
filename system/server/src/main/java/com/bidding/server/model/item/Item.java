@@ -1,6 +1,5 @@
 package com.bidding.server.model.item;
 
-import com.bidding.server.model.user.User;
 import java.util.List;
 import java.util.Map;
 import com.bidding.server.enums.ItemCondition;
@@ -35,9 +34,11 @@ public abstract class Item extends Entity {
     @Column(name = "image_url")
     private List<String> images;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "seller_id", nullable = false)
-    private User seller;
+    @Column(name = "seller_id", nullable = false)
+    private String sellerId;
+
+    @Column(name = "seller_full_name")
+    private String sellerFullName;
 
     // 3. ĐỔI TÊN CỘT TRÁNH TỪ KHÓA CẤM "CONDITION" CỦA MYSQL 8
     @Enumerated(EnumType.STRING)
@@ -48,7 +49,7 @@ public abstract class Item extends Entity {
         super();
     }
 
-    public Item(String id, String name, String description, double startingPrice, List<String> images, User seller, ItemCondition condition) {
+    public Item(String id, String name, String description, double startingPrice, List<String> images, String sellerId, String sellerFullName, ItemCondition condition) {
         super();
         if (id != null && !id.isEmpty()) {
             this.setId(id);
@@ -57,7 +58,8 @@ public abstract class Item extends Entity {
         this.description = description;
         this.startingPrice = startingPrice;
         this.images = images;
-        this.seller = seller;
+        this.sellerId = sellerId;
+        this.sellerFullName = sellerFullName;
         this.condition = condition;
     }
 

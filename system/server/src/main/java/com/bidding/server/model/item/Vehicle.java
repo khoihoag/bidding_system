@@ -1,5 +1,4 @@
 package com.bidding.server.model.item;
-import com.bidding.server.model.user.User;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,8 +16,8 @@ public class Vehicle extends Item {
         super();
     }
 
-    public Vehicle(String id, String name, String description, double startingPrice, List<String> images, User seller, ItemCondition condition, String make, String model, int year, int mileage, String fuelType) {
-        super(id, name, description, startingPrice, images, seller, condition);
+    public Vehicle(String id, String name, String description, double startingPrice, List<String> images, String sellerId, String sellerFullName, ItemCondition condition, String make, String model, int year, int mileage, String fuelType) {
+        super(id, name, description, startingPrice, images, sellerId, sellerFullName, condition);
         this.make = make;
         this.model = model;
         this.year = year;

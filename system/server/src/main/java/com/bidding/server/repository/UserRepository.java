@@ -68,7 +68,6 @@ public class UserRepository {
             // Câu lệnh HQL đơn giản nhất thế giới: Lấy tất cả từ bảng User
             String hql = "FROM User";
             Query<User> query = session.createQuery(hql, User.class);
-
             return query.list(); // Trả về nguyên một danh sách giang hồ mạng
         }
     }

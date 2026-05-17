@@ -9,6 +9,7 @@ import com.bidding.server.model.item.Item;
 import com.bidding.server.service.ItemService;
 import com.bidding.server.service.AuctionService;
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.util.List;
 import java.net.URI;
@@ -51,6 +52,8 @@ public class ItemController {
                 itemObj.addProperty("condition", item.getCondition() != null ? item.getCondition().toString() : "NEW");
                 itemObj.addProperty("type", item.getCategory());
                 itemObj.addProperty("description", item.getDescription());
+                itemObj.addProperty("sellerId", item.getSellerId());
+                itemObj.addProperty("sellerFullName", item.getSellerFullName());
 
                 if (item.getImages() != null && !item.getImages().isEmpty()) {
                     com.google.gson.JsonArray imgArray = new com.google.gson.JsonArray();
@@ -98,7 +101,10 @@ public class ItemController {
         try {
             String name = request.get("name").getAsString();
             String desc = request.get("description").getAsString();
-            double price = request.get("startingPrice").getAsDouble();
+            double price = requireDouble(request, "startingPrice");
+            if (price < 0) {
+                throw new IllegalArgumentException("startingPrice phải lớn hơn hoặc bằng 0.");
+            }
             String type = request.get("type").getAsString();
 
             com.bidding.server.enums.ItemCondition condition = null;
@@ -119,15 +125,15 @@ public class ItemController {
             switch (type) {
                 case "Art":
                     // Thay chữ null bằng imageList
-                    newItem = new com.bidding.server.model.item.Art(null, name, desc, price, imageList, client.getLoggedInUser(), condition, request.get("artist").getAsString(), request.get("medium").getAsString(), request.get("yearCreated").getAsInt(), request.get("dimensions").getAsString());
+                    newItem = new com.bidding.server.model.item.Art(null, name, desc, price, imageList, client.getLoggedInUser().getId(), client.getLoggedInUser().getFullName(), condition, request.get("artist").getAsString(), request.get("medium").getAsString(), requireInt(request, "yearCreated"), request.get("dimensions").getAsString());
                     break;
                 case "Electronics":
                     // Thay chữ null bằng imageList
-                    newItem = new com.bidding.server.model.item.Electronics(null, name, desc, price, imageList, client.getLoggedInUser(), condition, request.get("brand").getAsString(), request.get("model").getAsString(), request.get("warrantyMonths").getAsInt(), request.get("powerWatts").getAsInt());
+                    newItem = new com.bidding.server.model.item.Electronics(null, name, desc, price, imageList, client.getLoggedInUser().getId(), client.getLoggedInUser().getFullName(), condition, request.get("brand").getAsString(), request.get("model").getAsString(), requireInt(request, "warrantyMonths"), requireInt(request, "powerWatts"));
                     break;
                 case "Vehicle":
                     // Thay chữ null bằng imageList
-                    newItem = new com.bidding.server.model.item.Vehicle(null, name, desc, price, imageList, client.getLoggedInUser(), condition, request.get("make").getAsString(), request.get("model").getAsString(), request.get("year").getAsInt(), request.get("mileage").getAsInt(), request.get("fuelType").getAsString());
+                    newItem = new com.bidding.server.model.item.Vehicle(null, name, desc, price, imageList, client.getLoggedInUser().getId(), client.getLoggedInUser().getFullName(), condition, request.get("make").getAsString(), request.get("model").getAsString(), requireInt(request, "year"), requireInt(request, "mileage"), request.get("fuelType").getAsString());
                     break;
                 default:
                     client.sendError("Loại mặt hàng không hợp lệ!");
@@ -139,6 +145,37 @@ public class ItemController {
 
         } catch (Exception e) {
             client.sendError("Lỗi khi đăng bán vật phẩm: " + e.getMessage());
+        }
+    }
+
+    private double requireDouble(JsonObject request, String fieldName) {
+        JsonElement value = request.get(fieldName);
+        if (value == null || value.isJsonNull() || !value.isJsonPrimitive() || !value.getAsJsonPrimitive().isNumber()) {
+            throw new IllegalArgumentException(fieldName + " phải là số, không được truyền dạng chuỗi.");
+        }
+
+        double result = value.getAsDouble();
+        if (Double.isNaN(result) || Double.isInfinite(result)) {
+            throw new IllegalArgumentException(fieldName + " không hợp lệ.");
+        }
+        return result;
+    }
+
+    private int requireInt(JsonObject request, String fieldName) {
+        JsonElement value = request.get(fieldName);
+        if (value == null || value.isJsonNull() || !value.isJsonPrimitive() || !value.getAsJsonPrimitive().isNumber()) {
+            throw new IllegalArgumentException(fieldName + " phải là số nguyên, không được truyền dạng chuỗi.");
+        }
+
+        String rawValue = value.getAsString();
+        if (!rawValue.matches("-?\\d+")) {
+            throw new IllegalArgumentException(fieldName + " phải là số nguyên.");
+        }
+
+        try {
+            return Integer.parseInt(rawValue);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(fieldName + " vượt quá giới hạn số nguyên.");
         }
     }
 
@@ -256,6 +293,8 @@ public class ItemController {
                 itemObj.addProperty("condition", item.getCondition() != null ? item.getCondition().toString() : "NEW");
                 itemObj.addProperty("type", item.getCategory());
                 itemObj.addProperty("description", item.getDescription());
+                itemObj.addProperty("sellerId", item.getSellerId());
+                itemObj.addProperty("sellerFullName", item.getSellerFullName());
 
                 if (item.getImages() != null && !item.getImages().isEmpty()) {
                     com.google.gson.JsonArray imgArray = new com.google.gson.JsonArray();

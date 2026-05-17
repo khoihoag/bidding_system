@@ -177,8 +177,9 @@ public class AuctionService {
 
             User winner = auction.getCurrentWinner();
             if (winner != null) {
-                User originalSeller = auction.getItem().getSeller();
-                auction.getItem().setSeller(winner); // Đổi chủ trên RAM
+                User originalSeller = baoVe != null ? baoVe.findById(auction.getItem().getSellerId()) : null;
+                auction.getItem().setSellerId(winner.getId());
+                auction.getItem().setSellerFullName(winner.getFullName());
 
                 if (baoVe != null && originalSeller != null) {
                     baoVe.addBalance(originalSeller, auction.getCurrentPrice().get());

@@ -1,6 +1,5 @@
 package com.bidding.server.model.item;
 import java.util.HashMap;
-import com.bidding.server.model.user.User;
 import java.util.List;
 import java.util.Map;
 import com.bidding.server.enums.ItemCondition;
@@ -17,9 +16,8 @@ public class Art extends Item {
         super();
     }
 
-    public Art(String id, String name, String description, double startingPrice, List<String> images, User seller, ItemCondition condition, String artist, String medium, int yearCreated, String dimensions) {
-        // Truyền id và User seller lên cho Item xử lý
-        super(id, name, description, startingPrice, images, seller, condition);
+    public Art(String id, String name, String description, double startingPrice, List<String> images, String sellerId, String sellerFullName, ItemCondition condition, String artist, String medium, int yearCreated, String dimensions) {
+        super(id, name, description, startingPrice, images, sellerId, sellerFullName, condition);
         this.artist = artist;
         this.medium = medium;
         this.yearCreated = yearCreated;

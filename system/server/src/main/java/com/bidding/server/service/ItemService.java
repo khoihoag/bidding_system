@@ -15,8 +15,8 @@ public class ItemService {
     }
 
     public Item createItem(User actor, Item requestItem) {
-        // FIX: Truyền nguyên Object User vào thay vì truyền String ID
-        requestItem.setSeller(actor);
+        requestItem.setSellerId(actor.getId());
+        requestItem.setSellerFullName(actor.getFullName());
 
         itemRepository.saveOrUpdate(requestItem);
         return requestItem;
@@ -28,8 +28,7 @@ public class ItemService {
             throw new RuntimeException("Sản phẩm không tồn tại.");
         }
 
-        // FIX: Lấy getSeller().getId() để so sánh
-        if (!existingItem.getSeller().getId().equals(actor.getId())) {
+        if (!actor.getId().equals(existingItem.getSellerId())) {
             throw new SecurityException("Chỉ chủ sản phẩm mới được sửa thông tin.");
         }
 
@@ -44,8 +43,7 @@ public class ItemService {
         Item existingItem = itemRepository.findById(itemId);
         if (existingItem == null) return false;
 
-        // FIX: Lấy getSeller().getId()
-        if (!existingItem.getSeller().getId().equals(actor.getId())) {
+        if (!actor.getId().equals(existingItem.getSellerId())) {
             throw new SecurityException("Chỉ chủ sản phẩm mới được xóa.");
         }
 
@@ -73,7 +71,8 @@ public class ItemService {
     public void changeItemOwner(String itemId, User newOwner) {
         Item item = itemRepository.findById(itemId);
         if (item != null) {
-            item.setSeller(newOwner);
+            item.setSellerId(newOwner.getId());
+            item.setSellerFullName(newOwner.getFullName());
             itemRepository.saveOrUpdate(item);
         }
     }

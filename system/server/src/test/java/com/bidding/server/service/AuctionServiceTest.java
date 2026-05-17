@@ -42,7 +42,8 @@ class AuctionServiceTest {
         testItem = new com.bidding.server.model.item.Art();
         testItem.setId("ITEM_001");
         testItem.setName("Bức tranh quý");
-        testItem.setSeller(seller);
+        testItem.setSellerId(seller.getId());
+        testItem.setSellerFullName(seller.getFullName());
     }
 
     @Test

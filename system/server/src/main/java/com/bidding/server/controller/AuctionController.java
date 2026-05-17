@@ -48,11 +48,11 @@ public class AuctionController {
             if (item == null) { client.sendError("Không tìm thấy sản phẩm này!"); return; }
 
             // ================= BỌC THÉP LỖI DỮ LIỆU RÁC =================
-            if (item.getSeller() == null) {
+            if (item.getSellerId() == null || item.getSellerId().isEmpty()) {
                 client.sendError("Món đồ này bị lỗi dữ liệu cũ (Không có chủ). Sếp hãy xóa đi và Add 1 món đồ mới tinh vào kho nhé!");
                 return;
             }
-            if (!item.getSeller().getId().equals(client.getLoggedInUser().getId())) {
+            if (!item.getSellerId().equals(client.getLoggedInUser().getId())) {
                 client.sendError("Bạn không thể mang đồ của người khác đi đấu giá!");
                 return;
             }
@@ -87,11 +87,11 @@ public class AuctionController {
             if (item == null) { client.sendError("Không tìm thấy sản phẩm này!"); return; }
 
             // ================= BỌC THÉP LỖI DỮ LIỆU RÁC =================
-            if (item.getSeller() == null) {
+            if (item.getSellerId() == null || item.getSellerId().isEmpty()) {
                 client.sendError("Món đồ này bị lỗi dữ liệu cũ (Không có chủ). Sếp hãy xóa đi và Add 1 món đồ mới tinh vào kho nhé!");
                 return;
             }
-            if (!item.getSeller().getId().equals(client.getLoggedInUser().getId())) {
+            if (!item.getSellerId().equals(client.getLoggedInUser().getId())) {
                 client.sendError("Bạn không thể mang đồ của người khác đi đấu giá!");
                 return;
             }
@@ -150,6 +150,8 @@ public class AuctionController {
                     itemObj.addProperty("condition", item.getCondition() != null ? item.getCondition().toString() : "NEW");
                     itemObj.addProperty("type", item.getCategory());
                     itemObj.addProperty("description", item.getDescription());
+                    itemObj.addProperty("sellerId", item.getSellerId());
+                    itemObj.addProperty("sellerFullName", item.getSellerFullName());
 
                     // Lấy mảng đường dẫn ảnh
                     if (item.getImages() != null && !item.getImages().isEmpty()) {

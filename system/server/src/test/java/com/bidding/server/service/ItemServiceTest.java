@@ -43,7 +43,8 @@ class ItemServiceTest {
         testItem.setId("ITEM_123");
         testItem.setName("Bức tranh gốc");
         testItem.setDescription("Mô tả cũ");
-        testItem.setSeller(owner);
+        testItem.setSellerId(owner.getId());
+        testItem.setSellerFullName(owner.getFullName());
     }
 
     @Test
@@ -53,7 +54,8 @@ class ItemServiceTest {
 
         Item result = itemService.createItem(owner, requestItem);
 
-        assertEquals(owner, result.getSeller());
+        assertEquals(owner.getId(), result.getSellerId());
+        assertEquals(owner.getFullName(), result.getSellerFullName());
         verify(itemRepository, times(1)).saveOrUpdate(requestItem);
     }
 

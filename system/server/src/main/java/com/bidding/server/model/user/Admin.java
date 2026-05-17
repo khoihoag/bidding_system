@@ -22,7 +22,6 @@ public class Admin extends User {
         // Truyền thẳng UserRole.ADMIN lên cho hàm super() của thằng cha (User) xử lý
         super(id, username, email, passwordHash, fullName, UserRole.ADMIN);
     }
-
     // KHÔNG THÊM BẤT KỲ HÀM LOGIC NÀO VÀO ĐÂY NỮA!
     // Mọi thao tác quản trị phải được gọi qua AdminService.
 }

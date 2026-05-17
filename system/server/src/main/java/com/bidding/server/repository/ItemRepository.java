@@ -40,8 +40,8 @@ public class ItemRepository {
     }
     public List<Item> findBySellerId(String sellerId) {
         try (Session session = factory.openSession()) {
-            // HQL: Tìm tất cả Item mà có seller.id khớp với id truyền vào
-            String hql = "FROM Item i WHERE i.seller.id = :sid";
+            // HQL: Tìm tất cả Item mà có sellerId khớp với id truyền vào
+            String hql = "FROM Item i WHERE i.sellerId = :sid";
             return session.createQuery(hql, Item.class)
                     .setParameter("sid", sellerId)
                     .list();

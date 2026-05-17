@@ -5,9 +5,11 @@ import com.bidding.server.model.transaction.BiddingTransactionEntity;
 import com.bidding.server.repository.UserRepository;
 import com.bidding.server.enums.UserRole;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class UserService {
     private final UserRepository repository = new UserRepository();
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
 
     // ================= XỬ LÝ LOGIN =================
     public User login(String username, String password) {
@@ -27,10 +29,23 @@ public class UserService {
     }
     // ================= XỬ LÝ ĐĂNG KÝ =================
     public void register(String username, String password, String email, String fullName) {
+        if (username == null || username.trim().isEmpty()) {
+            throw new RuntimeException("Tên đăng nhập không được để trống!");
+        }
+        if (password == null || password.trim().isEmpty()) {
+            throw new RuntimeException("Mật khẩu không được để trống!");
+        }
+        if (fullName == null || fullName.trim().isEmpty()) {
+            throw new RuntimeException("Họ tên không được để trống!");
+        }
+        if (email == null || !EMAIL_PATTERN.matcher(email.trim()).matches()) {
+            throw new RuntimeException("Email không đúng định dạng!");
+        }
+
         // Tạo một Object User mới toanh.
         // Truyền null vào vị trí ID để Entity cha tự động đẻ ra UUID mới.
         // Role mặc định chắc chắn là USER thường rồi.
-        User newUser = new User(null, username, email, password, fullName, UserRole.USER);
+        User newUser = new User(null, username.trim(), email.trim(), password, fullName.trim(), UserRole.USER);
 
         // Gọi Thủ kho cất hồ sơ xuống Database
         repository.saveOrUpdate(newUser);
@@ -71,6 +86,13 @@ public class UserService {
         // Nhờ Kho xuống tận Database lấy thông tin user tươi rói lên
         User u = repository.findById(userId);
         return u != null ? u.getBalance() : 0.0;
+    }
+
+    public User findById(String userId) {
+        if (userId == null || userId.isEmpty()) {
+            return null;
+        }
+        return repository.findById(userId);
     }
 
     // Sau này ông có thể thêm các hàm như: register(User user), changePassword()... vào đây
