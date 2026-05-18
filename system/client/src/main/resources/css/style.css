@@ -92,6 +92,55 @@
     -fx-border-width: 0 0 0 4;
 }
 
+.notification-box {
+    -fx-background-color: rgba(22, 26, 35, 0.72);
+    -fx-background-radius: 8;
+    -fx-border-color: rgba(212, 175, 55, 0.18);
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 10;
+}
+
+.notification-title {
+    -fx-text-fill: #d4af37;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+.notification-clear-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: #8a94a6;
+    -fx-border-color: #343b4d;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+    -fx-font-size: 11px;
+    -fx-padding: 3 8;
+    -fx-cursor: hand;
+}
+
+.notification-clear-btn:hover {
+    -fx-text-fill: #d4af37;
+    -fx-border-color: #d4af37;
+    -fx-background-color: rgba(212, 175, 55, 0.08);
+}
+
+.notification-list {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.notification-list .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #d7dde8;
+    -fx-font-size: 11px;
+    -fx-padding: 6 4;
+    -fx-wrap-text: true;
+}
+
+.notification-list .list-cell:empty {
+    -fx-padding: 0;
+}
+
 /* ========================================================
    5. CHỮ & TIÊU ĐỀ (TYPOGRAPHY)
    ======================================================== */

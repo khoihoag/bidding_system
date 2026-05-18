@@ -13,6 +13,7 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
 public class NetworkClient {
@@ -23,6 +24,7 @@ public class NetworkClient {
     private BufferedReader in;
     private final Gson gson = new Gson();
     private Consumer<JsonObject> messageHandler;
+    private final List<Consumer<JsonObject>> globalMessageListeners = new CopyOnWriteArrayList<>();
     private final List<JsonObject> pendingMessages = new ArrayList<>();
 
     private static final String HOST = "localhost";
@@ -89,6 +91,9 @@ public class NetworkClient {
                 while (in != null && (line = in.readLine()) != null) {
                     System.out.println("<<< NHAN TU SERVER: " + line);
                     JsonObject json = JsonParser.parseString(line).getAsJsonObject();
+                    for (Consumer<JsonObject> listener : globalMessageListeners) {
+                        listener.accept(json);
+                    }
                     Consumer<JsonObject> handler = messageHandler;
                     if (handler != null) {
                         handler.accept(json);
@@ -117,6 +122,16 @@ public class NetworkClient {
 
     public void setMessageHandler(Consumer<JsonObject> handler) {
         this.messageHandler = handler;
+    }
+
+    public void addGlobalMessageListener(Consumer<JsonObject> listener) {
+        if (listener != null && !globalMessageListeners.contains(listener)) {
+            globalMessageListeners.add(listener);
+        }
+    }
+
+    public void removeGlobalMessageListener(Consumer<JsonObject> listener) {
+        globalMessageListeners.remove(listener);
     }
 
     private void flushPendingMessages() {
