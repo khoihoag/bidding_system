@@ -7,10 +7,15 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
 import javafx.scene.layout.StackPane;
+import com.google.gson.JsonObject;
 
 import java.io.IOException;
 import java.text.NumberFormat;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.function.Consumer;
 import javafx.application.Platform;
 public class MainController {
     private static MainController instance;
@@ -28,8 +33,13 @@ public class MainController {
     @FXML private Button btnHistory;
     @FXML
     private Label balanceLabel;
+    @FXML
+    private ListView<String> notificationListView;
     // Cái khung trống bên phải để nhúng các màn hình con vào
     @FXML private StackPane contentArea;
+    private static final int MAX_NOTIFICATIONS = 20;
+    private static final DateTimeFormatter NOTIFICATION_TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
+    private final Consumer<JsonObject> notificationListener = this::handleGlobalNotification;
 
     @FXML
     public void initialize() {
@@ -40,6 +50,7 @@ public class MainController {
         // Mặc định lúc vừa vào thì nhúng màn hình Kho đồ lên trước
         handleDashboard();
         updateBalanceDisplay();
+        NetworkClient.getInstance().addGlobalMessageListener(notificationListener);
     }
 
     @FXML
@@ -66,11 +77,47 @@ public class MainController {
     @FXML
     private void handleLogout() {
         // Xóa thông tin user và ngắt mạng hiện tại
+        NetworkClient.getInstance().removeGlobalMessageListener(notificationListener);
         NetworkClient.getInstance().setMessageHandler(null);
         UserSession.getInstance().clear();
 
         // Dùng con tàu AppNavigator chở về màn Login
         AppNavigator.navigate("Login.fxml");
+    }
+
+    @FXML
+    private void handleClearNotifications() {
+        if (notificationListView != null) {
+            notificationListView.getItems().clear();
+        }
+    }
+
+    private void handleGlobalNotification(JsonObject json) {
+        if (json == null || !json.has("action")) return;
+
+        String action = json.get("action").getAsString();
+        if (!"GLOBAL_NOTIFY".equals(action)) return;
+
+        String message = json.has("message") && !json.get("message").isJsonNull()
+                ? json.get("message").getAsString()
+                : "Có thông báo mới từ hệ thống.";
+
+        addNotification(message);
+    }
+
+    public void addNotification(String message) {
+        if (message == null || message.isBlank()) return;
+
+        Platform.runLater(() -> {
+            if (notificationListView == null) return;
+
+            String time = LocalTime.now().format(NOTIFICATION_TIME_FMT);
+            notificationListView.getItems().add(0, "[" + time + "] " + message);
+
+            while (notificationListView.getItems().size() > MAX_NOTIFICATIONS) {
+                notificationListView.getItems().remove(notificationListView.getItems().size() - 1);
+            }
+        });
     }
 
     // --- HÀM HỖ TRỢ: Nhúng giao diện FXML con vào khung contentArea ---

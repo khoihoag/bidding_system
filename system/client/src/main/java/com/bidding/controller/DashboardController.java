@@ -11,9 +11,11 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.FlowPane;
+import javafx.scene.Node;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
@@ -23,6 +25,7 @@ import com.bidding.controller.MainController;
 import java.io.File;
 import java.io.IOException;
 import java.text.NumberFormat;
+import java.text.Normalizer;
 import java.util.Locale;
 
 public class DashboardController {
@@ -30,16 +33,26 @@ public class DashboardController {
     @FXML
     private VBox auctionContainer;
 
+    @FXML
+    private TextField auctionSearchField;
+
     private final NetworkClient networkClient = NetworkClient.getInstance();
     private final NumberFormat currencyFmt = NumberFormat.getNumberInstance(Locale.of("vi", "VN"));
+    private JsonArray allAuctions = new JsonArray();
 
     @FXML
     public void initialize() {
         // ÉP BUỘC NetworkClient phải gửi tin nhắn cho TÔI (Dashboard)
         networkClient.setMessageHandler(this::handleServerMessage);
+        setupSearch();
 
         // Gửi lệnh đòi danh sách ngay
         requestAuctions();
+    }
+
+    private void setupSearch() {
+        if (auctionSearchField == null) return;
+        auctionSearchField.textProperty().addListener((obs, oldText, newText) -> renderAuctions(getFilteredAuctions()));
     }
 
     @FXML
@@ -47,6 +60,19 @@ public class DashboardController {
         // Trước khi refresh, phải đảm bảo mình đang cầm "cái tai"
         networkClient.setMessageHandler(this::handleServerMessage);
         requestAuctions();
+    }
+
+    @FXML
+    private void handleAuctionSearch() {
+        renderAuctions(getFilteredAuctions());
+    }
+
+    @FXML
+    private void clearAuctionSearch() {
+        if (auctionSearchField != null) {
+            auctionSearchField.clear();
+        }
+        renderAuctions(getFilteredAuctions());
     }
 
     private void requestAuctions() {
@@ -98,10 +124,18 @@ public class DashboardController {
         JsonArray data = json.getAsJsonArray("data");
 
         Platform.runLater(() -> {
+            allAuctions = copyAuctions(data);
+            renderAuctions(getFilteredAuctions());
+        });
+    }
+
+    private void renderAuctions(JsonArray data) {
             auctionContainer.getChildren().clear();
 
             if (data.isEmpty()) {
-                Label emptyLabel = new Label("Hiện chưa có phiên đấu giá nào trên sàn.");
+                Label emptyLabel = new Label(hasSearchKeyword()
+                        ? "Không tìm thấy phiên đấu giá phù hợp với từ khóa."
+                        : "Hiện chưa có phiên đấu giá nào trên sàn.");
                 emptyLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #95a5a6; -fx-font-style: italic; -fx-padding: 20;");
                 auctionContainer.getChildren().add(emptyLabel);
                 return;
@@ -201,12 +235,84 @@ public class DashboardController {
 
             // Nếu cả 2 đều trống trơn (do bị lọc sạch)
             if (runningPane.getChildren().isEmpty() && upcomingPane.getChildren().isEmpty()) {
-                Label emptyLabel = new Label("Hiện chưa có phiên đấu giá nào trên sàn.");
+                Label emptyLabel = new Label(hasSearchKeyword()
+                        ? "Không tìm thấy phiên đấu giá phù hợp với từ khóa."
+                        : "Hiện chưa có phiên đấu giá nào trên sàn.");
                 emptyLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #95a5a6; -fx-font-style: italic; -fx-padding: 20;");
                 auctionContainer.getChildren().add(emptyLabel);
             }
             // ===============================================================
-        });
+    }
+
+    private JsonArray getFilteredAuctions() {
+        String keyword = normalizeSearchText(auctionSearchField != null ? auctionSearchField.getText() : "");
+        if (keyword.isEmpty()) return allAuctions;
+
+        JsonArray filtered = new JsonArray();
+        for (JsonElement element : allAuctions) {
+            if (!element.isJsonObject()) continue;
+            JsonObject auction = element.getAsJsonObject();
+            if (matchesSearch(auction, keyword)) {
+                filtered.add(element);
+            }
+        }
+        return filtered;
+    }
+
+    private boolean matchesSearch(JsonObject auction, String keyword) {
+        StringBuilder content = new StringBuilder();
+        appendSearchValue(content, getStringSafe(auction, "id"));
+        appendSearchValue(content, getStringSafe(auction, "status"));
+        appendSearchValue(content, getStringSafe(auction, "startTime"));
+        appendSearchValue(content, getStringSafe(auction, "endTime"));
+        if (auction.has("currentPrice")) appendSearchValue(content, auction.get("currentPrice").getAsString());
+
+        if (auction.has("item") && auction.get("item").isJsonObject()) {
+            JsonObject item = auction.getAsJsonObject("item");
+            appendSearchValue(content, getStringSafe(item, "id"));
+            appendSearchValue(content, getStringSafe(item, "name"));
+            appendSearchValue(content, getStringSafe(item, "description"));
+            appendSearchValue(content, getStringSafe(item, "type"));
+            appendSearchValue(content, getStringSafe(item, "condition"));
+            appendSearchValue(content, getStringSafe(item, "sellerFullName"));
+
+            if (item.has("specifications") && item.get("specifications").isJsonObject()) {
+                JsonObject specs = item.getAsJsonObject("specifications");
+                for (String key : specs.keySet()) {
+                    appendSearchValue(content, key);
+                    appendSearchValue(content, getStringSafe(specs, key));
+                }
+            }
+        }
+
+        return normalizeSearchText(content.toString()).contains(keyword);
+    }
+
+    private void appendSearchValue(StringBuilder content, String value) {
+        if (value != null && !value.isBlank()) {
+            content.append(' ').append(value);
+        }
+    }
+
+    private boolean hasSearchKeyword() {
+        return auctionSearchField != null && !auctionSearchField.getText().trim().isEmpty();
+    }
+
+    private String normalizeSearchText(String text) {
+        if (text == null) return "";
+        String normalized = Normalizer.normalize(text, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .replace('đ', 'd')
+                .replace('Đ', 'D');
+        return normalized.toLowerCase(Locale.ROOT).trim();
+    }
+
+    private JsonArray copyAuctions(JsonArray source) {
+        JsonArray copy = new JsonArray();
+        for (JsonElement element : source) {
+            copy.add(element.deepCopy());
+        }
+        return copy;
     }
 
     // ... (Giữ nguyên hàm handleRealtimeBidUpdate và mapStatus như cũ) ...
@@ -306,28 +412,52 @@ public class DashboardController {
         double newPrice = json.has("newPrice") ? json.get("newPrice").getAsDouble() : 0.0;
 
         Platform.runLater(() -> {
+            updateCachedAuctionPrice(auctionId, newPrice);
             // Duyệt qua tất cả các thẻ đang hiển thị trên Sảnh
-            for (javafx.scene.Node node : auctionContainer.getChildren()) {
-                if (node instanceof VBox card && auctionId.equals(card.getUserData())) {
-                    // Tìm đúng cái Label hiện giá tiền và cập nhật số mới
-                    for (javafx.scene.Node child : card.getChildren()) {
-                        if (child instanceof Label lbl && lbl.getStyleClass().contains("card-price")) {
-                            lbl.setText("💰 " + currencyFmt.format(newPrice) + " ₫");
-                            // Hiệu ứng nháy màu cam nhẹ để User biết giá vừa thay đổi
-                            lbl.setStyle("-fx-text-fill: #e67e22; -fx-scale-x: 1.1; -fx-scale-y: 1.1;");
+            updateVisibleAuctionPrice(auctionContainer, auctionId, newPrice);
+        });
+    }
 
-                            // 0.5s sau trả về màu xanh như cũ
-                            new Thread(() -> {
-                                try { Thread.sleep(500); } catch (Exception ignored) {}
-                                Platform.runLater(() -> lbl.setStyle(""));
-                            }).start();
-                            break;
-                        }
-                    }
-                    break;
+    private void updateCachedAuctionPrice(String auctionId, double newPrice) {
+        if (auctionId == null || auctionId.isEmpty()) return;
+        for (JsonElement element : allAuctions) {
+            if (!element.isJsonObject()) continue;
+            JsonObject auction = element.getAsJsonObject();
+            if (auctionId.equals(getStringSafe(auction, "id"))) {
+                auction.addProperty("currentPrice", newPrice);
+                return;
+            }
+        }
+    }
+
+    private boolean updateVisibleAuctionPrice(Node node, String auctionId, double newPrice) {
+        if (node instanceof VBox card && auctionId.equals(card.getUserData())) {
+            // Tìm đúng cái Label hiện giá tiền và cập nhật số mới
+            for (Node child : card.getChildren()) {
+                if (child instanceof Label lbl && lbl.getStyleClass().contains("card-price")) {
+                    lbl.setText("💰 " + currencyFmt.format(newPrice) + " ₫");
+                    // Hiệu ứng nháy màu cam nhẹ để User biết giá vừa thay đổi
+                    lbl.setStyle("-fx-text-fill: #e67e22; -fx-scale-x: 1.1; -fx-scale-y: 1.1;");
+
+                    // 0.5s sau trả về màu xanh như cũ
+                    new Thread(() -> {
+                        try { Thread.sleep(500); } catch (Exception ignored) {}
+                        Platform.runLater(() -> lbl.setStyle(""));
+                    }).start();
+                    return true;
                 }
             }
-        });
+        }
+
+        if (node instanceof Pane pane) {
+            for (Node child : pane.getChildren()) {
+                if (updateVisibleAuctionPrice(child, auctionId, newPrice)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     // Hàm tiện ích lấy String an toàn, chống chết NullPointerException

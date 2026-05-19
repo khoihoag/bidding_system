@@ -20,6 +20,17 @@
 
         <Separator/>
 
+        <HBox alignment="CENTER_LEFT" spacing="12">
+            <TextField fx:id="auctionSearchField"
+                       promptText="Tìm theo tên sản phẩm, mã phiên, loại, người bán..."
+                       onAction="#handleAuctionSearch"
+                       styleClass="input-field"
+                       prefWidth="420"
+                       maxWidth="520"
+                       HBox.hgrow="ALWAYS"/>
+            <Button text="Xóa lọc" onAction="#clearAuctionSearch" styleClass="secondary-button"/>
+        </HBox>
+
         <VBox fx:id="auctionContainer" spacing="20"/>
     </VBox>
 </ScrollPane>

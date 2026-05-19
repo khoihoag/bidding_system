@@ -34,6 +34,19 @@
             <Button fx:id="btnInventory" text="📦 Kho Đồ &amp; Đăng Bán" onAction="#handleInventory" styleClass="menu-button" maxWidth="Infinity"/>
             <Button fx:id="btnHistory" text="📋 Lịch Sử Đặt Giá" onAction="#handleHistory" styleClass="menu-button" maxWidth="Infinity"/>
 
+            <VBox spacing="8" styleClass="notification-box">
+                <HBox alignment="CENTER_LEFT" spacing="8">
+                    <Label text="🔔 Thông báo" styleClass="notification-title"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="Xóa" onAction="#handleClearNotifications" styleClass="notification-clear-btn"/>
+                </HBox>
+                <ListView fx:id="notificationListView"
+                          prefHeight="150"
+                          maxHeight="150"
+                          focusTraversable="false"
+                          styleClass="notification-list"/>
+            </VBox>
+
             <Region VBox.vgrow="ALWAYS"/>
             <Button text="🚪 Đăng Xuất" onAction="#handleLogout" styleClass="logout-button" maxWidth="Infinity"/>
         </VBox>
