@@ -10,10 +10,6 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    
-    defaults:
-      run:
-        working-directory: system
 
     steps:
       - uses: actions/checkout@v4
