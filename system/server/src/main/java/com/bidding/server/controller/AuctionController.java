@@ -112,7 +112,7 @@ public class AuctionController {
     public void handleGetAuctions() {
         try {
             // Lấy danh sách bằng đúng hàm của sếp
-            List<Auction> activeAuctions = tongQuan.getActiveAuctions();
+            List<Auction> activeAuctions = tongQuan.getAllAuctionsForDisplay();
 
             com.google.gson.JsonArray dataArray = new com.google.gson.JsonArray();
 

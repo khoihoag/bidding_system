@@ -35,11 +35,13 @@
             <Button fx:id="btnHistory" text="📋 Lịch Sử Đặt Giá" onAction="#handleHistory" styleClass="menu-button" maxWidth="Infinity"/>
 
             <VBox spacing="8" styleClass="notification-box">
-                <HBox alignment="CENTER_LEFT" spacing="8">
+                <HBox alignment="CENTER_LEFT" spacing="6">
                     <Label text="🔔 Thông báo" styleClass="notification-title"/>
-                    <Region HBox.hgrow="ALWAYS"/>
-                    <Button text="Xóa" onAction="#handleClearNotifications" styleClass="notification-clear-btn"/>
                 </HBox>
+                <Button text="Xem chi tiết"
+                        onAction="#handleViewNotificationDetail"
+                        styleClass="notification-detail-btn"
+                        maxWidth="Infinity"/>
                 <ListView fx:id="notificationListView"
                           prefHeight="150"
                           maxHeight="150"

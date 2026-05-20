@@ -4,15 +4,13 @@ import com.bidding.server.network.ClientHandler;
 import com.bidding.server.model.user.User;
 import com.bidding.server.service.AdminService;
 import com.bidding.server.service.AuctionService;
-import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import java.util.List;
-import com.bidding.server.utils.GsonUtil;
 public class AdminController {
     private final ClientHandler client;
     private final AdminService adminService;
     private final AuctionService tongQuan;
-    Gson gson = GsonUtil.getInstance();
     public AdminController(ClientHandler client, AdminService adminService, AuctionService tongQuan) {
         this.client = client;
         this.adminService = adminService;
@@ -26,7 +24,22 @@ public class AdminController {
         }
         try {
             List<User> userList = adminService.getAllUsers(client.getLoggedInUser());
-            client.sendMessage("{\"action\": \"USERS_LIST\", \"data\": " + gson.toJson(userList) + "}");
+            JsonArray data = new JsonArray();
+            for (User user : userList) {
+                JsonObject userJson = new JsonObject();
+                userJson.addProperty("id", user.getId());
+                userJson.addProperty("username", user.getUsername());
+                userJson.addProperty("email", user.getEmail());
+                userJson.addProperty("role", user.getRole() != null ? user.getRole().name() : "");
+                userJson.addProperty("balance", user.getBalance());
+                userJson.addProperty("active", user.isActive());
+                data.add(userJson);
+            }
+
+            JsonObject reply = new JsonObject();
+            reply.addProperty("action", "USERS_LIST");
+            reply.add("data", data);
+            client.sendMessage(reply.toString());
         } catch (SecurityException se) {
             client.sendError("Cảnh báo: Bạn không có quyền truy cập danh sách người dùng!");
         } catch (Exception e) {
@@ -53,6 +66,32 @@ public class AdminController {
             client.sendError("Cảnh báo: Bạn không có quyền quản trị viên!");
         } catch (Exception e) {
             client.sendError("Lỗi hệ thống khi thực hiện lệnh cấm: " + e.getMessage());
+        }
+    }
+
+    public void handleUnbanUser(JsonObject request) {
+        if (client.getLoggedInUser() == null) {
+            client.sendError("Bạn phải đăng nhập tài khoản Admin!");
+            return;
+        }
+        try {
+            String targetUserId = request.get("targetUserId").getAsString();
+            boolean success = adminService.unbanUser(client.getLoggedInUser(), targetUserId);
+
+            if (success) {
+                JsonObject reply = new JsonObject();
+                reply.addProperty("action", "UNBAN_USER_REPLY");
+                reply.addProperty("status", "SUCCESS");
+                reply.addProperty("message", "Đã mở khóa tài khoản thành công!");
+                client.sendMessage(reply.toString());
+                System.out.println("[Admin] " + client.getLoggedInUser().getUsername() + " đã mở khóa user ID: " + targetUserId);
+            } else {
+                client.sendError("Không tìm thấy người dùng có ID này.");
+            }
+        } catch (SecurityException se) {
+            client.sendError("Cảnh báo: Bạn không có quyền quản trị viên!");
+        } catch (Exception e) {
+            client.sendError("Lỗi hệ thống khi thực hiện lệnh mở khóa: " + e.getMessage());
         }
     }
 

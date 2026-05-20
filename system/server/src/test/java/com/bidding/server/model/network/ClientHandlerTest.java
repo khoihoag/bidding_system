@@ -1,5 +1,7 @@
 package com.bidding.server.model.network;
 
+import com.bidding.server.network.ClientHandler;
+import com.bidding.server.network.ClientManager;
 import com.bidding.server.service.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

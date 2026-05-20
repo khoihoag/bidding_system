@@ -124,6 +124,23 @@
     -fx-background-color: rgba(212, 175, 55, 0.08);
 }
 
+.notification-detail-btn {
+    -fx-background-color: rgba(212, 175, 55, 0.08);
+    -fx-text-fill: #d4af37;
+    -fx-border-color: rgba(212, 175, 55, 0.45);
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-padding: 6 10;
+    -fx-cursor: hand;
+}
+
+.notification-detail-btn:hover {
+    -fx-background-color: rgba(212, 175, 55, 0.16);
+    -fx-border-color: #d4af37;
+}
+
 .notification-list {
     -fx-background-color: transparent;
     -fx-border-color: transparent;
