@@ -7,6 +7,9 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.List;
 
 public class AuctionRepository {
@@ -14,6 +17,10 @@ public class AuctionRepository {
     private static final SessionFactory factory = new Configuration()
             .configure("hibernate.cfg.xml") // Nó sẽ tự mò vào thư mục resources để đọc file này
             .buildSessionFactory();
+
+    static {
+        dropLegacyItemForeignKeys();
+    }
 
     /**
      * Hàm "Cất đồ": Dùng cho cả tạo mới (Insert) và cập nhật (Update)
@@ -144,5 +151,37 @@ public class AuctionRepository {
             throw new IllegalArgumentException("User does not exist in database: " + user.getId());
         }
         return managedUser;
+    }
+
+    private static void dropLegacyItemForeignKeys() {
+        try (Session session = factory.openSession()) {
+            session.doWork(connection -> {
+                List<String> constraintNames = new ArrayList<>();
+                String query = """
+                        SELECT CONSTRAINT_NAME
+                        FROM information_schema.KEY_COLUMN_USAGE
+                        WHERE TABLE_SCHEMA = DATABASE()
+                          AND TABLE_NAME = 'auctions'
+                          AND COLUMN_NAME = 'item_id'
+                          AND REFERENCED_TABLE_NAME = 'item'
+                        """;
+
+                try (Statement statement = connection.createStatement();
+                     ResultSet resultSet = statement.executeQuery(query)) {
+                    while (resultSet.next()) {
+                        constraintNames.add(resultSet.getString("CONSTRAINT_NAME"));
+                    }
+                }
+
+                for (String constraintName : constraintNames) {
+                    try (Statement statement = connection.createStatement()) {
+                        statement.execute("ALTER TABLE auctions DROP FOREIGN KEY `" + constraintName + "`");
+                        System.out.println("[DB] Dropped legacy auctions.item_id foreign key: " + constraintName);
+                    }
+                }
+            });
+        } catch (Exception e) {
+            System.err.println("[DB] Could not check legacy auctions.item_id foreign keys: " + e.getMessage());
+        }
     }
 }
