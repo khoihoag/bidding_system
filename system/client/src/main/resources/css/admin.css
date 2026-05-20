@@ -506,6 +506,23 @@
     -fx-text-fill: -black-deep;
 }
 
+.auction-detail-scroll,
+.auction-detail-scroll > .viewport,
+.auction-detail-scroll > .corner {
+    -fx-background-color: #0b0b0b;
+    -fx-background: #0b0b0b;
+}
+
+.auction-detail-scroll .scroll-bar {
+    -fx-background-color: -black-row;
+}
+
+.detail-section-title {
+    -fx-text-fill: -gold-primary;
+    -fx-font-weight: bold;
+    -fx-font-size: 16px;
+}
+
 /* ======================== DATE PICKER ======================== */
 .date-picker-popup {
     -fx-background-color: -black-card;

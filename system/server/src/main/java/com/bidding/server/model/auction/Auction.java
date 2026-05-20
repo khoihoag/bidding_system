@@ -62,6 +62,10 @@ public class Auction extends Entity {
 
     // Đặt giá
     // ĐÃ XÓA CHỮ 'synchronized' Ở ĐÂY
+    public BiddingTransaction placeBid(User bidder, double amount) {
+        return placeBid(bidder, amount, false);
+    }
+
     public BiddingTransaction placeBid(User bidder, double amount,boolean isAutoBid) {
         // 1. Kiểm tra trạng thái phiên (Fail-fast validation)
         if (this.status != AuctionStatus.RUNNING) {
@@ -140,12 +144,6 @@ public class Auction extends Entity {
         }
 
     }
-
-    // Gia hạn phiên (Đã sửa tên hàm cho đúng chính tả)
-    public void extendTime(int seconds) {
-        // TODO: Implement extendTime logic
-    }
-
 
     // Kiểm tra giá đặt hợp lệ
     private boolean isValidBid(double amount) {

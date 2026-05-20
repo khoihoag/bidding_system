@@ -300,7 +300,7 @@ public class AuctionController {
     public void handleGetAuctionHistory(JsonObject request) {
         try {
             String auctionId = request.get("auctionId").getAsString();
-            Auction auction = tongQuan.getActiveAuctions().stream()
+            Auction auction = tongQuan.getAllAuctionsForDisplay().stream()
                     .filter(a -> a.getId().equals(auctionId))
                     .findFirst().orElse(null);
 
@@ -317,8 +317,20 @@ public class AuctionController {
                         .sorted((tx1, tx2) -> tx1.getBidTime().compareTo(tx2.getBidTime()))
                         .forEach(tx -> {
                             JsonObject point = new JsonObject();
+                            point.addProperty("auctionId", auctionId);
                             point.addProperty("timestamp", tx.getBidTime().toString());
                             point.addProperty("price", tx.getBidAmount());
+                            if (tx.getBidder() != null) {
+                                point.addProperty("bidderId", tx.getBidder().getId());
+                                point.addProperty("bidderName", tx.getBidder().getUsername());
+                                point.addProperty("bidderEmail", tx.getBidder().getEmail());
+                            } else {
+                                point.addProperty("bidderId", "---");
+                                point.addProperty("bidderName", "---");
+                                point.addProperty("bidderEmail", "---");
+                            }
+                            point.addProperty("isAuto", tx.isAutoBid());
+                            point.addProperty("status", tx.getStatus() != null ? tx.getStatus().name() : "UNKNOWN");
                             dataArray.add(point);
                         });
                 // ============================================================
@@ -326,6 +338,7 @@ public class AuctionController {
 
             JsonObject reply = new JsonObject();
             reply.addProperty("action", "AUCTION_HISTORY_REPLY");
+            reply.addProperty("auctionId", auctionId);
             reply.add("data", dataArray);
             client.sendMessage(reply.toString());
         } catch (Exception e) {
