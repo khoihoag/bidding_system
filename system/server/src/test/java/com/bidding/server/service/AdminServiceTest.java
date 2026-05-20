@@ -79,6 +79,21 @@ class AdminServiceTest {
     }
 
     @Test
+    @DisplayName("Test 3.1 (Mở khóa User): Admin thực hiện mở khóa tài khoản")
+    void testUnbanUserSuccess() {
+        when(mockAdmin.hasRole(UserRole.ADMIN)).thenReturn(true);
+
+        String targetId = "user-99";
+        when(userRepository.findById(targetId)).thenReturn(mockTargetUser);
+
+        boolean result = adminService.unbanUser(mockAdmin, targetId);
+
+        assertTrue(result);
+        verify(mockTargetUser).setActive(true);
+        verify(userRepository).saveOrUpdate(mockTargetUser);
+    }
+
+    @Test
     @DisplayName("Test 4 (Cưỡng chế đóng phiên): Admin dùng quyền lực đóng phiên đấu giá ngay lập tức")
     void testForceCloseAuction() {
         when(mockAdmin.hasRole(UserRole.ADMIN)).thenReturn(true);

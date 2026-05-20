@@ -382,7 +382,25 @@ public class AuctionService {
         return new ArrayList<>(activeAuctions.values());
     }
 
+    public List<Auction> getAllAuctionsForDisplay() {
+        java.util.LinkedHashMap<String, Auction> auctionsById = new java.util.LinkedHashMap<>();
+
+        for (Auction auction : mapper.toModelList(repository.findAll())) {
+            auctionsById.put(auction.getId(), auction);
+        }
+
+        for (Auction auction : activeAuctions.values()) {
+            auctionsById.put(auction.getId(), auction);
+        }
+
+        return new ArrayList<>(auctionsById.values());
+    }
+
     // ================= KHỞI TẠO PHIÊN =================
+    public Auction startAuction(Item item, int durationMinutes) {
+        return startAuction(item, durationMinutes, false, 0.0);
+    }
+
     public Auction startAuction(Item item, int durationMinutes, boolean isReverse, double dropStep) {
         if (isItemInActiveAuction(item.getId())) throw new RuntimeException("Sản phẩm này đang được đấu giá rồi!");
 

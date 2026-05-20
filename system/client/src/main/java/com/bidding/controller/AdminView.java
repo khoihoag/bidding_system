@@ -301,16 +301,23 @@ public class AdminView implements Initializable {
     private Callback<TableColumn<UserRow, Void>, TableCell<UserRow, Void>> buildBanButtonColumn() {
         return param -> new TableCell<>() {
             private final Button banBtn = new Button("Khóa");
-            { banBtn.getStyleClass().add("btn-danger"); }
 
             @Override
             protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
                 if (empty) { setGraphic(null); return; }
                 UserRow row = getTableView().getItems().get(getIndex());
-                banBtn.setText(row.isActive() ? "Ban" : "Da ban");
-                banBtn.setDisable(!row.isActive());
-                banBtn.setOnAction(e -> confirmBanUser(row));
+                banBtn.getStyleClass().removeAll("btn-danger", "btn-outline");
+                if (row.isActive()) {
+                    banBtn.setText("Ban");
+                    banBtn.getStyleClass().add("btn-danger");
+                    banBtn.setOnAction(e -> confirmBanUser(row));
+                } else {
+                    banBtn.setText("Unban");
+                    banBtn.getStyleClass().add("btn-outline");
+                    banBtn.setOnAction(e -> confirmUnbanUser(row));
+                }
+                banBtn.setDisable(row.getId().equals(UserSession.getInstance().getUserId()));
                 setGraphic(banBtn);
             }
         };
@@ -325,6 +332,18 @@ public class AdminView implements Initializable {
                 + "\n\nHành động này sẽ khóa tài khoản ngay lập tức.");
         confirm.showAndWait().ifPresent(btn -> {
             if (btn == ButtonType.OK) sendBanUser(user.getId(), user.getUsername());
+        });
+    }
+
+    private void confirmUnbanUser(UserRow user) {
+        if (user == null) return;
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Xác nhận mở khóa tài khoản");
+        confirm.setHeaderText("Mở khóa: " + user.getUsername());
+        confirm.setContentText("ID: " + user.getId() + "  |  Role: " + user.getRole()
+                + "\n\nHành động này sẽ cho phép tài khoản đăng nhập lại.");
+        confirm.showAndWait().ifPresent(btn -> {
+            if (btn == ButtonType.OK) sendUnbanUser(user.getId(), user.getUsername());
         });
     }
 
@@ -473,6 +492,15 @@ public class AdminView implements Initializable {
         appendAuditRow("BAN_USER", "admin", username + " (ID: " + userId + ")", "Đang chờ...");
     }
 
+    private void sendUnbanUser(String userId, String username) {
+        if (!checkConnected()) return;
+        JsonObject req = new JsonObject();
+        req.addProperty("action", "UNBAN_USER");
+        req.addProperty("targetUserId", userId);
+        sendRequest(req);
+        appendAuditRow("UNBAN_USER", "admin", username + " (ID: " + userId + ")", "Đang chờ...");
+    }
+
     /**
      * FORCE_CLOSE
      * {
@@ -525,6 +553,7 @@ public class AdminView implements Initializable {
             case "LOGIN_REPLY"       -> handleLoginReply(response);
             case "USERS_LIST"        -> handleUsersList(response);
             case "BAN_USER_REPLY"    -> handleBanUserReply(response);
+            case "UNBAN_USER_REPLY"  -> handleUnbanUserReply(response);
             case "FORCE_CLOSE_REPLY" -> handleForceCloseReply(response);
             case "AUCTIONS_LIST"     -> handleAuctionsList(response);
             case "HISTORY_REPLY"     -> handleHistoryReply(response);
@@ -571,7 +600,7 @@ public class AdminView implements Initializable {
                     getStr(o, "role"),
                     o.has("balance") && !o.get("balance").isJsonNull()
                             ? o.get("balance").getAsDouble() : 0.0,
-                    !o.has("active") || o.get("active").isJsonNull() || o.get("active").getAsBoolean()
+                    getActiveValue(o)
             ));
         }
 
@@ -677,6 +706,23 @@ public class AdminView implements Initializable {
         } else {
             showAlert(Alert.AlertType.ERROR, "Lá»—i khÃ³a tÃ i khoáº£n",
                     message.isEmpty() ? "Không thể khóa tài khoản." : message);
+        }
+    }
+
+    private void handleUnbanUserReply(JsonObject res) {
+        String status  = getStr(res, "status");
+        String message = getStr(res, "message");
+
+        updateLastAuditDetail("UNBAN_USER",
+                "SUCCESS".equals(status) ? "OK " + message : "Lỗi: " + message);
+
+        if ("SUCCESS".equals(status)) {
+            showAlert(Alert.AlertType.INFORMATION, "Thành công",
+                    message.isEmpty() ? "Đã mở khóa tài khoản thành công!" : message);
+            requestAllUsers();
+        } else {
+            showAlert(Alert.AlertType.ERROR, "Lỗi mở khóa tài khoản",
+                    message.isEmpty() ? "Không thể mở khóa tài khoản." : message);
         }
     }
 
@@ -873,6 +919,16 @@ public class AdminView implements Initializable {
 
     private String getStr(JsonObject obj, String key) {
         return (obj.has(key) && !obj.get(key).isJsonNull()) ? obj.get(key).getAsString() : "";
+    }
+
+    private boolean getActiveValue(JsonObject obj) {
+        if (obj.has("active") && !obj.get("active").isJsonNull()) {
+            return obj.get("active").getAsBoolean();
+        }
+        if (obj.has("isActive") && !obj.get("isActive").isJsonNull()) {
+            return obj.get("isActive").getAsBoolean();
+        }
+        return true;
     }
 
     private void showAlert(Alert.AlertType type, String title, String message) {

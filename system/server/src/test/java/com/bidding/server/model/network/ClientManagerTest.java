@@ -1,6 +1,8 @@
 package com.bidding.server.model.network;
 
 import com.bidding.server.events.AuctionEvent;
+import com.bidding.server.network.ClientHandler;
+import com.bidding.server.network.ClientManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

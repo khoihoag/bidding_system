@@ -756,7 +756,7 @@ public class AuctionDetailController {
         javafx.scene.control.Label lblPrice = new javafx.scene.control.Label("Giá khởi điểm: 0 đ");
         lblPrice.getStyleClass().add("price-value"); // Gọi class mạ vàng
         if (item.has("startingPrice")) {
-            java.text.NumberFormat fmt = java.text.NumberFormat.getNumberInstance(java.util.Locale.of("vi", "VN"));
+            java.text.NumberFormat fmt = java.text.NumberFormat.getNumberInstance(java.util.Locale.forLanguageTag("vi-VN"));
             lblPrice.setText("Giá khởi điểm: " + fmt.format(item.get("startingPrice").getAsDouble()) + " đ");
         }
 

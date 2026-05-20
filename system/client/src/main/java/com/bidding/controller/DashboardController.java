@@ -37,7 +37,7 @@ public class DashboardController {
     private TextField auctionSearchField;
 
     private final NetworkClient networkClient = NetworkClient.getInstance();
-    private final NumberFormat currencyFmt = NumberFormat.getNumberInstance(Locale.of("vi", "VN"));
+    private final NumberFormat currencyFmt = NumberFormat.getNumberInstance(Locale.forLanguageTag("vi-VN"));
     private JsonArray allAuctions = new JsonArray();
 
     @FXML
@@ -130,120 +130,147 @@ public class DashboardController {
     }
 
     private void renderAuctions(JsonArray data) {
-            auctionContainer.getChildren().clear();
+        auctionContainer.getChildren().clear();
 
-            if (data.isEmpty()) {
-                Label emptyLabel = new Label(hasSearchKeyword()
-                        ? "Không tìm thấy phiên đấu giá phù hợp với từ khóa."
-                        : "Hiện chưa có phiên đấu giá nào trên sàn.");
-                emptyLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #95a5a6; -fx-font-style: italic; -fx-padding: 20;");
-                auctionContainer.getChildren().add(emptyLabel);
-                return;
-            }
+        if (data.isEmpty()) {
+            showEmptyAuctionsMessage();
+            return;
+        }
 
-            // ================= 1. TẠO 2 KHU VỰC RIÊNG BIỆT =================
-            // Khu vực ĐANG DIỄN RA
-            // Khu vực ĐANG DIỄN RA
-            Label runningHeader = new Label("🔥 PHIÊN ĐANG DIỄN RA");
-            runningHeader.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #d4af37; -fx-padding: 10 0 10 5;");
-            javafx.scene.layout.FlowPane runningPane = new javafx.scene.layout.FlowPane();
-            runningPane.setHgap(20);
-            runningPane.setVgap(20);
+        Label runningHeader = buildSectionHeader("PHIÊN ĐANG ĐẤU GIÁ", "#d4af37", 10);
+        javafx.scene.layout.HBox runningPane = buildAuctionRow();
 
-            // Khu vực SẮP DIỄN RA
-            Label upcomingHeader = new Label("📅 PHIÊN SẮP BẮT ĐẦU");
-            upcomingHeader.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #d4af37; -fx-padding: 30 0 10 5;");
-            javafx.scene.layout.FlowPane upcomingPane = new javafx.scene.layout.FlowPane();
-            // ... (giữ nguyên các dòng dưới) ...
-            upcomingPane.setHgap(20);
-            upcomingPane.setVgap(20);
-            // ==============================================================
+        Label upcomingHeader = buildSectionHeader("PHIÊN CHUẨN BỊ ĐẤU GIÁ", "#d4af37", 30);
+        javafx.scene.layout.HBox upcomingPane = buildAuctionRow();
 
-            for (com.google.gson.JsonElement element : data) {
-                try {
-                    JsonObject auction = element.getAsJsonObject();
-                    String auctionId = getStringSafe(auction, "id");
-                    double currentPrice = auction.has("currentPrice") ? auction.get("currentPrice").getAsDouble() : 0.0;
-                    String status = getStringSafe(auction, "status");
+        Label endedHeader = buildSectionHeader("PHIÊN ĐÃ KẾT THÚC", "#95a5a6", 30);
+        javafx.scene.layout.HBox endedPane = buildAuctionRow();
 
-                    String startTimeStr = getStringSafe(auction, "startTime");
-                    String endTimeStr = getStringSafe(auction, "endTime");
+        for (com.google.gson.JsonElement element : data) {
+            try {
+                if (!element.isJsonObject()) continue;
+                JsonObject auction = element.getAsJsonObject();
+                String auctionId = getStringSafe(auction, "id");
+                double currentPrice = auction.has("currentPrice") ? auction.get("currentPrice").getAsDouble() : 0.0;
+                String status = getStringSafe(auction, "status");
+                String startTimeStr = getStringSafe(auction, "startTime");
+                String endTimeStr = getStringSafe(auction, "endTime");
 
-                    // Bỏ qua các phiên đã chốt sổ
-                    if ("FINISHED".equals(status) || "CLOSED".equals(status) || "CANCELED".equals(status)
-                            || "CANCELLED".equals(status) || "PAID".equals(status) || "FAILED".equals(status)) {
-                        continue;
-                    }
+                boolean isEnded = isEndedAuction(status, endTimeStr);
+                boolean isUpcoming = !isEnded && isUpcomingAuction(status, startTimeStr);
 
-                    String timeLabelText = "";
-                    String targetTimeStr = "";
-                    boolean isUpcoming = false;
-
-                    if ("OPEN".equals(status)) {
-                        timeLabelText = "⏳ Sắp mở sau: ";
-                        targetTimeStr = startTimeStr;
-                        isUpcoming = true; // Đánh dấu đây là hàng chờ
-                    } else {
-                        timeLabelText = "⏱ Kết thúc sau: ";
-                        targetTimeStr = endTimeStr;
-                        if (!endTimeStr.isEmpty()) {
-                            try {
-                                java.time.LocalDateTime endTime = java.time.LocalDateTime.parse(endTimeStr);
-                                if (java.time.LocalDateTime.now().isAfter(endTime)) continue;
-                            } catch (Exception e) {}
-                        }
-                    }
-
-                    String itemName = "Món hàng không xác định";
-                    String imagePath = "";
-
-                    if (auction.has("item") && auction.get("item").isJsonObject()) {
-                        JsonObject item = auction.getAsJsonObject("item");
-                        itemName = getStringSafe(item, "name");
-                        if (item.has("images") && item.get("images").isJsonArray()) {
-                            JsonArray imgs = item.getAsJsonArray("images");
-                            if (!imgs.isEmpty()) imagePath = imgs.get(0).getAsString();
-                        }
-                    }
-
-                    // Gọi hàm xây thẻ
-                    javafx.scene.layout.VBox card = buildAuctionCard(auctionId, itemName, currentPrice, status, imagePath, timeLabelText, targetTimeStr);
-
-                    // ================= 2. PHÂN LOẠI VÀO TỪNG KHU VỰC =================
-                    if (isUpcoming) {
-                        upcomingPane.getChildren().add(card);
-                    } else {
-                        runningPane.getChildren().add(card);
-                    }
-                    // =================================================================
-
-                } catch (Exception e) {
-                    System.err.println("Lỗi vẽ thẻ đấu giá: " + e.getMessage());
+                String timeLabelText;
+                String targetTimeStr;
+                if (isEnded) {
+                    timeLabelText = "Đã kết thúc: ";
+                    targetTimeStr = endTimeStr;
+                } else if (isUpcoming) {
+                    timeLabelText = "Sắp mở: ";
+                    targetTimeStr = startTimeStr;
+                } else {
+                    timeLabelText = "Kết thúc: ";
+                    targetTimeStr = endTimeStr;
                 }
-            }
 
-            // ================= 3. GHÉP TẤT CẢ LÊN MÀN HÌNH =================
-            // Chỉ hiển thị khu vực "Đang diễn ra" nếu có đồ
-            if (!runningPane.getChildren().isEmpty()) {
-                auctionContainer.getChildren().addAll(runningHeader, runningPane);
-            }
+                String itemName = "Món hàng không xác định";
+                String imagePath = "";
 
-            // Chỉ hiển thị khu vực "Sắp diễn ra" nếu có đồ
-            if (!upcomingPane.getChildren().isEmpty()) {
-                auctionContainer.getChildren().addAll(upcomingHeader, upcomingPane);
-            }
+                if (auction.has("item") && auction.get("item").isJsonObject()) {
+                    JsonObject item = auction.getAsJsonObject("item");
+                    itemName = getStringSafe(item, "name");
+                    if (item.has("images") && item.get("images").isJsonArray()) {
+                        JsonArray imgs = item.getAsJsonArray("images");
+                        if (!imgs.isEmpty()) imagePath = imgs.get(0).getAsString();
+                    }
+                }
 
-            // Nếu cả 2 đều trống trơn (do bị lọc sạch)
-            if (runningPane.getChildren().isEmpty() && upcomingPane.getChildren().isEmpty()) {
-                Label emptyLabel = new Label(hasSearchKeyword()
-                        ? "Không tìm thấy phiên đấu giá phù hợp với từ khóa."
-                        : "Hiện chưa có phiên đấu giá nào trên sàn.");
-                emptyLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #95a5a6; -fx-font-style: italic; -fx-padding: 20;");
-                auctionContainer.getChildren().add(emptyLabel);
+                javafx.scene.layout.VBox card = buildAuctionCard(auctionId, itemName, currentPrice, status, imagePath, timeLabelText, targetTimeStr);
+
+                if (isEnded) {
+                    endedPane.getChildren().add(card);
+                } else if (isUpcoming) {
+                    upcomingPane.getChildren().add(card);
+                } else {
+                    runningPane.getChildren().add(card);
+                }
+            } catch (Exception e) {
+                System.err.println("Lỗi vẽ thẻ đấu giá: " + e.getMessage());
             }
-            // ===============================================================
+        }
+
+        if (!runningPane.getChildren().isEmpty()) {
+            auctionContainer.getChildren().addAll(runningHeader, buildHorizontalAuctionScroll(runningPane));
+        }
+        if (!upcomingPane.getChildren().isEmpty()) {
+            auctionContainer.getChildren().addAll(upcomingHeader, buildHorizontalAuctionScroll(upcomingPane));
+        }
+        if (!endedPane.getChildren().isEmpty()) {
+            auctionContainer.getChildren().addAll(endedHeader, buildHorizontalAuctionScroll(endedPane));
+        }
+
+        if (runningPane.getChildren().isEmpty() && upcomingPane.getChildren().isEmpty() && endedPane.getChildren().isEmpty()) {
+            showEmptyAuctionsMessage();
+        }
     }
 
+    private Label buildSectionHeader(String text, String color, int topPadding) {
+        Label header = new Label(text);
+        header.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: " + color + "; -fx-padding: " + topPadding + " 0 10 5;");
+        return header;
+    }
+
+    private javafx.scene.layout.HBox buildAuctionRow() {
+        javafx.scene.layout.HBox row = new javafx.scene.layout.HBox(20);
+        row.setFillHeight(false);
+        row.setMinHeight(380);
+        return row;
+    }
+
+    private javafx.scene.control.ScrollPane buildHorizontalAuctionScroll(javafx.scene.layout.HBox row) {
+        javafx.scene.control.ScrollPane scrollPane = new javafx.scene.control.ScrollPane(row);
+        scrollPane.setFitToHeight(true);
+        scrollPane.setFitToWidth(false);
+        scrollPane.setHbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setVbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setPannable(true);
+        scrollPane.setStyle("-fx-background-color: transparent; -fx-background: transparent; -fx-padding: 0 0 8 0;");
+        scrollPane.setMinHeight(390);
+        scrollPane.setPrefHeight(400);
+        return scrollPane;
+    }
+
+    private void showEmptyAuctionsMessage() {
+        Label emptyLabel = new Label(hasSearchKeyword()
+                ? "Không tìm thấy phiên đấu giá phù hợp với từ khóa."
+                : "Hiện chưa có phiên đấu giá nào trên sàn.");
+        emptyLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #95a5a6; -fx-font-style: italic; -fx-padding: 20;");
+        auctionContainer.getChildren().add(emptyLabel);
+    }
+
+    private boolean isEndedAuction(String status, String endTimeStr) {
+        if ("FINISHED".equals(status) || "CLOSED".equals(status) || "CANCELED".equals(status)
+                || "CANCELLED".equals(status) || "PAID".equals(status) || "FAILED".equals(status)) {
+            return true;
+        }
+        if (endTimeStr == null || endTimeStr.isBlank()) return false;
+        try {
+            java.time.LocalDateTime endTime = java.time.LocalDateTime.parse(endTimeStr);
+            return java.time.LocalDateTime.now().isAfter(endTime);
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    private boolean isUpcomingAuction(String status, String startTimeStr) {
+        if ("OPEN".equals(status) || "SCHEDULED".equals(status)) return true;
+        if (startTimeStr == null || startTimeStr.isBlank()) return false;
+        try {
+            java.time.LocalDateTime startTime = java.time.LocalDateTime.parse(startTimeStr);
+            return java.time.LocalDateTime.now().isBefore(startTime);
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
     private JsonArray getFilteredAuctions() {
         String keyword = normalizeSearchText(auctionSearchField != null ? auctionSearchField.getText() : "");
         if (keyword.isEmpty()) return allAuctions;

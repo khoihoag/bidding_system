@@ -5,9 +5,11 @@ import com.bidding.network.NetworkClient;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.TextArea;
 import javafx.scene.layout.StackPane;
 import com.google.gson.JsonObject;
 
@@ -34,7 +36,7 @@ public class MainController {
     @FXML
     private Label balanceLabel;
     @FXML
-    private ListView<String> notificationListView;
+    private ListView<NotificationEntry> notificationListView;
     // Cái khung trống bên phải để nhúng các màn hình con vào
     @FXML private StackPane contentArea;
     private static final int MAX_NOTIFICATIONS = 20;
@@ -50,6 +52,7 @@ public class MainController {
         // Mặc định lúc vừa vào thì nhúng màn hình Kho đồ lên trước
         handleDashboard();
         updateBalanceDisplay();
+        setupNotificationList();
         NetworkClient.getInstance().addGlobalMessageListener(notificationListener);
     }
 
@@ -92,6 +95,32 @@ public class MainController {
         }
     }
 
+    @FXML
+    private void handleViewNotificationDetail() {
+        if (notificationListView == null) return;
+
+        if (notificationListView.getItems().isEmpty()) {
+            showNotificationDetailDialog("Chi tiết thông báo", "Chưa có thông báo nào.");
+            return;
+        }
+
+        StringBuilder detail = new StringBuilder();
+        for (int i = 0; i < notificationListView.getItems().size(); i++) {
+            NotificationEntry entry = notificationListView.getItems().get(i);
+            detail.append(i + 1)
+                    .append(". [")
+                    .append(entry.time())
+                    .append("] ")
+                    .append(entry.message());
+
+            if (i < notificationListView.getItems().size() - 1) {
+                detail.append("\n\n");
+            }
+        }
+
+        showNotificationDetailDialog("Chi tiết thông báo", detail.toString());
+    }
+
     private void handleGlobalNotification(JsonObject json) {
         if (json == null || !json.has("action")) return;
 
@@ -102,22 +131,65 @@ public class MainController {
                 ? json.get("message").getAsString()
                 : "Có thông báo mới từ hệ thống.";
 
-        addNotification(message);
+        addNotification(message, json);
     }
 
     public void addNotification(String message) {
+        addNotification(message, null);
+    }
+
+    public void addNotification(String message, JsonObject rawJson) {
         if (message == null || message.isBlank()) return;
 
         Platform.runLater(() -> {
             if (notificationListView == null) return;
 
             String time = LocalTime.now().format(NOTIFICATION_TIME_FMT);
-            notificationListView.getItems().add(0, "[" + time + "] " + message);
+            notificationListView.getItems().add(0, new NotificationEntry(time, message));
 
             while (notificationListView.getItems().size() > MAX_NOTIFICATIONS) {
                 notificationListView.getItems().remove(notificationListView.getItems().size() - 1);
             }
         });
+    }
+
+    private void setupNotificationList() {
+        if (notificationListView == null) return;
+        notificationListView.setCellFactory(list -> new javafx.scene.control.ListCell<>() {
+            @Override
+            protected void updateItem(NotificationEntry item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : item.toString());
+            }
+        });
+    }
+
+    private void showNotificationDetailDialog(String title, String content) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(title);
+
+        TextArea detailArea = new TextArea(content);
+        detailArea.setEditable(false);
+        detailArea.setWrapText(true);
+        detailArea.setPrefSize(520, 320);
+        detailArea.getStyleClass().add("input-field");
+
+        alert.getDialogPane().setContent(detailArea);
+        try {
+            alert.getDialogPane().getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
+            alert.getDialogPane().setStyle("-fx-background-color: #05070a;");
+        } catch (Exception e) {
+            System.err.println("Lỗi load CSS cho dialog chi tiết thông báo!");
+        }
+        alert.showAndWait();
+    }
+
+    private record NotificationEntry(String time, String message) {
+        @Override
+        public String toString() {
+            return "[" + time + "] " + message;
+        }
     }
 
     // --- HÀM HỖ TRỢ: Nhúng giao diện FXML con vào khung contentArea ---
@@ -178,7 +250,7 @@ public class MainController {
             double currentBalance = UserSession.getInstance().getBalance();
 
             // Định dạng tiền tệ Việt Nam (vi, VN)
-            NumberFormat currencyFmt = NumberFormat.getNumberInstance(java.util.Locale.of("vi", "VN"));
+            NumberFormat currencyFmt = NumberFormat.getNumberInstance(java.util.Locale.forLanguageTag("vi-VN"));
 
             // Cập nhật text cho Label
             Platform.runLater(() -> {
