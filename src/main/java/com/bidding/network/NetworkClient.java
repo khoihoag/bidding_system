@@ -1,8 +1,14 @@
 package com.bidding.network;
 
+import com.bidding.controller.AppNavigator;
+import com.bidding.model.UserSession;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import javafx.animation.PauseTransition;
+import javafx.application.Platform;
+import javafx.scene.control.Alert;
+import javafx.util.Duration;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -89,6 +95,10 @@ public class NetworkClient {
                 while (in != null && (line = in.readLine()) != null) {
                     System.out.println("<<< NHAN TU SERVER: " + line);
                     JsonObject json = JsonParser.parseString(line).getAsJsonObject();
+                    if (isBanNotice(json)) {
+                        handleBanNotice(json);
+                        continue;
+                    }
                     Consumer<JsonObject> handler = messageHandler;
                     if (handler != null) {
                         handler.accept(json);
@@ -117,6 +127,35 @@ public class NetworkClient {
 
     public void setMessageHandler(Consumer<JsonObject> handler) {
         this.messageHandler = handler;
+    }
+
+    private boolean isBanNotice(JsonObject json) {
+        return json.has("action")
+                && !json.get("action").isJsonNull()
+                && "YOU_ARE_BANNED".equals(json.get("action").getAsString());
+    }
+
+    private void handleBanNotice(JsonObject json) {
+        String message = json.has("message") && !json.get("message").isJsonNull()
+                ? json.get("message").getAsString()
+                : "Tai khoan cua ban da bi khoa boi Admin.";
+
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Tai khoan bi khoa");
+            alert.setHeaderText("Ban da bi dang xuat");
+            alert.setContentText(message + "\n\nHe thong se dua ban ve man hinh dang nhap sau vai giay.");
+            alert.show();
+
+            PauseTransition delay = new PauseTransition(Duration.seconds(3));
+            delay.setOnFinished(event -> {
+                alert.close();
+                UserSession.getInstance().clear();
+                disconnect();
+                AppNavigator.navigate("Login.fxml");
+            });
+            delay.play();
+        });
     }
 
     private void flushPendingMessages() {

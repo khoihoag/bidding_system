@@ -301,20 +301,49 @@ public class AdminView implements Initializable {
     private Callback<TableColumn<UserRow, Void>, TableCell<UserRow, Void>> buildBanButtonColumn() {
         return param -> new TableCell<>() {
             private final Button banBtn = new Button("Khóa");
-            { banBtn.getStyleClass().add("btn-danger"); }
 
             @Override
             protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
                 if (empty) { setGraphic(null); return; }
                 UserRow row = getTableView().getItems().get(getIndex());
-                banBtn.setText(row.isActive() ? "Ban" : "Da ban");
-                banBtn.setDisable(!row.isActive());
-                banBtn.setOnAction(e -> confirmBanUser(row));
+                banBtn.getStyleClass().removeAll("btn-danger", "btn-outline");
+                banBtn.setDisable(false);
+                if (row.isActive()) {
+                    banBtn.setText("Ban");
+                    banBtn.getStyleClass().add("btn-danger");
+                    banBtn.setStyle("""
+                            -fx-background-color: #2a0508;
+                            -fx-text-fill: #ff4d5a;
+                            -fx-font-weight: bold;
+                            -fx-background-radius: 8;
+                            -fx-border-color: #7c1118;
+                            -fx-border-radius: 8;
+                            -fx-padding: 8 18;
+                        """);
+                    banBtn.setOnAction(e -> confirmBanUser(row));
+                    banBtn.setPrefSize(80, 40);
+                } else {
+                    banBtn.setPrefSize(80, 40);
+                    banBtn.setText("Unban");
+                    banBtn.getStyleClass().add("btn-outline");
+                                        banBtn.setStyle("""
+                            -fx-background-color: #18b368;
+                            -fx-text-fill: white;
+                            -fx-font-weight: bold;
+                            -fx-background-radius: 8;
+                            -fx-border-color: #f0c040;
+                            -fx-border-radius: 8;
+                            -fx-padding: 8 18;
+                        """);
+                    banBtn.setOnAction(e -> confirmUnbanUser(row));
+                }
                 setGraphic(banBtn);
             }
         };
     }
+
+    
 
     private void confirmBanUser(UserRow user) {
         if (user == null) return;
@@ -325,6 +354,18 @@ public class AdminView implements Initializable {
                 + "\n\nHành động này sẽ khóa tài khoản ngay lập tức.");
         confirm.showAndWait().ifPresent(btn -> {
             if (btn == ButtonType.OK) sendBanUser(user.getId(), user.getUsername());
+        });
+    }
+
+    private void confirmUnbanUser(UserRow user) {
+        if (user == null) return;
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Xác nhận mở khóa tài khoản");
+        confirm.setHeaderText("Mở khóa: " + user.getUsername());
+        confirm.setContentText("ID: " + user.getId() + "  |  Role: " + user.getRole()
+                + "\n\n Bạn có muốn mở khóa tài khoản này ngay lập tức không?");
+        confirm.showAndWait().ifPresent(btn -> {
+            if (btn == ButtonType.OK) sendUnbanUser(user.getId(), user.getUsername());
         });
     }
 
@@ -473,6 +514,15 @@ public class AdminView implements Initializable {
         appendAuditRow("BAN_USER", "admin", username + " (ID: " + userId + ")", "Đang chờ...");
     }
 
+    private void sendUnbanUser(String userId, String username) {
+        if (!checkConnected()) return;
+        JsonObject req = new JsonObject();
+        req.addProperty("action",       "UNBAN_USER");
+        req.addProperty("targetUserId", userId);
+        sendRequest(req);
+        appendAuditRow("UNBAN_USER", "admin", username + " (ID: " + userId + ")", "Dang cho...");
+    }
+
     /**
      * FORCE_CLOSE
      * {
@@ -525,11 +575,13 @@ public class AdminView implements Initializable {
             case "LOGIN_REPLY"       -> handleLoginReply(response);
             case "USERS_LIST"        -> handleUsersList(response);
             case "BAN_USER_REPLY"    -> handleBanUserReply(response);
+            case "UNBAN_USER_REPLY"  -> handleUnbanUserReply(response);
             case "FORCE_CLOSE_REPLY" -> handleForceCloseReply(response);
             case "AUCTIONS_LIST"     -> handleAuctionsList(response);
             case "HISTORY_REPLY"     -> handleHistoryReply(response);
             case "GLOBAL_NOTIFY"     -> handleGlobalNotify(response);
             case "ERROR"             -> handleError(response);
+            
         }
     }
     // ==================== RESPONSE HANDLERS ====================
@@ -677,6 +729,23 @@ public class AdminView implements Initializable {
         } else {
             showAlert(Alert.AlertType.ERROR, "Lá»—i khÃ³a tÃ i khoáº£n",
                     message.isEmpty() ? "Không thể khóa tài khoản." : message);
+        }
+    }
+
+    private void handleUnbanUserReply(JsonObject res) {
+        String status  = getStr(res, "status");
+        String message = getStr(res, "message");
+
+        updateLastAuditDetail("UNBAN_USER",
+                "SUCCESS".equals(status) ? "OK " + message : "Loi: " + message);
+
+        if ("SUCCESS".equals(status)) {
+            showAlert(Alert.AlertType.INFORMATION, "Thanh cong",
+                    message.isEmpty() ? "Da mo khoa tai khoan thanh cong!" : message);
+            requestAllUsers();
+        } else {
+            showAlert(Alert.AlertType.ERROR, "Loi mo khoa tai khoan",
+                    message.isEmpty() ? "Khong the mo khoa tai khoan." : message);
         }
     }
 
