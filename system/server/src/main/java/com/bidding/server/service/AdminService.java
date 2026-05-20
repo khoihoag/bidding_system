@@ -40,7 +40,6 @@ public class AdminService {
 
     public boolean unbanUser(User actor, String targetUserId) {
         requireAdmin(actor);
-
         User targetUser = userRepository.findById(targetUserId);
         if (targetUser != null) {
             targetUser.setActive(true);

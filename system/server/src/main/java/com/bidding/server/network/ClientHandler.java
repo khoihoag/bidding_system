@@ -35,7 +35,7 @@ public class ClientHandler implements Runnable {
         // Cấp phát vũ khí cho các đệ tử
         this.authController = new AuthController(this, baoVe);
         this.itemController = new ItemController(this, quanLyKho, tongQuan);
-        this.auctionController = new AuctionController(this, tongQuan, quanLyKho, loaPhuong, baoVe);        this.adminController = new AdminController(this, adminService, tongQuan);
+        this.auctionController = new AuctionController(this, tongQuan, quanLyKho, loaPhuong, baoVe);        this.adminController = new AdminController(this, adminService, tongQuan, loaPhuong);
     }
 
     @Override
@@ -51,7 +51,7 @@ public class ClientHandler implements Runnable {
                 System.out.println("[RAW DATA TỪ CLIENT]: " + clientMessage);
                 try {
                     JsonObject request = JsonParser.parseString(clientMessage).getAsJsonObject();
-                    String action = request.get("action").getAsString();
+                    String action = request.get("action").getAsString();                
 
                     // MENU CHUYỂN MẠCH THUẦN LOGIC
                     switch (action) {
@@ -82,6 +82,7 @@ public class ClientHandler implements Runnable {
                         case "GET_ALL_USERS": adminController.handleGetAllUsers(); break;
                         case "FORCE_CLOSE": adminController.handleForceClose(request); break;
                         case "BAN_USER": adminController.handleBanUser(request); break;
+                        case "UNBAN_USER": adminController.handleUnbanUser(request); break;
 
                         default:
                             sendError("Lệnh action không tồn tại trên Server!");
@@ -113,7 +114,7 @@ public class ClientHandler implements Runnable {
         sendMessage(errorJson.toString());
     }
 
-    private void closeEverything() {
+    void closeEverything() {
         if (loaPhuong != null) loaPhuong.removeClient(this);
         try {
             if (in != null) in.close();

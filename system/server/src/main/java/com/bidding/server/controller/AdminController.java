@@ -1,6 +1,7 @@
 package com.bidding.server.controller;
 
 import com.bidding.server.network.ClientHandler;
+import com.bidding.server.network.ClientManager;
 import com.bidding.server.model.user.User;
 import com.bidding.server.service.AdminService;
 import com.bidding.server.service.AuctionService;
@@ -13,11 +14,15 @@ public class AdminController {
     private final ClientHandler client;
     private final AdminService adminService;
     private final AuctionService tongQuan;
+
+    private final ClientManager loaPhuong;
+
     Gson gson = GsonUtil.getInstance();
-    public AdminController(ClientHandler client, AdminService adminService, AuctionService tongQuan) {
+    public AdminController(ClientHandler client, AdminService adminService, AuctionService tongQuan, ClientManager loaPhuong) {
         this.client = client;
         this.adminService = adminService;
         this.tongQuan = tongQuan;
+        this.loaPhuong = loaPhuong;
     }
 
     public void handleGetAllUsers() {
@@ -60,6 +65,7 @@ public class AdminController {
             boolean success = adminService.banUser(client.getLoggedInUser(), targetUserId);
 
             if (success) {
+                loaPhuong.kickUser(targetUserId);
                 client.sendMessage("{\"action\": \"BAN_USER_REPLY\", \"status\": \"SUCCESS\", \"message\": \"Đã khóa tài khoản thành công!\"}");
                 System.out.println("[Admin] " + client.getLoggedInUser().getUsername() + " đã thực thi lệnh cấm với ID: " + targetUserId);
             } else {
@@ -69,6 +75,28 @@ public class AdminController {
             client.sendError("Cảnh báo: Bạn không có quyền quản trị viên!");
         } catch (Exception e) {
             client.sendError("Lỗi hệ thống khi thực hiện lệnh cấm: " + e.getMessage());
+        }
+    }
+
+// Thêm xử lý UnBan 
+    public void handleUnbanUser(JsonObject request) {
+        if (client.getLoggedInUser() == null) {
+            client.sendError("Bạn phải đăng nhập tài khoản Admin!");
+            return;
+        }
+        try {
+            String targetUserId = request.get("targetUserId").getAsString();
+            boolean success = adminService.unbanUser(client.getLoggedInUser(), targetUserId);
+            if (success) {
+                client.sendMessage("{\"action\": \"UNBAN_USER_REPLY\", \"status\": \"SUCCESS\", \"message\": \"Mở khóa tài khoản thành công!\"}");
+                System.out.println("[Admin] " + client.getLoggedInUser().getUsername() + " đã thực thi lệnh mở khóa với ID: " + targetUserId);
+            } else {
+                client.sendError("Không tìm thấy người dùng có ID này để mở khóa.");
+            }
+        } catch (SecurityException se) {
+            client.sendError("Cảnh báo: Bạn không có quyền quản trị viên!");
+        } catch (Exception e) {
+            client.sendError("Lỗi hệ thống khi thực hiện lệnh mở khóa: " + e.getMessage());
         }
     }
 

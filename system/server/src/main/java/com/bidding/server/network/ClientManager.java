@@ -111,4 +111,44 @@ public class ClientManager implements AuctionObserver {
             client.sendMessage(message);
         }
     }
+
+
+
+
+// hàm kick user khi user đang online 
+
+public synchronized void kickUser(String userId) {
+    ClientHandler targetHandler = null;
+    
+    // 1. Tìm xem thằng bị ban có đang online không
+    for (ClientHandler handler : activeClients) { 
+        if (handler.getLoggedInUser() != null && handler.getLoggedInUser().getId().equals(userId)) {
+            targetHandler = handler;
+            break;
+        }
+    }
+
+    // 2. Nếu tìm thấy, thực hiện quy trình báo tử và ngắt kết nối
+    if (targetHandler != null) {
+        try {
+            // Tạo gói tin báo bị ban độc quyền
+            com.google.gson.JsonObject banNotice = new com.google.gson.JsonObject();
+            banNotice.addProperty("action", "YOU_ARE_BANNED");
+            banNotice.addProperty("message", "Tài khoản của bạn đã bị khóa bởi Admin do vi phạm quy chế!");
+            
+            // Bắn gói tin về cho Client
+            targetHandler.sendMessage(banNotice.toString());
+            
+            // Hoãn lại 150ms để gói tin truyền đi trọn vẹn qua môi trường mạng trước khi sập
+            Thread.sleep(150); 
+            
+        } catch (Exception e) {
+            System.out.println("[SERVER] Lỗi khi gửi lệnh ban: " + e.getMessage());
+        } finally {
+            // 3. Chính thức gọi hàm cắt Socket vật lý (Hàm bạn gửi ở hình trên)
+            targetHandler.closeEverything(); 
+            System.out.println("[SERVER] Đã ngắt kết nối an toàn với User ID: " + userId);
+        }
+    }
+}
 }
