@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane prefHeight="768.0" prefWidth="1280.0"
+            stylesheets="@../css/admin.css"
+            style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial', 'Liberation Sans', sans-serif;"
+            xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.bidding.controller.AdminView">
+
+    <!-- ========== SIDEBAR ========== -->
+    <left>
+        <VBox prefWidth="240" styleClass="sidebar" spacing="8">
+
+            <!-- Brand -->
+            <VBox spacing="3" styleClass="admin-brand">
+                <Label text="BidViet" styleClass="brand-label" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial'; -fx-font-size: 22px;"/>
+                <Label text="Admin Control Panel" styleClass="brand-sub" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial'; -fx-font-size: 12px;"/>
+            </VBox>
+            <Label fx:id="clockLabel" styleClass="clock-label" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+
+            <!-- Divider -->
+            <Region styleClass="gold-divider"/>
+            <Region prefHeight="10"/>
+
+            <!-- Nav -->
+            <Button fx:id="navDashboard" text="Dashboard"
+                    onAction="#showDashboard"
+                    styleClass="nav-btn" maxWidth="Infinity"
+                    style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+
+            <Button fx:id="navUsers" text="Người dùng"
+                    onAction="#showUsers"
+                    styleClass="nav-btn" maxWidth="Infinity"
+                    style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+
+            <Button fx:id="navAuctions" text="Đấu giá"
+                    onAction="#showAuctions"
+                    styleClass="nav-btn" maxWidth="Infinity"
+                    style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+
+            <Button fx:id="navAuditLog" text="Audit Log"
+                    onAction="#showAuditLog"
+                    styleClass="nav-btn" maxWidth="Infinity"
+                    style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+
+            <Button fx:id="navStats" text="Thống kê"
+                    onAction="#showStats"
+                    styleClass="nav-btn" maxWidth="Infinity"
+                    style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+
+            <Region VBox.vgrow="ALWAYS"/>
+
+            <!-- Connection status -->
+            <Label fx:id="connectionLabel" text="● Chưa kết nối"
+                   style="-fx-text-fill: #FF4444; -fx-font-size: 11px; -fx-padding: 0 0 8 4; -fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+
+            <!-- Divider -->
+            <Region styleClass="gold-divider"/>
+            <Region prefHeight="10"/>
+
+            <Button text="Đăng xuất"
+                    onAction="#handleLogout"
+                    styleClass="logout-btn" maxWidth="Infinity"
+                    style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+        </VBox>
+    </left>
+
+    <!-- ========== MAIN ========== -->
+    <center>
+        <StackPane styleClass="main-area">
+
+            <!-- ===== DASHBOARD ===== -->
+            <VBox fx:id="dashboardSection" spacing="20">
+
+                <HBox alignment="CENTER_LEFT" spacing="12">
+                    <VBox>
+                        <Label text="Dashboard" styleClass="section-title" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                        <Label text="Tổng quan hệ thống BidViet" styleClass="section-subtitle" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    </VBox>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="Làm mới" onAction="#showDashboard" styleClass="btn-outline" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                </HBox>
+
+                <!-- Stat cards -->
+                <HBox spacing="16">
+                    <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+                        <Label text="TỔNG NGƯỜI DÙNG" styleClass="stat-label" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                        <Label fx:id="statTotalUsers" text="-" styleClass="stat-value" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                        <Label fx:id="statUsersGrowth" text="Đang tải..." styleClass="stat-growth" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    </VBox>
+                    <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+                        <Label text="PHIÊN ĐANG CHẠY" styleClass="stat-label" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                        <Label fx:id="statActiveSessions" text="-" styleClass="stat-value" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                        <Label fx:id="statSessionsInfo" text="Đang tải..." styleClass="stat-growth" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    </VBox>
+                    <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+                        <Label text="TỔNG LƯỢT BID" styleClass="stat-label" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                        <Label fx:id="statTotalBids" text="-" styleClass="stat-value" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                        <Label fx:id="statBidsToday" text="Đang tải..." styleClass="stat-growth" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    </VBox>
+                    <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+                        <Label text="DOANH THU" styleClass="stat-label" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                        <Label fx:id="statTotalRevenue" text="-" styleClass="stat-value" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                        <Label fx:id="statRevenueGrowth" text="Đang tải..." styleClass="stat-growth" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    </VBox>
+                </HBox>
+
+                <!-- Charts row -->
+                <HBox spacing="16" VBox.vgrow="ALWAYS">
+                    <BarChart fx:id="bidBarChart" title="Lượt bid theo phiên"
+                              styleClass="chart" HBox.hgrow="ALWAYS" animated="false"
+                              style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial'; -fx-font-size: 13px;">
+                        <xAxis><CategoryAxis label="Phiên đấu giá"/></xAxis>
+                        <yAxis><NumberAxis label="Lượt bid"/></yAxis>
+                    </BarChart>
+
+                    <PieChart fx:id="categoryPieChart" title="Trạng thái phiên"
+                              styleClass="chart" prefWidth="280" animated="false"
+                              style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial'; -fx-font-size: 13px;"/>
+                </HBox>
+            </VBox>
+
+            <!-- ===== USERS ===== -->
+            <VBox fx:id="usersSection" spacing="16" visible="false">
+
+                <HBox alignment="CENTER_LEFT" spacing="12">
+                    <VBox>
+                        <Label text="Quản lý Người dùng" styleClass="section-title" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                        <Label text="Xem và khóa tài khoản người dùng" styleClass="section-subtitle" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    </VBox>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="Tải lại" onAction="#showUsers" styleClass="btn-outline" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                </HBox>
+
+                <!-- Toolbar -->
+                <HBox styleClass="toolbar-row" spacing="10">
+                    <TextField fx:id="userSearchField"
+                               promptText="🔍  Tìm theo tên / email / ID..."
+                               styleClass="search-field"
+                               HBox.hgrow="ALWAYS"
+                               style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    <ComboBox fx:id="userRoleFilter"
+                              promptText="Role"
+                              styleClass="filter-combo"
+                              prefWidth="130"
+                              style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    <Button text="Tìm kiếm" onAction="#handleUserSearch" styleClass="btn-gold" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    <Button text="Xóa lọc" onAction="#clearUserSearch" styleClass="btn-outline" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                </HBox>
+
+                <TableView fx:id="userTable" VBox.vgrow="ALWAYS" styleClass="table-view">
+                    <columns>
+                        <TableColumn fx:id="colUserId"      text="ID"         prefWidth="160"/>
+                        <TableColumn fx:id="colUserName"    text="Username"   prefWidth="180"/>
+                        <TableColumn fx:id="colUserEmail"   text="Email"      prefWidth="220"/>
+                        <TableColumn fx:id="colUserRole"    text="Role"       prefWidth="100"/>
+                        <TableColumn fx:id="colUserBalance" text="Số dư (₫)"  prefWidth="130" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                        <TableColumn fx:id="colUserActions" text="Hành động"  prefWidth="120" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    </columns>
+                </TableView>
+
+                <HBox styleClass="pagination-bar" spacing="8">
+                    <Button text="◀  Trước" onAction="#userPrevPage" styleClass="btn-page" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    <Label fx:id="userPageInfo" styleClass="page-info-label" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    <Button text="Tiếp  ▶" onAction="#userNextPage" styleClass="btn-page" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="userCountLabel" styleClass="page-info-label" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                </HBox>
+
+            </VBox>
+
+            <!-- ===== AUCTIONS ===== -->
+            <VBox fx:id="auctionsAdminSection" spacing="16" visible="false">
+
+                <HBox alignment="CENTER_LEFT" spacing="12">
+                    <VBox>
+                        <Label text="Quản lý Đấu giá" styleClass="section-title" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                        <Label text="Giám sát và ép đóng phiên đấu giá" styleClass="section-subtitle" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    </VBox>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="Tải lại" onAction="#showAuctions" styleClass="btn-outline" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                </HBox>
+
+                <HBox styleClass="toolbar-row" spacing="10">
+                    <TextField fx:id="aucSearchField"
+                               promptText="🔍  Tìm theo tên sản phẩm / ID phiên..."
+                               styleClass="search-field"
+                               HBox.hgrow="ALWAYS"
+                               style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    <ComboBox fx:id="aucStatusFilter"
+                              promptText="Trạng thái"
+                              styleClass="filter-combo"
+                              prefWidth="150"
+                              style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    <Button text="Tìm kiếm" onAction="#handleAucSearch" styleClass="btn-gold" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    <Button text="Xóa lọc" onAction="#clearAucSearch" styleClass="btn-outline" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                </HBox>
+
+                <TableView fx:id="adminAucTable" VBox.vgrow="ALWAYS" styleClass="table-view">
+                    <columns>
+                        <TableColumn fx:id="colAdminAucId"      text="ID Phiên"      prefWidth="160" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                        <TableColumn fx:id="colAdminAucTitle"   text="Sản phẩm"      prefWidth="260" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                        <TableColumn fx:id="colAdminAucStatus"  text="Trạng thái"    prefWidth="120" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                        <TableColumn fx:id="colAdminAucPrice"   text="Giá hiện tại"  prefWidth="140" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                        <TableColumn fx:id="colAdminAucAction"  text="Hành động"     prefWidth="300" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    </columns>
+                </TableView>
+
+                <HBox styleClass="pagination-bar" spacing="8">
+                    <Button text="◀  Trước" onAction="#aucPrevPage" styleClass="btn-page" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    <Label fx:id="aucPageInfo" styleClass="page-info-label" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    <Button text="Tiếp  ▶" onAction="#aucNextPage" styleClass="btn-page" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="aucCountLabel" styleClass="page-info-label" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                </HBox>
+
+            </VBox>
+
+            <!-- ===== AUDIT LOG ===== -->
+            <VBox fx:id="auditLogSection" spacing="16" visible="false">
+
+                <HBox alignment="CENTER_LEFT" spacing="12">
+                    <VBox>
+                        <Label text="Audit Log" styleClass="section-title" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                        <Label text="Lịch sử hành động admin trên hệ thống" styleClass="section-subtitle" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    </VBox>
+                    <Region HBox.hgrow="ALWAYS"/>
+                </HBox>
+
+                <HBox styleClass="toolbar-row" spacing="10">
+                    <Label text="Lọc theo ngày:" style="-fx-text-fill: #6a5a30; -fx-font-size: 12px; -fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    <DatePicker fx:id="auditDateFilter" styleClass="date-picker" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    <Button text="Lọc" onAction="#filterAuditLog" styleClass="btn-gold" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    <Button text="Reset" onAction="#resetAuditFilter" styleClass="btn-outline" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                </HBox>
+
+                <TableView fx:id="auditTable" VBox.vgrow="ALWAYS" styleClass="table-view">
+                    <columns>
+                        <TableColumn fx:id="colAuditTime"   text="Thời gian"    prefWidth="170" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                        <TableColumn fx:id="colAuditActor"  text="Actor"        prefWidth="130" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                        <TableColumn fx:id="colAuditAction" text="Hành động"    prefWidth="160" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                        <TableColumn fx:id="colAuditTarget" text="Đối tượng"    prefWidth="160" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                        <TableColumn fx:id="colAuditDetail" text="Chi tiết"     prefWidth="320" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    </columns>
+                </TableView>
+
+            </VBox>
+
+            <!-- ===== STATS ===== -->
+            <VBox fx:id="statsSection" spacing="20" visible="false">
+
+                <HBox alignment="CENTER_LEFT" spacing="12">
+                    <VBox>
+                        <Label text="Thống kê" styleClass="section-title" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                        <Label text="Phân tích dữ liệu toàn hệ thống" styleClass="section-subtitle" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    </VBox>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="Tải lại" onAction="#showStats" styleClass="btn-outline" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                </HBox>
+
+                <HBox spacing="16" VBox.vgrow="ALWAYS">
+                    <BarChart fx:id="revenueChart" title="Giá trị theo trạng thái phiên"
+                              styleClass="chart" HBox.hgrow="ALWAYS" animated="false">
+                        <xAxis><CategoryAxis label="Trạng thái"/></xAxis>
+                        <yAxis><NumberAxis label="Giá trị (VNĐ)"/></yAxis>
+                    </BarChart>
+
+                    <LineChart fx:id="usersGrowthChart" title="Phân bổ tài khoản theo role"
+                               styleClass="chart" HBox.hgrow="ALWAYS" animated="false">
+                        <xAxis><CategoryAxis label="Role"/></xAxis>
+                        <yAxis><NumberAxis label="Số lượng"/></yAxis>
+                    </LineChart>
+                </HBox>
+
+                <PieChart fx:id="rolesPieChart" title="Tỉ lệ Role"
+                          styleClass="chart" prefHeight="260" animated="false"/>
+
+            </VBox>
+
+        </StackPane>
+    </center>
+
+</BorderPane>

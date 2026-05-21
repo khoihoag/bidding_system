@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<ScrollPane fitToWidth="true" style="-fx-background-color: transparent;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.bidding.controller.DashboardController">
+    <VBox spacing="20" styleClass="content-area">
+        <padding>
+            <Insets top="20" right="20" bottom="20" left="20"/>
+        </padding>
+
+        <HBox alignment="CENTER_LEFT">
+            <VBox spacing="5">
+                <Label text="🏛 Sảnh Đấu Giá" styleClass="page-title" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+                <Label text="Các phiên đấu giá đang diễn ra trên toàn server" styleClass="page-subtitle" style="-fx-text-fill: #7f8c8d;"/>
+            </VBox>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="🔄 Làm mới Sảnh" onAction="#handleRefresh" styleClass="action-button"/>
+        </HBox>
+
+        <Separator/>
+
+        <HBox alignment="CENTER_LEFT" spacing="12">
+            <TextField fx:id="auctionSearchField"
+                       promptText="Tìm theo tên sản phẩm, mã phiên, loại, người bán..."
+                       onAction="#handleAuctionSearch"
+                       styleClass="input-field"
+                       prefWidth="420"
+                       maxWidth="520"
+                       HBox.hgrow="ALWAYS"/>
+            <Button text="Xóa lọc" onAction="#clearAuctionSearch" styleClass="secondary-button"/>
+        </HBox>
+
+        <VBox fx:id="auctionContainer" spacing="20"/>
+    </VBox>
+</ScrollPane>
