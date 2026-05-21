@@ -3,6 +3,7 @@ package com.bidding.controller;
 import com.bidding.controller.admin.*;
 import com.bidding.controller.admin.model.AuctionRow;
 import com.bidding.controller.admin.model.AuditRow;
+import com.bidding.controller.admin.model.PendingItemRow;
 import com.bidding.controller.admin.model.UserRow;
 import com.bidding.model.UserSession;
 import javafx.application.Platform;
@@ -31,6 +32,7 @@ public class AdminView implements Initializable {
 
     @FXML private Button navDashboard;
     @FXML private Button navUsers;
+    @FXML private Button navApprovals;
     @FXML private Button navAuctions;
     @FXML private Button navAuditLog;
     @FXML private Button navStats;
@@ -39,6 +41,7 @@ public class AdminView implements Initializable {
 
     @FXML private VBox dashboardSection;
     @FXML private VBox usersSection;
+    @FXML private VBox approvalsSection;
     @FXML private VBox auctionsAdminSection;
     @FXML private VBox auditLogSection;
     @FXML private VBox statsSection;
@@ -66,6 +69,14 @@ public class AdminView implements Initializable {
     @FXML private TableColumn<UserRow, Void> colUserActions;
     @FXML private Label userPageInfo;
     @FXML private Label userCountLabel;
+
+    @FXML private TableView<PendingItemRow> pendingItemTable;
+    @FXML private TableColumn<PendingItemRow, String> colPendingItemId;
+    @FXML private TableColumn<PendingItemRow, String> colPendingItemName;
+    @FXML private TableColumn<PendingItemRow, String> colPendingItemSeller;
+    @FXML private TableColumn<PendingItemRow, String> colPendingItemType;
+    @FXML private TableColumn<PendingItemRow, String> colPendingItemPrice;
+    @FXML private TableColumn<PendingItemRow, Void> colPendingItemAction;
 
     @FXML private TextField aucSearchField;
     @FXML private ComboBox<String> aucStatusFilter;
@@ -113,6 +124,7 @@ public class AdminView implements Initializable {
                 state, auditLog, charts, filters, network,
                 this::requestAllUsers,
                 this::requestAllAuctions,
+                this::requestPendingItems,
                 (auctionId, title, rows) -> AdminDialogs.showAuctionBidHistoryDialog(
                         auctionId, title, rows, AdminView.class));
 
@@ -144,6 +156,24 @@ public class AdminView implements Initializable {
             }
         }));
         userTable.setItems(state.filteredUsers);
+
+        colPendingItemId.setCellValueFactory(new PropertyValueFactory<>("id"));
+        colPendingItemName.setCellValueFactory(new PropertyValueFactory<>("name"));
+        colPendingItemSeller.setCellValueFactory(new PropertyValueFactory<>("seller"));
+        colPendingItemType.setCellValueFactory(new PropertyValueFactory<>("type"));
+        colPendingItemPrice.setCellValueFactory(new PropertyValueFactory<>("startingPriceFormatted"));
+        colPendingItemAction.setCellFactory(AdminTableCellFactory.approvalActionColumn(new AdminTableCellFactory.PendingItemActionHandler() {
+            @Override
+            public void onApprove(PendingItemRow item) {
+                confirmApproveItem(item);
+            }
+
+            @Override
+            public void onReject(PendingItemRow item) {
+                confirmRejectItem(item);
+            }
+        }));
+        pendingItemTable.setItems(state.pendingItems);
 
         colAdminAucId.setCellValueFactory(new PropertyValueFactory<>("id"));
         colAdminAucTitle.setCellValueFactory(new PropertyValueFactory<>("title"));
@@ -230,6 +260,17 @@ public class AdminView implements Initializable {
         highlightNav(navUsers);
         if (state.adminLoggedIn) {
             requestAllUsers();
+        } else {
+            warnNotLoggedIn();
+        }
+    }
+
+    @FXML
+    public void showApprovals() {
+        showSection(approvalsSection);
+        highlightNav(navApprovals);
+        if (state.adminLoggedIn) {
+            requestPendingItems();
         } else {
             warnNotLoggedIn();
         }
@@ -339,6 +380,10 @@ public class AdminView implements Initializable {
         network.sendAction("GET_AUCTIONS");
     }
 
+    private void requestPendingItems() {
+        network.sendAction("GET_PENDING_ITEMS");
+    }
+
     private void requestStatsData() {
         network.sendAction("GET_ALL_USERS");
         network.sendAction("GET_AUCTIONS");
@@ -399,6 +444,35 @@ public class AdminView implements Initializable {
         });
     }
 
+    private void confirmApproveItem(PendingItemRow item) {
+        if (item == null) {
+            return;
+        }
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Duyet san pham");
+        confirm.setHeaderText("Duyet: " + item.getName());
+        confirm.setContentText("ID: " + item.getId()
+                + "\nNguoi ban: " + item.getSeller()
+                + "\n\nSan pham se duoc phep mo phien dau gia.");
+        confirm.showAndWait().ifPresent(btn -> {
+            if (btn == ButtonType.OK) {
+                sendApproveItem(item.getId(), item.getName());
+            }
+        });
+    }
+
+    private void confirmRejectItem(PendingItemRow item) {
+        if (item == null) {
+            return;
+        }
+        TextInputDialog dialog = new TextInputDialog("San pham chua dat yeu cau.");
+        dialog.setTitle("Tu choi san pham");
+        dialog.setHeaderText("Tu choi: " + item.getName());
+        dialog.setContentText("Ly do:");
+        dialog.showAndWait().ifPresent(reason ->
+                sendRejectItem(item.getId(), item.getName(), reason));
+    }
+
     private void sendBanUser(String userId, String username) {
         network.sendBanUser(userId);
         auditLog.append("BAN_USER", "admin", username + " (ID: " + userId + ")", "Đang chờ...");
@@ -414,9 +488,20 @@ public class AdminView implements Initializable {
         auditLog.append("FORCE_CLOSE", "admin", title + " (ID: " + auctionId + ")", "Đang chờ...");
     }
 
+    private void sendApproveItem(String itemId, String name) {
+        network.sendApproveItem(itemId);
+        auditLog.append("APPROVE_ITEM", "admin", name + " (ID: " + itemId + ")", "Dang cho...");
+    }
+
+    private void sendRejectItem(String itemId, String name, String reason) {
+        network.sendRejectItem(itemId, reason);
+        auditLog.append("REJECT_ITEM", "admin", name + " (ID: " + itemId + ")", "Dang cho...");
+    }
+
     private void showSection(VBox target) {
         dashboardSection.setVisible(false);
         usersSection.setVisible(false);
+        approvalsSection.setVisible(false);
         auctionsAdminSection.setVisible(false);
         auditLogSection.setVisible(false);
         statsSection.setVisible(false);
@@ -424,7 +509,7 @@ public class AdminView implements Initializable {
     }
 
     private void highlightNav(Button active) {
-        for (Button btn : new Button[]{navDashboard, navUsers, navAuctions, navAuditLog, navStats}) {
+        for (Button btn : new Button[]{navDashboard, navUsers, navApprovals, navAuctions, navAuditLog, navStats}) {
             btn.getStyleClass().remove("nav-btn-active");
             if (!btn.getStyleClass().contains("nav-btn")) {
                 btn.getStyleClass().add("nav-btn");

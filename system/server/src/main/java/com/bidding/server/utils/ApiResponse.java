@@ -24,11 +24,16 @@ public final class ApiResponse {
     }
 
     public static JsonObject loginSuccess(String userId, String role, double balance) {
+        return loginSuccess(userId, role, 0, balance);
+    }
+
+    public static JsonObject loginSuccess(String userId, String role, int adminLevel, double balance) {
         JsonObject reply = new JsonObject();
         reply.addProperty("action", "LOGIN_REPLY");
         reply.addProperty("status", "SUCCESS");
         reply.addProperty("myId", userId);
         reply.addProperty("role", role);
+        reply.addProperty("adminLevel", adminLevel);
         reply.addProperty("balance", balance);
         return reply;
     }

@@ -24,6 +24,10 @@ public final class ItemJsonMapper {
         itemObj.addProperty("description", item.getDescription());
         itemObj.addProperty("sellerId", item.getSellerId());
         itemObj.addProperty("sellerFullName", item.getSellerFullName());
+        itemObj.addProperty("approvalStatus", item.getEffectiveApprovalStatus().name());
+        itemObj.addProperty("reviewedByAdminId", item.getReviewedByAdminId());
+        itemObj.addProperty("reviewedAt", item.getReviewedAt() != null ? item.getReviewedAt().toString() : "");
+        itemObj.addProperty("rejectionReason", item.getRejectionReason());
 
         if (item.getImages() != null && !item.getImages().isEmpty()) {
             JsonArray imgArray = new JsonArray();

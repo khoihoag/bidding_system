@@ -2,6 +2,7 @@ package com.bidding.controller.admin;
 
 import com.bidding.controller.admin.model.AuctionRow;
 import com.bidding.controller.admin.model.AuditRow;
+import com.bidding.controller.admin.model.PendingItemRow;
 import com.bidding.controller.admin.model.UserRow;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -16,6 +17,7 @@ public class AdminViewState {
     public final ObservableList<UserRow> allUsers = FXCollections.observableArrayList();
     public final ObservableList<AuctionRow> allAuctions = FXCollections.observableArrayList();
     public final ObservableList<AuditRow> allAuditLogs = FXCollections.observableArrayList();
+    public final ObservableList<PendingItemRow> pendingItems = FXCollections.observableArrayList();
     public final ObservableList<UserRow> filteredUsers = FXCollections.observableArrayList();
     public final ObservableList<AuctionRow> filteredAuctions = FXCollections.observableArrayList();
 

@@ -1,6 +1,7 @@
 package com.bidding.controller.admin;
 
 import com.bidding.controller.admin.model.AuctionRow;
+import com.bidding.controller.admin.model.PendingItemRow;
 import com.bidding.controller.admin.model.UserRow;
 import com.bidding.model.UserSession;
 import javafx.scene.control.Button;
@@ -26,6 +27,12 @@ public final class AdminTableCellFactory {
         void onViewHistory(AuctionRow auction);
 
         void onForceClose(AuctionRow auction);
+    }
+
+    public interface PendingItemActionHandler {
+        void onApprove(PendingItemRow item);
+
+        void onReject(PendingItemRow item);
     }
 
     private AdminTableCellFactory() {
@@ -91,6 +98,33 @@ public final class AdminTableCellFactory {
                     closeBtn.setVisible(false);
                     closeBtn.setManaged(false);
                 }
+                setGraphic(actions);
+            }
+        };
+    }
+
+    public static Callback<TableColumn<PendingItemRow, Void>, TableCell<PendingItemRow, Void>> approvalActionColumn(
+            PendingItemActionHandler handler) {
+        return param -> new TableCell<>() {
+            private final Button approveBtn = new Button("Duyet");
+            private final Button rejectBtn = new Button("Tu choi");
+            private final HBox actions = new HBox(8, approveBtn, rejectBtn);
+
+            {
+                approveBtn.getStyleClass().add("btn-gold");
+                rejectBtn.getStyleClass().add("btn-danger");
+            }
+
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                    return;
+                }
+                PendingItemRow row = getTableView().getItems().get(getIndex());
+                approveBtn.setOnAction(e -> handler.onApprove(row));
+                rejectBtn.setOnAction(e -> handler.onReject(row));
                 setGraphic(actions);
             }
         };

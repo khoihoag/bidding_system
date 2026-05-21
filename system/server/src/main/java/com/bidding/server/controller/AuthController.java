@@ -1,5 +1,7 @@
 package com.bidding.server.controller;
 
+import com.bidding.server.enums.UserRole;
+import com.bidding.server.model.user.Admin;
 import com.bidding.server.network.ClientHandler;
 import com.bidding.server.model.user.User;
 import com.bidding.server.service.UserService;
@@ -26,6 +28,7 @@ public class AuthController {
             client.sendMessage(ApiResponse.loginSuccess(
                     loggedInUser.getId(),
                     loggedInUser.getRole().name(),
+                    getAdminLevel(loggedInUser),
                     loggedInUser.getBalance()
             ).toString());
         } catch (Exception e) {
@@ -86,5 +89,15 @@ public class AuthController {
         } catch (Exception e) {
             client.sendError("Lỗi nạp tiền: " + e.getMessage());
         }
+    }
+
+    private int getAdminLevel(User user) {
+        if (user == null || user.getRole() != UserRole.ADMIN) {
+            return 0;
+        }
+        if (user instanceof Admin admin) {
+            return admin.getAdminLevel();
+        }
+        return 2;
     }
 }

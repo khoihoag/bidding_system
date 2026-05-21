@@ -321,7 +321,10 @@ public class InventoryController implements Initializable {
                 else if ("ADD_ITEM_REPLY".equals(action)) {
                     String status = response.has("status") ? response.get("status").getAsString() : "ERROR";
                     if ("SUCCESS".equals(status)) {
-                        showAlert(AlertType.INFORMATION, "Thành công", "Đã nhập đồ vào kho!");
+                        String msg = response.has("message")
+                                ? response.get("message").getAsString()
+                                : "Da gui san pham va dang cho admin duyet.";
+                        showAlert(AlertType.INFORMATION, "Thành công", msg);
                         handleRefreshInventory();
                         // Clear form nhập đồ mới
                         txtNewName.clear(); txtNewPrice.clear(); txtNewDesc.clear();
@@ -387,6 +390,18 @@ public class InventoryController implements Initializable {
                 System.err.println("Lỗi parse JSON Inventory: " + e.getMessage());
             }
         });
+    }
+
+    private String approvalStatusLabel(String status) {
+        if (status == null || status.isEmpty()) {
+            return "Da duyet";
+        }
+        return switch (status) {
+            case "PENDING" -> "Cho duyet";
+            case "REJECTED" -> "Bi tu choi";
+            case "APPROVED" -> "Da duyet";
+            default -> status;
+        };
     }
 
     private void showAlert(AlertType type, String title, String content) {
@@ -522,12 +537,22 @@ public class InventoryController implements Initializable {
         lblId.setAlignment(javafx.geometry.Pos.CENTER);
         lblId.setMaxWidth(165);
 
+        String approvalStatus = item.has("approvalStatus") ? item.get("approvalStatus").getAsString() : "APPROVED";
+        Label lblApproval = new Label(approvalStatusLabel(approvalStatus));
+        lblApproval.getStyleClass().add("card-id");
+        lblApproval.setStyle("-fx-font-size: 11px; -fx-font-weight: 700;");
+        if ("REJECTED".equals(approvalStatus)) {
+            lblApproval.setStyle("-fx-font-size: 11px; -fx-font-weight: 700; -fx-text-fill: #b91c1c;");
+        } else if ("PENDING".equals(approvalStatus)) {
+            lblApproval.setStyle("-fx-font-size: 11px; -fx-font-weight: 700; -fx-text-fill: #b45309;");
+        }
+
         Button btnDetails = new Button("Xem chi tiết");
         btnDetails.getStyleClass().add("secondary-button");
         btnDetails.setStyle("-fx-font-size: 11px; -fx-padding: 5 10;");
         btnDetails.setOnAction(e -> handleViewDetailsById(id));
 
-        card.getChildren().addAll(imageBox, lblName, lblId, btnDetails);
+        card.getChildren().addAll(imageBox, lblName, lblId, lblApproval, btnDetails);
 
         card.setOnMouseClicked(e -> {
             for (javafx.scene.Node node : inventoryGrid.getChildren()) {

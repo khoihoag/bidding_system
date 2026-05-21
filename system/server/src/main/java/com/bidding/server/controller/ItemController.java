@@ -102,7 +102,7 @@ public class ItemController {
             }
 
             quanLyKho.createItem(client.getLoggedInUser(), newItem);
-            client.sendMessage("{\"action\": \"ADD_ITEM_REPLY\", \"status\": \"SUCCESS\"}");
+            client.sendMessage("{\"action\": \"ADD_ITEM_REPLY\", \"status\": \"SUCCESS\", \"message\": \"San pham da duoc gui va dang cho admin duyet.\"}");
 
         } catch (Exception e) {
             client.sendError("Lỗi khi đăng bán vật phẩm: " + e.getMessage());

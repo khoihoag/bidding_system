@@ -429,6 +429,7 @@ public class AuctionService {
     }
 
     public Auction startAuction(Item item, int durationMinutes, boolean isReverse, double dropStep) {
+        if (!item.isApprovedForAuction()) throw new RuntimeException("San pham chua duoc admin duyet.");
         if (isItemInActiveAuction(item.getId())) throw new RuntimeException("Sản phẩm này đang được đấu giá rồi!");
 
         LocalDateTime startTime = LocalDateTime.now();
@@ -461,6 +462,7 @@ public class AuctionService {
     }
 
     public Auction scheduleAuction(Item item, LocalDateTime startTime, LocalDateTime endTime, boolean isReverse, double dropStep) {
+        if (!item.isApprovedForAuction()) throw new RuntimeException("San pham chua duoc admin duyet.");
         if (isItemInActiveAuction(item.getId())) throw new RuntimeException("Sản phẩm này đang nằm trong một phiên đấu giá khác!");
         if (startTime.isBefore(LocalDateTime.now())) throw new RuntimeException("Thời gian bắt đầu không được ở trong quá khứ!");
         if (endTime.isBefore(startTime)) throw new RuntimeException("Thời gian kết thúc phải diễn ra sau thời gian bắt đầu!");

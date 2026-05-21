@@ -7,6 +7,7 @@ public class UserSession {
     private String userId;
     private String username;
     private String role;
+    private int adminLevel;
 
     private UserSession() {}
 
@@ -21,14 +22,17 @@ public class UserSession {
     public String getUserId()   { return userId; }
     public String getUsername() { return username; }
     public String getRole()     { return role; }
+    public int getAdminLevel()  { return adminLevel; }
 
     public void setUserId(String userId)     { this.userId = userId; }
     public void setUsername(String username) { this.username = username; }
     public void setRole(String role)         { this.role = role; }
+    public void setAdminLevel(int adminLevel) { this.adminLevel = adminLevel; }
 
     public void clear() {
         userId = null;
         username = null;
         role = null;
+        adminLevel = 0;
     }
 }

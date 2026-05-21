@@ -97,6 +97,27 @@ public class AdminNetworkGateway {
         sendRequest(req);
     }
 
+    public void sendApproveItem(String itemId) {
+        if (!checkConnected()) {
+            return;
+        }
+        JsonObject req = new JsonObject();
+        req.addProperty("action", "APPROVE_ITEM");
+        req.addProperty("itemId", itemId);
+        sendRequest(req);
+    }
+
+    public void sendRejectItem(String itemId, String reason) {
+        if (!checkConnected()) {
+            return;
+        }
+        JsonObject req = new JsonObject();
+        req.addProperty("action", "REJECT_ITEM");
+        req.addProperty("itemId", itemId);
+        req.addProperty("reason", reason == null ? "" : reason);
+        sendRequest(req);
+    }
+
     private void updateConnectingStatus() {
         connectionLabel.setText("● Đang kết nối");
         connectionLabel.setStyle("-fx-text-fill: #b45309; -fx-font-size: 12px; -fx-font-weight: 700;");

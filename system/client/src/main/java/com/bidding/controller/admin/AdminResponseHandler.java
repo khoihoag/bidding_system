@@ -2,6 +2,7 @@ package com.bidding.controller.admin;
 
 import com.bidding.controller.admin.model.AdminBidHistoryRow;
 import com.bidding.controller.admin.model.AuctionRow;
+import com.bidding.controller.admin.model.PendingItemRow;
 import com.bidding.controller.admin.model.UserRow;
 import com.bidding.util.JsonUtil;
 import com.google.gson.JsonArray;
@@ -23,6 +24,7 @@ public class AdminResponseHandler {
     private final AdminNetworkGateway network;
     private final Runnable requestAllUsers;
     private final Runnable requestAllAuctions;
+    private final Runnable requestPendingItems;
     private final BidHistoryDialogOpener bidHistoryDialogOpener;
 
     @FunctionalInterface
@@ -37,6 +39,7 @@ public class AdminResponseHandler {
                                 AdminNetworkGateway network,
                                 Runnable requestAllUsers,
                                 Runnable requestAllAuctions,
+                                Runnable requestPendingItems,
                                 BidHistoryDialogOpener bidHistoryDialogOpener) {
         this.state = state;
         this.auditLog = auditLog;
@@ -45,6 +48,7 @@ public class AdminResponseHandler {
         this.network = network;
         this.requestAllUsers = requestAllUsers;
         this.requestAllAuctions = requestAllAuctions;
+        this.requestPendingItems = requestPendingItems;
         this.bidHistoryDialogOpener = bidHistoryDialogOpener;
     }
 
@@ -57,6 +61,9 @@ public class AdminResponseHandler {
             case "UNBAN_USER_REPLY" -> handleUnbanUserReply(response);
             case "FORCE_CLOSE_REPLY" -> handleForceCloseReply(response);
             case "AUCTIONS_LIST" -> handleAuctionsList(response);
+            case "PENDING_ITEMS_LIST" -> handlePendingItemsList(response);
+            case "APPROVE_ITEM_REPLY" -> handleApprovalMutationReply(response, "APPROVE_ITEM");
+            case "REJECT_ITEM_REPLY" -> handleApprovalMutationReply(response, "REJECT_ITEM");
             case "HISTORY_REPLY" -> handleHistoryReply(response);
             case "ADMIN_AUCTION_BID_HISTORY_REPLY" -> handleAdminAuctionBidHistoryReply(response);
             case "GLOBAL_NOTIFY" -> handleGlobalNotify(response);
@@ -145,6 +152,26 @@ public class AdminResponseHandler {
 
         charts.updateAuctionStats(running, ended, totalRevenue, other);
         filters.applyAucFilter();
+    }
+
+    private void handlePendingItemsList(JsonObject res) {
+        state.pendingItems.clear();
+        if (!res.has("data") || res.get("data").isJsonNull()) {
+            return;
+        }
+
+        for (JsonElement el : res.getAsJsonArray("data")) {
+            JsonObject item = el.getAsJsonObject();
+            double price = item.has("startingPrice") && !item.get("startingPrice").isJsonNull()
+                    ? item.get("startingPrice").getAsDouble() : 0.0;
+            state.pendingItems.add(new PendingItemRow(
+                    AdminUiHelper.getString(item, "id"),
+                    AdminUiHelper.getString(item, "name"),
+                    AdminUiHelper.getString(item, "sellerFullName"),
+                    AdminUiHelper.getString(item, "type"),
+                    price
+            ));
+        }
     }
 
     private void handleHistoryReply(JsonObject res) {
@@ -236,6 +263,22 @@ public class AdminResponseHandler {
             requestAllAuctions.run();
         } else {
             AdminUiHelper.showAlert(Alert.AlertType.ERROR, "Lỗi", "Không thể đóng phiên đấu giá.");
+        }
+    }
+
+    private void handleApprovalMutationReply(JsonObject res, String actionName) {
+        String status = AdminUiHelper.getString(res, "status");
+        String message = AdminUiHelper.getString(res, "message");
+        auditLog.updateLastDetail(actionName,
+                "SUCCESS".equals(status) ? "OK " + message : "Loi: " + message);
+
+        if ("SUCCESS".equals(status)) {
+            AdminUiHelper.showAlert(Alert.AlertType.INFORMATION, "Thanh cong",
+                    message.isEmpty() ? "Da cap nhat trang thai san pham." : message);
+            requestPendingItems.run();
+        } else {
+            AdminUiHelper.showAlert(Alert.AlertType.ERROR, "Loi",
+                    message.isEmpty() ? "Khong the cap nhat trang thai san pham." : message);
         }
     }
 
