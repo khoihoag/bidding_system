@@ -84,6 +84,10 @@ public class ClientHandler implements Runnable {
                         case "FORCE_CLOSE": adminController.handleForceClose(request); break;
                         case "BAN_USER": adminController.handleBanUser(request); break;
                         case "UNBAN_USER": adminController.handleUnbanUser(request); break;
+                        case "GET_PENDING_ITEMS": adminController.handleGetPendingItems(); break;
+                        case "APPROVE_ITEM": adminController.handleApproveItem(request); break;
+                        case "REJECT_ITEM": adminController.handleRejectItem(request); break;
+                        case "CREATE_ADMIN_LEVEL1": adminController.handleCreateAdminLevel1(request); break;
 
                         default:
                             sendError("Lệnh action không tồn tại trên Server!");

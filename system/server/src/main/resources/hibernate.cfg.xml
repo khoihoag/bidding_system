@@ -12,6 +12,7 @@
         <property name="hbm2ddl.auto">update</property>
 
         <mapping class="com.bidding.server.model.user.User"/>
+        <mapping class="com.bidding.server.model.user.Admin"/>
         <mapping class="com.bidding.server.model.item.Item"/>
         <mapping class="com.bidding.server.model.item.Art"/>
         <mapping class="com.bidding.server.model.item.Electronics"/>

@@ -5,7 +5,6 @@ import com.bidding.model.UserSession;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -18,7 +17,6 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.util.Callback;
-import javafx.util.Duration;
 
 import java.net.URL;
 import java.time.LocalDateTime;
@@ -34,6 +32,7 @@ public class AdminView implements Initializable {
     // ==================== SIDEBAR ====================
     @FXML private Button navDashboard;
     @FXML private Button navUsers;
+    @FXML private Button navApprovals;
     @FXML private Button navAuctions;
     @FXML private Button navAuditLog;
     @FXML private Button navStats;
@@ -43,6 +42,7 @@ public class AdminView implements Initializable {
     // ==================== SECTIONS ====================
     @FXML private VBox dashboardSection;
     @FXML private VBox usersSection;
+    @FXML private VBox approvalsSection;
     @FXML private VBox auctionsAdminSection;
     @FXML private VBox auditLogSection;
     @FXML private VBox statsSection;
@@ -74,6 +74,21 @@ public class AdminView implements Initializable {
     @FXML private Label userPageInfo;
     @FXML private Label userCountLabel;
 
+    @FXML private VBox createAdminBox;
+    @FXML private TextField newAdminUsernameField;
+    @FXML private TextField newAdminEmailField;
+    @FXML private TextField newAdminFullNameField;
+    @FXML private PasswordField newAdminPasswordField;
+
+    // ==================== PRODUCT APPROVALS ====================
+    @FXML private TableView<PendingItemRow> pendingItemTable;
+    @FXML private TableColumn<PendingItemRow, String> colPendingItemId;
+    @FXML private TableColumn<PendingItemRow, String> colPendingItemName;
+    @FXML private TableColumn<PendingItemRow, String> colPendingItemSeller;
+    @FXML private TableColumn<PendingItemRow, String> colPendingItemType;
+    @FXML private TableColumn<PendingItemRow, String> colPendingItemPrice;
+    @FXML private TableColumn<PendingItemRow, Void> colPendingItemAction;
+
     // ==================== AUCTIONS ====================
     @FXML private TextField                 aucSearchField;
     @FXML private ComboBox<String>          aucStatusFilter;
@@ -103,6 +118,7 @@ public class AdminView implements Initializable {
     // ==================== STATE ====================
     private final ObservableList<UserRow>    allUsers         = FXCollections.observableArrayList();
     private final ObservableList<AuctionRow> allAuctions      = FXCollections.observableArrayList();
+    private final ObservableList<PendingItemRow> pendingItems = FXCollections.observableArrayList();
     private final ObservableList<AuditRow>   allAuditLogs     = FXCollections.observableArrayList();
     private final ObservableList<UserRow>    filteredUsers    = FXCollections.observableArrayList();
     private final ObservableList<AuctionRow> filteredAuctions = FXCollections.observableArrayList();
@@ -112,6 +128,7 @@ public class AdminView implements Initializable {
     private int     aucCurrentPage  = 1;
     private static final int PAGE_SIZE = 20;
     private boolean adminLoggedIn   = false;
+    private int adminLevel = 0;
     private boolean connectionStarted = false;
     private Dialog<Void> bidHistoryDialog;
     private TableView<BidRow> bidHistoryTable;
@@ -123,12 +140,16 @@ public class AdminView implements Initializable {
     public void initialize(URL url, ResourceBundle resourceBundle) {
         startClock();
         setupUserTable();
+        setupApprovalTable();
         setupAuctionTable();
         hideOutOfScopeAdminFeatures();
         setupComboBoxes();
         setupNetworkListeners();
         connectToServer();
         adminLoggedIn = "ADMIN".equals(UserSession.getInstance().getRole());
+        adminLevel = UserSession.getInstance().getAdminLevel();
+        if (adminLoggedIn && adminLevel == 0) adminLevel = 2;
+        configureAdminLevelVisibility();
         showUsers();
     }
 
@@ -175,30 +196,50 @@ public class AdminView implements Initializable {
         updateConnectionStatus();
     }
 
-    private void scheduleAdminLogin() {
-        PauseTransition delay = new PauseTransition(Duration.millis(700));
-        delay.setOnFinished(event -> loginAdmin());
-        delay.play();
+    // ==================== ADMIN ACTIONS ====================
+    private void sendApproveItem(String itemId, String name) {
+        if (!checkConnected()) return;
+        JsonObject req = new JsonObject();
+        req.addProperty("action", "APPROVE_ITEM");
+        req.addProperty("itemId", itemId);
+        sendRequest(req);
+        appendAuditRow("APPROVE_ITEM", UserSession.getInstance().getUsername(), name + " (ID: " + itemId + ")", "Dang cho...");
     }
 
-    // ==================== ADMIN LOGIN ====================
-    /**
-     * Báº¯t buá»™c Ä‘Äƒng nháº­p báº±ng tÃ i khoáº£n ADMIN trÆ°á»›c.
-     * Server kiá»ƒm tra quyá»n dá»±a vÃ o user Ä‘ang login trong socket.
-     *
-     * Request:
-     * {
-     *   "action":   "LOGIN",
-     *   "username": "admin",
-     *   "password": "admin123"
-     * }
-     */
-    private void loginAdmin() {
+    private void sendRejectItem(String itemId, String name, String reason) {
+        if (!checkConnected()) return;
         JsonObject req = new JsonObject();
-        req.addProperty("action",   "LOGIN");
-        req.addProperty("username", "admin");
-        req.addProperty("password", "admin123");
+        req.addProperty("action", "REJECT_ITEM");
+        req.addProperty("itemId", itemId);
+        req.addProperty("reason", reason);
         sendRequest(req);
+        appendAuditRow("REJECT_ITEM", UserSession.getInstance().getUsername(), name + " (ID: " + itemId + ")", "Dang cho...");
+    }
+
+    @FXML private void handleCreateAdminLevel1() {
+        if (!checkConnected()) return;
+        if (adminLevel < 2) {
+            showAlert(Alert.AlertType.WARNING, "Khong du quyen", "Chi admin level 2 moi duoc tao admin level 1.");
+            return;
+        }
+
+        String username = newAdminUsernameField.getText().trim();
+        String email = newAdminEmailField.getText().trim();
+        String fullName = newAdminFullNameField.getText().trim();
+        String password = newAdminPasswordField.getText().trim();
+        if (username.isEmpty() || email.isEmpty() || fullName.isEmpty() || password.isEmpty()) {
+            showAlert(Alert.AlertType.WARNING, "Thieu thong tin", "Vui long nhap day du thong tin admin level 1.");
+            return;
+        }
+
+        JsonObject req = new JsonObject();
+        req.addProperty("action", "CREATE_ADMIN_LEVEL1");
+        req.addProperty("username", username);
+        req.addProperty("email", email);
+        req.addProperty("fullName", fullName);
+        req.addProperty("password", password);
+        sendRequest(req);
+        appendAuditRow("CREATE_ADMIN_LEVEL1", UserSession.getInstance().getUsername(), username, "Dang cho...");
     }
 
     // ==================== NAVIGATION ====================
@@ -212,6 +253,13 @@ public class AdminView implements Initializable {
         showSection(usersSection);
         highlightNav(navUsers);
         if (adminLoggedIn) requestAllUsers();
+        else warnNotLoggedIn();
+    }
+
+    @FXML public void showApprovals() {
+        showSection(approvalsSection);
+        highlightNav(navApprovals);
+        if (adminLoggedIn) requestPendingItems();
         else warnNotLoggedIn();
     }
 
@@ -238,6 +286,7 @@ public class AdminView implements Initializable {
     private void showSection(VBox target) {
         dashboardSection.setVisible(false);
         usersSection.setVisible(false);
+        approvalsSection.setVisible(false);
         auctionsAdminSection.setVisible(false);
         auditLogSection.setVisible(false);
         statsSection.setVisible(false);
@@ -245,11 +294,12 @@ public class AdminView implements Initializable {
     }
 
     private void highlightNav(Button active) {
-        for (Button btn : new Button[]{navDashboard, navUsers, navAuctions, navAuditLog, navStats}) {
+        for (Button btn : new Button[]{navDashboard, navUsers, navApprovals, navAuctions, navAuditLog, navStats}) {
+            if (btn == null) continue;
             btn.getStyleClass().remove("nav-btn-active");
             if (!btn.getStyleClass().contains("nav-btn")) btn.getStyleClass().add("nav-btn");
         }
-        active.getStyleClass().add("nav-btn-active");
+        if (active != null) active.getStyleClass().add("nav-btn-active");
     }
 
     private void warnNotLoggedIn() {
@@ -275,6 +325,17 @@ public class AdminView implements Initializable {
         colUserBalance.setCellValueFactory(new PropertyValueFactory<>("balanceFormatted"));
         colUserActions.setCellFactory(buildBanButtonColumn());
         userTable.setItems(filteredUsers);
+    }
+
+    private void setupApprovalTable() {
+        if (pendingItemTable == null) return;
+        colPendingItemId.setCellValueFactory(new PropertyValueFactory<>("id"));
+        colPendingItemName.setCellValueFactory(new PropertyValueFactory<>("name"));
+        colPendingItemSeller.setCellValueFactory(new PropertyValueFactory<>("seller"));
+        colPendingItemType.setCellValueFactory(new PropertyValueFactory<>("type"));
+        colPendingItemPrice.setCellValueFactory(new PropertyValueFactory<>("priceFormatted"));
+        colPendingItemAction.setCellFactory(buildApprovalButtonColumn());
+        pendingItemTable.setItems(pendingItems);
     }
 
     private void setupAuctionTable() {
@@ -317,7 +378,7 @@ public class AdminView implements Initializable {
     }
 
     private void setupComboBoxes() {
-        userRoleFilter.setItems(FXCollections.observableArrayList("Tất cả", "USER", "SELLER", "ADMIN"));
+        userRoleFilter.setItems(FXCollections.observableArrayList("Tất cả", "USER", "ADMIN L1", "ADMIN L2"));
         userRoleFilter.getSelectionModel().selectFirst();
         aucStatusFilter.setItems(FXCollections.observableArrayList(
                 "Tất cả", "RUNNING", "OPEN", "FINISHED", "FAILED", "PAID", "CANCELED"));
@@ -372,6 +433,65 @@ public class AdminView implements Initializable {
         confirm.showAndWait().ifPresent(btn -> {
             if (btn == ButtonType.OK) sendUnbanUser(user.getId(), user.getUsername());
         });
+    }
+
+    private Callback<TableColumn<PendingItemRow, Void>, TableCell<PendingItemRow, Void>> buildApprovalButtonColumn() {
+        return param -> new TableCell<>() {
+            private final Button detailBtn = new Button("Chi tiet");
+            private final Button approveBtn = new Button("Duyet");
+            private final Button rejectBtn = new Button("Tu choi");
+            private final HBox actions = new HBox(8, detailBtn, approveBtn, rejectBtn);
+            {
+                detailBtn.getStyleClass().add("btn-outline");
+                approveBtn.getStyleClass().add("btn-gold");
+                rejectBtn.getStyleClass().add("btn-danger");
+            }
+
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) { setGraphic(null); return; }
+                PendingItemRow row = getTableView().getItems().get(getIndex());
+                actions.setStyle("-fx-alignment: center;");
+                detailBtn.setOnAction(e -> showPendingItemDetails(row));
+                approveBtn.setOnAction(e -> confirmApproveItem(row));
+                rejectBtn.setOnAction(e -> confirmRejectItem(row));
+                setGraphic(actions);
+            }
+        };
+    }
+
+    private void showPendingItemDetails(PendingItemRow row) {
+        JsonObject item = row.getItemJson();
+        StringBuilder details = new StringBuilder();
+        details.append("ID: ").append(row.getId()).append("\n");
+        details.append("San pham: ").append(row.getName()).append("\n");
+        details.append("Nguoi ban: ").append(row.getSeller()).append("\n");
+        details.append("Loai: ").append(row.getType()).append("\n");
+        details.append("Gia khoi diem: ").append(row.getPriceFormatted()).append("\n\n");
+        details.append(getStr(item, "description"));
+
+        showAlert(Alert.AlertType.INFORMATION, "Chi tiet san pham", details.toString());
+    }
+
+    private void confirmApproveItem(PendingItemRow row) {
+        if (row == null) return;
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Duyet san pham");
+        confirm.setHeaderText(row.getName());
+        confirm.setContentText("Duyet san pham nay de nguoi ban co the mo phien dau gia?");
+        confirm.showAndWait().ifPresent(btn -> {
+            if (btn == ButtonType.OK) sendApproveItem(row.getId(), row.getName());
+        });
+    }
+
+    private void confirmRejectItem(PendingItemRow row) {
+        if (row == null) return;
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("Tu choi san pham");
+        dialog.setHeaderText(row.getName());
+        dialog.setContentText("Ly do tu choi:");
+        dialog.showAndWait().ifPresent(reason -> sendRejectItem(row.getId(), row.getName(), reason));
     }
 
     // ==================== FORCE CLOSE BUTTON ====================
@@ -572,6 +692,10 @@ public class AdminView implements Initializable {
         sendAction("GET_ALL_USERS");
     }
 
+    private void requestPendingItems() {
+        sendAction("GET_PENDING_ITEMS");
+    }
+
     private void requestAllAuctions() {
         sendAction("GET_AUCTIONS");
     }
@@ -669,6 +793,10 @@ public class AdminView implements Initializable {
             case "UNBAN_USER_REPLY"  -> handleUnbanUserReply(response);
             case "FORCE_CLOSE_REPLY" -> handleForceCloseReply(response);
             case "AUCTIONS_LIST"     -> handleAuctionsList(response);
+            case "PENDING_ITEMS_LIST" -> handlePendingItemsList(response);
+            case "APPROVE_ITEM_REPLY" -> handleApprovalMutationReply(response, "APPROVE_ITEM");
+            case "REJECT_ITEM_REPLY"  -> handleApprovalMutationReply(response, "REJECT_ITEM");
+            case "CREATE_ADMIN_LEVEL1_REPLY" -> handleCreateAdminLevel1Reply(response);
             case "AUCTION_HISTORY_REPLY" -> handleAuctionHistoryReply(response);
             case "HISTORY_REPLY"     -> handleHistoryReply(response);
             case "GLOBAL_NOTIFY"     -> handleGlobalNotify(response);
@@ -687,10 +815,16 @@ public class AdminView implements Initializable {
 
         if ("SUCCESS".equals(status) && "ADMIN".equals(role)) {
             adminLoggedIn = true;
+            adminLevel = getInt(res, "adminLevel");
+            if (adminLevel == 0) adminLevel = 2;
+            UserSession.getInstance().setAdminLevel(adminLevel);
+            configureAdminLevelVisibility();
             appendAuditRow("LOGIN", "admin", "Hệ thống", "Đăng nhập admin thành công");
             requestDashboardData();
         } else {
             adminLoggedIn = false;
+            adminLevel = 0;
+            configureAdminLevelVisibility();
             showAlert(Alert.AlertType.ERROR, "Lỗi xác thực",
                     "Đăng nhập admin thất bại.\nStatus: " + status + "  |  Role nhận: " + role
                     + "\nVui lòng kiểm tra credentials.");
@@ -707,11 +841,12 @@ public class AdminView implements Initializable {
 
         for (JsonElement el : res.getAsJsonArray("data")) {
             JsonObject o = el.getAsJsonObject();
+            String role = getDisplayRole(getStr(o, "role"), getInt(o, "adminLevel"));
             allUsers.add(new UserRow(
                     getStr(o, "id"),
                     getStr(o, "username"),
                     getStr(o, "email"),
-                    getStr(o, "role"),
+                    role,
                     o.has("balance") && !o.get("balance").isJsonNull()
                             ? o.get("balance").getAsDouble() : 0.0,
                     getActiveValue(o)
@@ -722,6 +857,50 @@ public class AdminView implements Initializable {
         statUsersGrowth.setText("Tổng tài khoản: " + allUsers.size());
         applyUserFilter();
         updateRolesPieChart();
+    }
+
+    private void handlePendingItemsList(JsonObject res) {
+        pendingItems.clear();
+        if (!res.has("data") || res.get("data").isJsonNull()) return;
+
+        for (JsonElement el : res.getAsJsonArray("data")) {
+            JsonObject item = el.getAsJsonObject();
+            pendingItems.add(new PendingItemRow(
+                    getStr(item, "id"),
+                    getStr(item, "name"),
+                    getStr(item, "sellerFullName"),
+                    getStr(item, "type"),
+                    item.has("startingPrice") && !item.get("startingPrice").isJsonNull()
+                            ? item.get("startingPrice").getAsDouble() : 0.0,
+                    item
+            ));
+        }
+    }
+
+    private void handleApprovalMutationReply(JsonObject res, String actionName) {
+        String status = getStr(res, "status");
+        if ("SUCCESS".equals(status)) {
+            showAlert(Alert.AlertType.INFORMATION, "Thanh cong", getStr(res, "message"));
+            requestPendingItems();
+        } else {
+            showAlert(Alert.AlertType.ERROR, "Loi", getStr(res, "message"));
+        }
+        updateLastAuditDetail(actionName, "Da xu ly: " + status);
+    }
+
+    private void handleCreateAdminLevel1Reply(JsonObject res) {
+        String status = getStr(res, "status");
+        if ("SUCCESS".equals(status)) {
+            showAlert(Alert.AlertType.INFORMATION, "Thanh cong", getStr(res, "message"));
+            newAdminUsernameField.clear();
+            newAdminEmailField.clear();
+            newAdminFullNameField.clear();
+            newAdminPasswordField.clear();
+            requestAllUsers();
+        } else {
+            showAlert(Alert.AlertType.ERROR, "Loi", getStr(res, "message"));
+        }
+        updateLastAuditDetail("CREATE_ADMIN_LEVEL1", "Da xu ly: " + status);
     }
 
     /**
@@ -905,26 +1084,26 @@ public class AdminView implements Initializable {
     // ==================== CHART UPDATES ====================
 
     private void updateRolesPieChart() {
-        int u = 0, s = 0, a = 0, o = 0;
+        int u = 0, a1 = 0, a2 = 0, o = 0;
         for (UserRow row : allUsers) {
             switch (row.getRole()) {
                 case "USER"   -> u++;
-                case "SELLER" -> s++;
-                case "ADMIN"  -> a++;
+                case "ADMIN L1" -> a1++;
+                case "ADMIN L2" -> a2++;
                 default       -> o++;
             }
         }
         rolesPieChart.getData().clear();
         if (u > 0) rolesPieChart.getData().add(new PieChart.Data("USER (" + u + ")", u));
-        if (s > 0) rolesPieChart.getData().add(new PieChart.Data("SELLER (" + s + ")", s));
-        if (a > 0) rolesPieChart.getData().add(new PieChart.Data("ADMIN (" + a + ")", a));
+        if (a1 > 0) rolesPieChart.getData().add(new PieChart.Data("ADMIN L1 (" + a1 + ")", a1));
+        if (a2 > 0) rolesPieChart.getData().add(new PieChart.Data("ADMIN L2 (" + a2 + ")", a2));
         if (o > 0) rolesPieChart.getData().add(new PieChart.Data("Khác (" + o + ")", o));
 
         XYChart.Series<String, Number> series = new XYChart.Series<>();
         series.setName("Số lượng");
         if (u > 0) series.getData().add(new XYChart.Data<>("USER", u));
-        if (s > 0) series.getData().add(new XYChart.Data<>("SELLER", s));
-        if (a > 0) series.getData().add(new XYChart.Data<>("ADMIN", a));
+        if (a1 > 0) series.getData().add(new XYChart.Data<>("ADMIN L1", a1));
+        if (a2 > 0) series.getData().add(new XYChart.Data<>("ADMIN L2", a2));
         usersGrowthChart.getData().clear();
         if (!series.getData().isEmpty()) usersGrowthChart.getData().add(series);
     }
@@ -1064,6 +1243,17 @@ public class AdminView implements Initializable {
         return (obj.has(key) && !obj.get(key).isJsonNull()) ? obj.get(key).getAsString() : "";
     }
 
+    private int getInt(JsonObject obj, String key) {
+        return (obj.has(key) && !obj.get(key).isJsonNull()) ? obj.get(key).getAsInt() : 0;
+    }
+
+    private String getDisplayRole(String role, int adminLevel) {
+        if ("ADMIN".equals(role)) {
+            return adminLevel >= 2 ? "ADMIN L2" : "ADMIN L1";
+        }
+        return role;
+    }
+
     private String getFirstNonEmpty(JsonObject obj, String... keys) {
         for (String key : keys) {
             String value = getStr(obj, key);
@@ -1078,6 +1268,14 @@ public class AdminView implements Initializable {
             return LocalDateTime.parse(rawTime).format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
         } catch (Exception ignored) {
             return rawTime;
+        }
+    }
+
+    private void configureAdminLevelVisibility() {
+        boolean canCreateAdmin = adminLoggedIn && adminLevel >= 2;
+        if (createAdminBox != null) {
+            createAdminBox.setVisible(canCreateAdmin);
+            createAdminBox.setManaged(canCreateAdmin);
         }
     }
 
@@ -1120,6 +1318,29 @@ public class AdminView implements Initializable {
         public double getBalance()          { return balance; }
         public String getBalanceFormatted() { return String.format("VNĐ %,.0f", balance); }
         public boolean isActive()           { return active; }
+    }
+
+    public static class PendingItemRow {
+        private final String id, name, seller, type;
+        private final double startingPrice;
+        private final JsonObject itemJson;
+
+        public PendingItemRow(String id, String name, String seller, String type, double startingPrice, JsonObject itemJson) {
+            this.id = id;
+            this.name = name;
+            this.seller = seller == null || seller.isEmpty() ? "---" : seller;
+            this.type = type == null || type.isEmpty() ? "---" : type;
+            this.startingPrice = startingPrice;
+            this.itemJson = itemJson;
+        }
+
+        public String getId()             { return id; }
+        public String getName()           { return name; }
+        public String getSeller()         { return seller; }
+        public String getType()           { return type; }
+        public double getStartingPrice()  { return startingPrice; }
+        public String getPriceFormatted() { return String.format("VNÄ %,.0f", startingPrice); }
+        public JsonObject getItemJson()   { return itemJson; }
     }
 
     public static class AuctionRow {

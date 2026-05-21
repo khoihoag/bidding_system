@@ -46,6 +46,10 @@ public class AuctionController {
 
             Item item = quanLyKho.findById(itemId);
             if (item == null) { client.sendError("Không tìm thấy sản phẩm này!"); return; }
+            if (!item.isApprovedForAuction()) {
+                client.sendError("San pham nay chua duoc admin duyet nen khong the mo phien dau gia.");
+                return;
+            }
 
             // ================= BỌC THÉP LỖI DỮ LIỆU RÁC =================
             if (item.getSellerId() == null || item.getSellerId().isEmpty()) {
@@ -85,6 +89,10 @@ public class AuctionController {
 
             Item item = quanLyKho.findById(itemId);
             if (item == null) { client.sendError("Không tìm thấy sản phẩm này!"); return; }
+            if (!item.isApprovedForAuction()) {
+                client.sendError("San pham nay chua duoc admin duyet nen khong the dat lich dau gia.");
+                return;
+            }
 
             // ================= BỌC THÉP LỖI DỮ LIỆU RÁC =================
             if (item.getSellerId() == null || item.getSellerId().isEmpty()) {
@@ -152,6 +160,7 @@ public class AuctionController {
                     itemObj.addProperty("description", item.getDescription());
                     itemObj.addProperty("sellerId", item.getSellerId());
                     itemObj.addProperty("sellerFullName", item.getSellerFullName());
+                    itemObj.addProperty("approvalStatus", item.getEffectiveApprovalStatus().name());
 
                     // Lấy mảng đường dẫn ảnh
                     if (item.getImages() != null && !item.getImages().isEmpty()) {
