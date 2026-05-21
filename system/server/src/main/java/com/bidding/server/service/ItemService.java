@@ -47,8 +47,8 @@ public class ItemService {
         Item existingItem = itemRepository.findById(itemId);
         if (existingItem == null) return false;
 
-        // FIX: Lấy getSeller().getId()
-        if (!existingItem.getSeller().getId().equals(actor.getId())) {
+        // FIX: Lấy getSeller().getId() (Bọc Null-Safe phòng lỗi dữ liệu rác không chủ)
+        if (existingItem.getSeller() != null && !existingItem.getSeller().getId().equals(actor.getId())) {
             throw new SecurityException("Chỉ chủ sản phẩm mới được xóa.");
         }
 

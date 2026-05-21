@@ -75,12 +75,29 @@ public class ItemRepository {
         Transaction transaction = null;
         try (Session session = factory.openSession()) {
             transaction = session.beginTransaction();
+            // Xóa mối liên kết giữa Item và User để tránh lỗi cascade của Hibernate
+            Item managedItem = session.contains(item) ? item : session.merge(item);
+            if (managedItem.getSeller() != null) {
+                managedItem.getSeller().getItems().remove(managedItem);
+            }
+            // Xóa tất cả phiên đấu giá liên quan trước (để không bị dính Foreign Key constraint)
+            // 1. Xóa các lịch sử đấu giá (transactions) của phiên đấu giá thuộc món đồ này
+            session.createQuery("DELETE FROM BiddingTransactionEntity t WHERE t.auction.id IN (SELECT a.id FROM AuctionEntity a WHERE a.item.id = :itemId)")
+                   .setParameter("itemId", managedItem.getId())
+                   .executeUpdate();
+                   
+            // 2. Xóa các phiên đấu giá thuộc món đồ này
+            session.createQuery("DELETE FROM AuctionEntity a WHERE a.item.id = :itemId")
+                   .setParameter("itemId", managedItem.getId())
+                   .executeUpdate();
+            
             // Xóa món đồ khỏi Database
-            session.remove(session.contains(item) ? item : session.merge(item));
+            session.remove(managedItem);
             transaction.commit();
         } catch (Exception e) {
             if (transaction != null) transaction.rollback();
             e.printStackTrace();
+            throw e;
         }
     }
     /**

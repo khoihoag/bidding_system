@@ -131,7 +131,7 @@ public synchronized void kickUser(String userId) {
     // 2. Nếu tìm thấy, thực hiện quy trình báo tử và ngắt kết nối
     if (targetHandler != null) {
         try {
-            // Tạo gói tin báo bị ban độc quyền
+
             com.google.gson.JsonObject banNotice = new com.google.gson.JsonObject();
             banNotice.addProperty("action", "YOU_ARE_BANNED");
             banNotice.addProperty("message", "Tài khoản của bạn đã bị khóa bởi Admin do vi phạm quy chế!");

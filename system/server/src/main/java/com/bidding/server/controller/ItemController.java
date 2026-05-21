@@ -52,6 +52,14 @@ public class ItemController {
                 itemObj.addProperty("type", item.getCategory());
                 itemObj.addProperty("description", item.getDescription());
 
+                // Xác định trạng thái đấu giá của vật phẩm
+                String status = "NONE";
+                String dbStatus = tongQuan.getAuctionStatusForItem(item.getId());
+                if (dbStatus != null) {
+                    status = dbStatus; // This will return "RUNNING", "PENDING" (scheduled), "FINISHED", "CANCELLED"
+                }
+                itemObj.addProperty("status", status);
+
                 if (item.getImages() != null && !item.getImages().isEmpty()) {
                     com.google.gson.JsonArray imgArray = new com.google.gson.JsonArray();
                     for(String img : item.getImages()){
@@ -150,16 +158,69 @@ public class ItemController {
 
         try {
             String itemId = request.get("itemId").getAsString();
-            if (tongQuan.isItemInActiveAuction(itemId)) {
-                client.sendError("Món hàng này đang được đấu giá, không được phép sửa đổi thông tin!");
+            // Chặn sửa nếu đang đấu giá RUNNING hoặc đã hoàn thành
+            String dbStatus = tongQuan.getAuctionStatusForItem(itemId);
+            if ("RUNNING".equals(dbStatus) || "OPEN".equals(dbStatus) || "FINISHED".equals(dbStatus) || "PAID".equals(dbStatus)) {
+                client.sendError("Vật phẩm đang hoặc đã được đấu giá, không được phép sửa đổi thông tin!");
                 return;
             }
 
-            Item updateData = new com.bidding.server.model.item.Art();
-            updateData.setName(request.get("name").getAsString());
-            updateData.setDescription(request.get("description").getAsString());
+            Item existingItem = quanLyKho.findById(itemId);
+            if (existingItem == null) {
+                client.sendError("Không tìm thấy vật phẩm!");
+                return;
+            }
+            // Kiểm tra quyền sở hữu
+            if (!existingItem.getSeller().getId().equals(client.getLoggedInUser().getId())) {
+                client.sendError("Chỉ chủ sở hữu mới được sửa vật phẩm!");
+                return;
+            }
 
-            quanLyKho.updateItem(client.getLoggedInUser(), itemId, updateData);
+            // Cập nhật các trường cơ bản
+            if (request.has("name") && !request.get("name").isJsonNull()) {
+                existingItem.setName(request.get("name").getAsString());
+            }
+            if (request.has("description") && !request.get("description").isJsonNull()) {
+                existingItem.setDescription(request.get("description").getAsString());
+            }
+            if (request.has("startingPrice") && !request.get("startingPrice").isJsonNull()) {
+                existingItem.setStartingPrice(request.get("startingPrice").getAsDouble());
+            }
+            if (request.has("condition") && !request.get("condition").isJsonNull()) {
+                existingItem.setCondition(com.bidding.server.enums.ItemCondition.valueOf(request.get("condition").getAsString()));
+            }
+            if (request.has("images") && !request.get("images").isJsonNull()) {
+                java.util.List<String> imageList = new java.util.ArrayList<>();
+                com.google.gson.JsonArray imagesArray = request.getAsJsonArray("images");
+                for (com.google.gson.JsonElement imgElem : imagesArray) {
+                    imageList.add(imgElem.getAsString());
+                }
+                existingItem.setImages(imageList);
+            }
+
+            // Cập nhật các trường đặc biệt theo loại
+            if (existingItem instanceof Art && request.has("artist")) {
+                Art artItem = (Art) existingItem;
+                if (request.has("artist") && !request.get("artist").isJsonNull()) artItem.setArtist(request.get("artist").getAsString());
+                if (request.has("medium") && !request.get("medium").isJsonNull()) artItem.setMedium(request.get("medium").getAsString());
+                if (request.has("yearCreated") && !request.get("yearCreated").isJsonNull()) artItem.setYearCreated(request.get("yearCreated").getAsInt());
+                if (request.has("dimensions") && !request.get("dimensions").isJsonNull()) artItem.setDimensions(request.get("dimensions").getAsString());
+            } else if (existingItem instanceof Vehicle && request.has("make")) {
+                Vehicle vehItem = (Vehicle) existingItem;
+                if (request.has("make") && !request.get("make").isJsonNull()) vehItem.setMake(request.get("make").getAsString());
+                if (request.has("model") && !request.get("model").isJsonNull()) vehItem.setModel(request.get("model").getAsString());
+                if (request.has("year") && !request.get("year").isJsonNull()) vehItem.setYear(request.get("year").getAsInt());
+                if (request.has("mileage") && !request.get("mileage").isJsonNull()) vehItem.setMileage(request.get("mileage").getAsInt());
+                if (request.has("fuelType") && !request.get("fuelType").isJsonNull()) vehItem.setFuelType(request.get("fuelType").getAsString());
+            } else if (existingItem instanceof Electronics && request.has("brand")) {
+                Electronics elecItem = (Electronics) existingItem;
+                if (request.has("brand") && !request.get("brand").isJsonNull()) elecItem.setBrand(request.get("brand").getAsString());
+                if (request.has("model") && !request.get("model").isJsonNull()) elecItem.setModel(request.get("model").getAsString());
+                if (request.has("warrantyMonths") && !request.get("warrantyMonths").isJsonNull()) elecItem.setWarrantyMonths(request.get("warrantyMonths").getAsInt());
+                if (request.has("powerWatts") && !request.get("powerWatts").isJsonNull()) elecItem.setPowerWatts(request.get("powerWatts").getAsInt());
+            }
+
+            quanLyKho.createItem(client.getLoggedInUser(), existingItem); // saveOrUpdate
             client.sendMessage("{\"action\": \"UPDATE_ITEM_REPLY\", \"status\": \"SUCCESS\"}");
 
         } catch (SecurityException se) {
@@ -177,10 +238,14 @@ public class ItemController {
 
         try {
             String itemId = request.get("itemId").getAsString();
-            if (tongQuan.isItemInActiveAuction(itemId)) {
-                client.sendError("Đồ đang đấu giá, xóa là ăn phạt đấy! Không cho xóa.");
+            String dbStatus = tongQuan.getAuctionStatusForItem(itemId);
+            if ("RUNNING".equals(dbStatus) || "OPEN".equals(dbStatus)) {
+                client.sendError("Vật phẩm đang được đấu giá, không xóa được nhé!");
                 return;
             }
+            // FAILED/CANCELLED: Đã chạy nhưng không ai mua -> CHO PHÉP XÓA
+            // FINISHED/PAID: Đấu giá thành công -> CHO PHÉP XÓA (chủ sở hữu muốn dọn kho)
+            // NONE: Chưa đấu giá -> CHO PHÉP XÓA
 
             boolean success = quanLyKho.deleteItem(client.getLoggedInUser(), itemId);
             if (success) {

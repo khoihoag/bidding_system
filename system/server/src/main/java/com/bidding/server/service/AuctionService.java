@@ -443,4 +443,29 @@ public class AuctionService {
 
         return newAuction;
     }
+
+    public boolean hasFinishedAuctionForItem(String itemId) {
+        return repository.hasFinishedAuctionForItem(itemId);
+    }
+
+    public boolean hasAnyAuctionForItem(String itemId) {
+        return repository.hasAnyAuctionForItem(itemId);
+    }
+
+    public String getAuctionStatusForItem(String itemId) {
+        // 1. Check RAM (activeAuctions) first for real-time status
+        for (Auction auction : activeAuctions.values()) {
+            if (auction.getItem() != null && auction.getItem().getId().equals(itemId)) {
+                return auction.getStatus().name();
+            }
+        }
+        
+        // 2. If not in RAM, but DB says RUNNING or OPEN, it's a zombie (crashed server). Treat as FAILED or return DB status.
+        String dbStatus = repository.getAuctionStatusForItem(itemId);
+        if ("RUNNING".equals(dbStatus) || "OPEN".equals(dbStatus)) {
+            return "FAILED"; // It's not in activeAuctions, so it's a zombie!
+        }
+        
+        return dbStatus;
+    }
 }

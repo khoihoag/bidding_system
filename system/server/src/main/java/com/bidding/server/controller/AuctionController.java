@@ -56,6 +56,10 @@ public class AuctionController {
                 client.sendError("Bạn không thể mang đồ của người khác đi đấu giá!");
                 return;
             }
+            if (tongQuan.hasAnyAuctionForItem(itemId)) {
+                client.sendError("Không thể mở phiên đấu giá với vật phẩm đã được đấu giá (hoặc đang đấu giá)!");
+                return;
+            }
             // ============================================================
 
             // GỌI HÀM VỚI ĐỦ 4 THAM SỐ MỚI
@@ -93,6 +97,10 @@ public class AuctionController {
             }
             if (!item.getSeller().getId().equals(client.getLoggedInUser().getId())) {
                 client.sendError("Bạn không thể mang đồ của người khác đi đấu giá!");
+                return;
+            }
+            if (tongQuan.hasAnyAuctionForItem(itemId)) {
+                client.sendError("Không thể lên lịch đấu giá với vật phẩm đã được đấu giá (hoặc đang đấu giá)!");
                 return;
             }
             // ============================================================

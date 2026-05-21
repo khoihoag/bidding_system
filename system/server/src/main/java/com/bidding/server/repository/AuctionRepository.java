@@ -184,4 +184,35 @@ public class AuctionRepository {
             System.err.println("[DB] Could not check legacy auctions.item_id foreign keys: " + e.getMessage());
         }
     }
+
+    public boolean hasFinishedAuctionForItem(String itemId) {
+        try (Session session = factory.openSession()) {
+            String hql = "SELECT count(a) FROM AuctionEntity a WHERE a.item.id = :itemId AND a.status = :status";
+            Long count = session.createQuery(hql, Long.class)
+                    .setParameter("itemId", itemId)
+                    .setParameter("status", com.bidding.server.enums.AuctionStatus.FINISHED)
+                    .uniqueResult();
+            return count != null && count > 0;
+        }
+    }
+
+    public boolean hasAnyAuctionForItem(String itemId) {
+        try (Session session = factory.openSession()) {
+            String hql = "SELECT count(a) FROM AuctionEntity a WHERE a.item.id = :itemId";
+            Long count = session.createQuery(hql, Long.class)
+                    .setParameter("itemId", itemId)
+                    .uniqueResult();
+            return count != null && count > 0;
+        }
+    }
+
+    public String getAuctionStatusForItem(String itemId) {
+        try (Session session = factory.openSession()) {
+            String hql = "SELECT a.status FROM AuctionEntity a WHERE a.item.id = :itemId";
+            com.bidding.server.enums.AuctionStatus status = session.createQuery(hql, com.bidding.server.enums.AuctionStatus.class)
+                    .setParameter("itemId", itemId)
+                    .uniqueResult();
+            return status != null ? status.name() : null;
+        }
+    }
 }
