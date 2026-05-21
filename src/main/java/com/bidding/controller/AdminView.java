@@ -418,6 +418,7 @@ public class AdminView implements Initializable {
         content.setPrefWidth(580);
         content.setStyle("-fx-padding: 20; -fx-font-size: 15px;");
 
+        addImageGallery(content, item, 540, 300);
         javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView();
         imageView.setFitWidth(540);
         imageView.setFitHeight(300);
@@ -427,7 +428,7 @@ public class AdminView implements Initializable {
             java.io.File file = new java.io.File(imagePath);
             if (file.exists()) {
                 imageView.setImage(new javafx.scene.image.Image(file.toURI().toString()));
-                content.getChildren().add(imageView);
+                // Gallery above shows all images.
             } else {
                 content.getChildren().add(new Label("(Không tìm thấy ảnh)"));
             }
@@ -465,6 +466,45 @@ public class AdminView implements Initializable {
         dialog.getDialogPane().setContent(content);
         dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
         dialog.showAndWait();
+    }
+
+    private void addImageGallery(VBox parent, JsonObject item, double width, double height) {
+        JsonArray images = item.has("images") && item.get("images").isJsonArray()
+                ? item.getAsJsonArray("images") : new JsonArray();
+        if (images.size() == 0) {
+            parent.getChildren().add(new Label("(Chua co hinh anh)"));
+            return;
+        }
+
+        javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView();
+        imageView.setFitWidth(width);
+        imageView.setFitHeight(height);
+        imageView.setPreserveRatio(true);
+        Label counter = new Label();
+        Button prevBtn = new Button("Truoc");
+        Button nextBtn = new Button("Tiep");
+        HBox controls = new HBox(10, prevBtn, counter, nextBtn);
+        controls.setStyle("-fx-alignment: center;");
+        final int[] currentIndex = {0};
+
+        Runnable renderImage = () -> {
+            String imagePath = images.get(currentIndex[0]).getAsString();
+            java.io.File file = new java.io.File(imagePath);
+            imageView.setImage(file.exists() ? new javafx.scene.image.Image(file.toURI().toString()) : null);
+            counter.setText((currentIndex[0] + 1) + " / " + images.size());
+            prevBtn.setDisable(images.size() <= 1);
+            nextBtn.setDisable(images.size() <= 1);
+        };
+        prevBtn.setOnAction(e -> {
+            currentIndex[0] = (currentIndex[0] - 1 + images.size()) % images.size();
+            renderImage.run();
+        });
+        nextBtn.setOnAction(e -> {
+            currentIndex[0] = (currentIndex[0] + 1) % images.size();
+            renderImage.run();
+        });
+        renderImage.run();
+        parent.getChildren().addAll(imageView, controls);
     }
 
     private void confirmForceClose(AuctionRow auction) {

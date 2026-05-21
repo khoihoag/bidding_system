@@ -5,6 +5,7 @@
 <?import javafx.scene.chart.*?>
 <?import javafx.scene.text.*?>
 <?import javafx.geometry.Insets?>
+<?import javafx.scene.image.ImageView?>
 
 <BorderPane xmlns="[javafx.com](http://javafx.com/javafx/21)"
             xmlns:fx="[javafx.com](http://javafx.com/fxml/1)"
@@ -53,25 +54,39 @@
                         <Insets top="24" right="20" bottom="24" left="20"/>
                     </padding>
 
-                    <!-- ── Thông tin phiên đấu giá ── -->
-                    <VBox styleClass="info-card" spacing="16">
-                        <Label text="📋 Thông Tin Phiên" styleClass="section-title"/>
+                    <!-- ── Hình ảnh và Tên Sản Phẩm ── -->
+                    <VBox styleClass="info-card" spacing="12">
+                        <!-- Product Image Container (Large Rectangle) -->
+                        <StackPane fx:id="imageStackPane" prefHeight="280" style="-fx-background-color: rgba(0,0,0,0.3); -fx-background-radius: 12; -fx-padding: 8; -fx-border-color: rgba(212, 175, 55, 0.2); -fx-border-radius: 12; -fx-border-width: 1;">
+                            <ImageView fx:id="itemImageView" fitWidth="380" fitHeight="260" preserveRatio="true"/>
+                            <Label fx:id="noImagePlaceholder" text="Không có ảnh" styleClass="hint-label" visible="false"/>
+                            <HBox fx:id="imageControlsBox" alignment="CENTER" pickOnBounds="false" visible="false">
+                                <padding><Insets left="10" right="10"/></padding>
+                                <Button fx:id="prevImageBtn" text="&lt;" onAction="#handlePrevImage" style="-fx-background-color: rgba(0,0,0,0.6); -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16px; -fx-cursor: hand; -fx-background-radius: 20;"/>
+                                <Region HBox.hgrow="ALWAYS" />
+                                <Button fx:id="nextImageBtn" text="&gt;" onAction="#handleNextImage" style="-fx-background-color: rgba(0,0,0,0.6); -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16px; -fx-cursor: hand; -fx-background-radius: 20;"/>
+                            </HBox>
+                        </StackPane>
 
-                        <VBox spacing="8">
-                            <Label text="Sản phẩm" styleClass="field-label"/>
-
-                            <HBox alignment="CENTER_LEFT" spacing="10">
+                        <!-- Product Text Details & Button -->
+                        <HBox alignment="CENTER_LEFT" spacing="16">
+                            <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                <Label text="Sản phẩm" styleClass="field-label"/>
                                 <Label fx:id="itemNameLabel"
                                        text="Đang tải..."
                                        styleClass="info-value-large"
-                                       wrapText="true"
-                                       HBox.hgrow="ALWAYS"/>
+                                       wrapText="true"/>
+                            </VBox>
+                            <Button text="🔍 Xem Chi Tiết"
+                                    onAction="#handleViewAuctionItemDetails"
+                                    styleClass="secondary-button"
+                                    minWidth="130"/>
+                        </HBox>
+                    </VBox>
 
-                                <Button text="🔍 Xem Chi Tiết"
-                                        onAction="#handleViewAuctionItemDetails"
-                                        styleClass="secondary-button"/>
-                            </HBox>
-                        </VBox>
+                    <!-- ── Thông tin phiên đấu giá ── -->
+                    <VBox styleClass="info-card" spacing="16">
+                        <Label text="📋 Thông Tin Phiên" styleClass="section-title"/>
 
                         <HBox spacing="16">
                             <VBox spacing="4" HBox.hgrow="ALWAYS">

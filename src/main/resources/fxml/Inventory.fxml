@@ -13,13 +13,25 @@
     <VBox styleClass="auction-card" HBox.hgrow="ALWAYS" spacing="10" minWidth="300">
         <Label text="📦 Kho Đồ Của Tôi" styleClass="card-name"/>
         <Label text="Chọn một món đồ để thao tác" styleClass="card-id"/>
+        <HBox spacing="8" alignment="CENTER_LEFT">
+            <Label text="🔎 Lọc:" style="-fx-text-fill: #d4af37; -fx-font-weight: bold;"/>
+            <ComboBox fx:id="comboFilter" promptText="Tất cả" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+        </HBox>
+        <HBox spacing="15" alignment="CENTER_LEFT" style="-fx-padding: 5 10 5 10; -fx-background-color: #2d3436; -fx-background-radius: 5;">
+            <Label text="UID" style="-fx-text-fill: #b2bec3; -fx-font-weight: bold;" prefWidth="260"/>
+            <Label text="Tên" style="-fx-text-fill: #b2bec3; -fx-font-weight: bold;" prefWidth="200"/>
+            <Label text="Trạng thái" style="-fx-text-fill: #b2bec3; -fx-font-weight: bold;"/>
+        </HBox>
         <ListView fx:id="inventoryListView" VBox.vgrow="ALWAYS" style="-fx-background-radius: 5;"/>
-        <Button text="🔍 Xem Chi Tiết Vật Phẩm" onAction="#handleViewDetails" styleClass="action-button" maxWidth="Infinity"/>
-        <Button text="🔄 Làm mới kho đồ" onAction="#handleRefreshInventory" styleClass="card-view-btn" maxWidth="Infinity"/>
+        <Button text="Xem Chi Tiết Vật Phẩm" onAction="#handleViewDetails" styleClass="action-button" maxWidth="Infinity"/>
+        <Button text="Chỉnh Sửa Vật Phẩm" onAction="#handleEditItem" styleClass="action-button" maxWidth="Infinity"/>
+        <Button fx:id="btnDeleteItem" text="Xóa Vật Phẩm" onAction="#handleDeleteItem" styleClass="action-button" maxWidth="Infinity" style="-fx-background-color: linear-gradient(to right, #c0392b, #e74c3c); -fx-text-fill: white;"/>
+        <Button text="🔄 Làm mới kho đồ" onAction="#handleRefreshInventory" styleClass="action-button" maxWidth="Infinity"/>
+
     </VBox>
 
     <VBox styleClass="auction-card" minWidth="450" spacing="10">
-        <Label text="⚙️ Bảng Thao Tác" styleClass="card-name"/>
+        <Label text="Bảng Thao Tác" styleClass="card-name"/>
 
         <TabPane tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
 

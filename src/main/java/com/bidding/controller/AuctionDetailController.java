@@ -55,6 +55,14 @@ public class AuctionDetailController {
 
     // THÊM DÒNG NÀY VÀO:
     private JsonObject currentSelectedAuction;
+    
+    // ─── Image Viewer ─────────────────────────────────────────────────────────
+    @FXML private javafx.scene.image.ImageView itemImageView;
+    @FXML private Label noImagePlaceholder;
+    @FXML private javafx.scene.layout.HBox imageControlsBox;
+    private java.util.List<String> currentItemImages = new java.util.ArrayList<>();
+    private int currentImageIndex = 0;
+
     // ─── FXML nodes — Result & Chart ──────────────────────────────────────────
     @FXML private Label                        resultLabel;
     @FXML private Label                        lastUpdateLabel;
@@ -487,8 +495,22 @@ public class AuctionDetailController {
                 final String finalEndTime  = endTimeStr;
                 final String finalWinner   = winnerId;
                 final boolean finalIsReverse = isReverse; // Tạo final để ném vào luồng UI
+                
+                // Lấy danh sách ảnh
+                java.util.List<String> imagePaths = new java.util.ArrayList<>();
+                if (auction.has("item") && auction.get("item").isJsonObject()) {
+                    JsonObject item = auction.getAsJsonObject("item");
+                    if (item.has("images")) {
+                        for (JsonElement e : item.getAsJsonArray("images")) imagePaths.add(e.getAsString());
+                    }
+                }
 
                 Platform.runLater(() -> {
+                    this.currentItemImages.clear();
+                    this.currentItemImages.addAll(imagePaths);
+                    this.currentImageIndex = 0;
+                    updateImageView();
+
                     itemNameLabel.setText(finalItemName);
                     headerItemName.setText(finalItemName);
                     updateCurrentPrice(finalPrice);
@@ -582,6 +604,42 @@ public class AuctionDetailController {
     }
 
     // ─── UI Helpers ───────────────────────────────────────────────────────────
+    
+    private void updateImageView() {
+        if (currentItemImages.isEmpty()) {
+            itemImageView.setImage(null);
+            if (noImagePlaceholder != null) noImagePlaceholder.setVisible(true);
+            if (imageControlsBox != null) imageControlsBox.setVisible(false);
+        } else {
+            if (noImagePlaceholder != null) noImagePlaceholder.setVisible(false);
+            try {
+                java.io.File file = new java.io.File(currentItemImages.get(currentImageIndex));
+                if (file.exists()) {
+                    itemImageView.setImage(new javafx.scene.image.Image(file.toURI().toString()));
+                } else {
+                    itemImageView.setImage(null);
+                }
+            } catch (Exception e) {}
+            
+            if (imageControlsBox != null) {
+                imageControlsBox.setVisible(currentItemImages.size() > 1);
+            }
+        }
+    }
+
+    @FXML
+    private void handlePrevImage() {
+        if (currentItemImages.isEmpty()) return;
+        currentImageIndex = (currentImageIndex - 1 + currentItemImages.size()) % currentItemImages.size();
+        updateImageView();
+    }
+
+    @FXML
+    private void handleNextImage() {
+        if (currentItemImages.isEmpty()) return;
+        currentImageIndex = (currentImageIndex + 1) % currentItemImages.size();
+        updateImageView();
+    }
 
     private void updateCurrentPrice(double price) {
         currentPriceLabel.setText(currencyFmt.format(price) + " ₫");
@@ -726,10 +784,18 @@ public class AuctionDetailController {
 
         javafx.scene.layout.VBox vbox = new javafx.scene.layout.VBox(10);
         vbox.setStyle("-fx-padding: 20; -fx-font-size: 15px;");
-        vbox.setPrefWidth(500);
+        // 1. TẠO GIAO DIỆN CHÍNH LÀ HBOX (Hình bên trái, Chữ bên phải)
+        javafx.scene.layout.HBox mainBox = new javafx.scene.layout.HBox(20);
+        mainBox.setStyle("-fx-padding: 20; -fx-font-size: 15px;");
+        mainBox.setPrefWidth(750); // Tăng chiều rộng để chứa cả hình và chữ
+
+        // 2. KHU VỰC HÌNH ẢNH (Bên trái, trong hình chữ nhật riêng)
+        javafx.scene.layout.VBox imageBox = new javafx.scene.layout.VBox();
+        imageBox.setStyle("-fx-background-color: rgba(0,0,0,0.3); -fx-background-radius: 12; -fx-padding: 10; -fx-border-color: rgba(212, 175, 55, 0.2); -fx-border-radius: 12; -fx-border-width: 1;");
+        imageBox.setPrefWidth(350);
 
         javafx.scene.image.ImageView imgView = new javafx.scene.image.ImageView();
-        imgView.setFitWidth(460);
+        imgView.setFitWidth(330);
         imgView.setFitHeight(300);
         imgView.setPreserveRatio(true);
         if (item.has("images") && item.getAsJsonArray("images").size() > 0) {
@@ -741,8 +807,15 @@ public class AuctionDetailController {
                 }
             } catch (Exception e) { System.err.println("Lỗi load ảnh!"); }
         } else {
-            vbox.getChildren().add(new javafx.scene.control.Label("(Chưa có hình ảnh)"));
+            javafx.scene.control.Label noImg = new javafx.scene.control.Label("(Chưa có hình ảnh)");
+            noImg.setStyle("-fx-text-fill: #7f8c8d;");
+            imageBox.getChildren().add(noImg);
         }
+        if (imgView.getImage() != null) imageBox.getChildren().add(imgView);
+
+        // 3. KHU VỰC THÔNG TIN (Bên phải)
+        javafx.scene.layout.VBox infoBox = new javafx.scene.layout.VBox(10);
+        javafx.scene.layout.HBox.setHgrow(infoBox, javafx.scene.layout.Priority.ALWAYS);
 
         javafx.scene.control.Label lblType = new javafx.scene.control.Label("Loại: " + (item.has("type") ? item.get("type").getAsString() : "---"));
 
@@ -751,10 +824,10 @@ public class AuctionDetailController {
         else if ("USED".equals(conditionText)) conditionText = "Đã sử dụng";
 
         javafx.scene.control.Label lblCondition = new javafx.scene.control.Label("Tình trạng: " + conditionText);
-        lblCondition.setStyle("-fx-font-style: italic; -fx-text-fill: #6b7a90;"); // Chuyển sang màu xám sang trọng
+        lblCondition.setStyle("-fx-font-style: italic; -fx-text-fill: #6b7a90;"); 
 
         javafx.scene.control.Label lblPrice = new javafx.scene.control.Label("Giá khởi điểm: 0 đ");
-        lblPrice.getStyleClass().add("price-value"); // Gọi class mạ vàng
+        lblPrice.getStyleClass().add("price-value"); 
         if (item.has("startingPrice")) {
             java.text.NumberFormat fmt = java.text.NumberFormat.getNumberInstance(java.util.Locale.of("vi", "VN"));
             lblPrice.setText("Giá khởi điểm: " + fmt.format(item.get("startingPrice").getAsDouble()) + " đ");
@@ -762,27 +835,27 @@ public class AuctionDetailController {
 
         javafx.scene.control.Label lblDesc = new javafx.scene.control.Label("Mô tả: " + (item.has("description") ? item.get("description").getAsString() : ""));
         lblDesc.setWrapText(true);
-        lblDesc.setMaxWidth(480);
 
-        vbox.getChildren().addAll(imgView, lblType, lblCondition, lblPrice, new javafx.scene.control.Separator(), lblDesc);
+        infoBox.getChildren().addAll(lblType, lblCondition, lblPrice, new javafx.scene.control.Separator(), lblDesc);
 
         if (item.has("specifications")) {
             JsonObject specs = item.getAsJsonObject("specifications");
             javafx.scene.layout.VBox extraBox = new javafx.scene.layout.VBox(8);
 
-            // Xóa màu cứng, gán class info-card để nó nổi bóng 3D
             extraBox.getStyleClass().add("info-card");
-            extraBox.setStyle("");
+            extraBox.setStyle("-fx-margin-top: 10;");
 
             extraBox.getChildren().add(new javafx.scene.control.Label("📋 Thông số chi tiết:"));
             for (String key : specs.keySet()) {
                 String value = specs.get(key).getAsString();
                 extraBox.getChildren().add(new javafx.scene.control.Label("  • " + key + ": " + value));
             }
-            vbox.getChildren().add(extraBox);
+            infoBox.getChildren().add(extraBox);
         }
 
-        dialog.getDialogPane().setContent(vbox);
+        mainBox.getChildren().addAll(imageBox, infoBox);
+
+        dialog.getDialogPane().setContent(mainBox);
         dialog.getDialogPane().getButtonTypes().add(javafx.scene.control.ButtonType.CLOSE);
         dialog.showAndWait();
     }
