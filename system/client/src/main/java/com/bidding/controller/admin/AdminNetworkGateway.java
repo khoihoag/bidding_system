@@ -118,6 +118,19 @@ public class AdminNetworkGateway {
         sendRequest(req);
     }
 
+    public void sendCreateAdminLevel1(String username, String email, String fullName, String password) {
+        if (!checkConnected()) {
+            return;
+        }
+        JsonObject req = new JsonObject();
+        req.addProperty("action", "CREATE_ADMIN_LEVEL1");
+        req.addProperty("username", username);
+        req.addProperty("email", email);
+        req.addProperty("fullName", fullName);
+        req.addProperty("password", password);
+        sendRequest(req);
+    }
+
     private void updateConnectingStatus() {
         connectionLabel.setText("● Đang kết nối");
         connectionLabel.setStyle("-fx-text-fill: #b45309; -fx-font-size: 12px; -fx-font-weight: 700;");

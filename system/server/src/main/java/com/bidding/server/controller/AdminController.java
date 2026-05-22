@@ -231,7 +231,14 @@ public class AdminController {
             client.sendError(message);
             return false;
         }
-        return true;
+        try {
+            client.setLoggedInUser(adminService.requireActiveAccount(client.getLoggedInUser()));
+            return true;
+        } catch (SecurityException se) {
+            client.setLoggedInUser(null);
+            client.sendError(se.getMessage());
+            return false;
+        }
     }
 
     private void sendStatus(String action, String status, String message) {

@@ -35,6 +35,7 @@ public class LoginController {
 
         loginButton.setDisable(true);
         errorLabel.setVisible(false);
+        UserSession.getInstance().clear();
 
         JsonObject request = new JsonObject();
         request.addProperty("action", "LOGIN");

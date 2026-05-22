@@ -64,6 +64,7 @@ public class AdminResponseHandler {
             case "PENDING_ITEMS_LIST" -> handlePendingItemsList(response);
             case "APPROVE_ITEM_REPLY" -> handleApprovalMutationReply(response, "APPROVE_ITEM");
             case "REJECT_ITEM_REPLY" -> handleApprovalMutationReply(response, "REJECT_ITEM");
+            case "CREATE_ADMIN_LEVEL1_REPLY" -> handleCreateAdminLevel1Reply(response);
             case "HISTORY_REPLY" -> handleHistoryReply(response);
             case "ADMIN_AUCTION_BID_HISTORY_REPLY" -> handleAdminAuctionBidHistoryReply(response);
             case "GLOBAL_NOTIFY" -> handleGlobalNotify(response);
@@ -96,11 +97,14 @@ public class AdminResponseHandler {
 
         for (JsonElement el : res.getAsJsonArray("data")) {
             JsonObject o = el.getAsJsonObject();
+            String role = getDisplayRole(
+                    AdminUiHelper.getString(o, "role"),
+                    o.has("adminLevel") && !o.get("adminLevel").isJsonNull() ? o.get("adminLevel").getAsInt() : 0);
             state.allUsers.add(new UserRow(
                     AdminUiHelper.getString(o, "id"),
                     AdminUiHelper.getString(o, "username"),
                     AdminUiHelper.getString(o, "email"),
-                    AdminUiHelper.getString(o, "role"),
+                    role,
                     o.has("balance") && !o.get("balance").isJsonNull()
                             ? o.get("balance").getAsDouble() : 0.0,
                     AdminUiHelper.getActiveValue(o)
@@ -280,6 +284,29 @@ public class AdminResponseHandler {
             AdminUiHelper.showAlert(Alert.AlertType.ERROR, "Loi",
                     message.isEmpty() ? "Khong the cap nhat trang thai san pham." : message);
         }
+    }
+
+    private void handleCreateAdminLevel1Reply(JsonObject res) {
+        String status = AdminUiHelper.getString(res, "status");
+        String message = AdminUiHelper.getString(res, "message");
+        auditLog.updateLastDetail("CREATE_ADMIN_LEVEL1",
+                "SUCCESS".equals(status) ? "OK " + message : "Loi: " + message);
+
+        if ("SUCCESS".equals(status)) {
+            AdminUiHelper.showAlert(Alert.AlertType.INFORMATION, "Thanh cong",
+                    message.isEmpty() ? "Da tao admin level 1." : message);
+            requestAllUsers.run();
+        } else {
+            AdminUiHelper.showAlert(Alert.AlertType.ERROR, "Loi",
+                    message.isEmpty() ? "Khong the tao admin level 1." : message);
+        }
+    }
+
+    private String getDisplayRole(String role, int adminLevel) {
+        if ("ADMIN".equals(role)) {
+            return adminLevel >= 2 ? "ADMIN L2" : "ADMIN L1";
+        }
+        return role;
     }
 
     private void handleGlobalNotify(JsonObject res) {

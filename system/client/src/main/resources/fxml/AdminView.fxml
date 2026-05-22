@@ -206,6 +206,17 @@
                     <Button text="Xóa lọc" onAction="#clearUserSearch" styleClass="btn-outline" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
                 </HBox>
 
+                <VBox fx:id="createAdminBox" spacing="10" styleClass="toolbar-row">
+                    <Label text="Tạo admin level 1" styleClass="section-subtitle" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    <HBox spacing="10">
+                        <TextField fx:id="newAdminUsernameField" promptText="Username" HBox.hgrow="ALWAYS" styleClass="search-field"/>
+                        <TextField fx:id="newAdminEmailField" promptText="Email" HBox.hgrow="ALWAYS" styleClass="search-field"/>
+                        <TextField fx:id="newAdminFullNameField" promptText="Họ tên" HBox.hgrow="ALWAYS" styleClass="search-field"/>
+                        <PasswordField fx:id="newAdminPasswordField" promptText="Password" HBox.hgrow="ALWAYS" styleClass="search-field"/>
+                        <Button text="Tạo admin L1" onAction="#handleCreateAdminLevel1" styleClass="btn-gold"/>
+                    </HBox>
+                </VBox>
+
                 <TableView fx:id="userTable" VBox.vgrow="ALWAYS" styleClass="table-view">
                     <columns>
                         <TableColumn fx:id="colUserId"      text="ID"         prefWidth="160"/>

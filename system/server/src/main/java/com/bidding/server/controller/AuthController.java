@@ -22,6 +22,7 @@ public class AuthController {
         String pass = request.get("password").getAsString();
 
         try {
+            client.setLoggedInUser(null);
             User loggedInUser = baoVe.login(user, pass);
             client.setLoggedInUser(loggedInUser); // Set ngược lại vào Lễ tân
 
@@ -32,6 +33,7 @@ public class AuthController {
                     loggedInUser.getBalance()
             ).toString());
         } catch (Exception e) {
+            client.setLoggedInUser(null);
             client.sendError(e.getMessage());
         }
     }

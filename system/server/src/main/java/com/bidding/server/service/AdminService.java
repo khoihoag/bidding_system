@@ -59,6 +59,18 @@ public class AdminService {
         }
     }
 
+    public User requireActiveAccount(User user) {
+        if (user == null) {
+            throw new SecurityException("Admin chua dang nhap.");
+        }
+
+        User freshUser = userRepository.findById(user.getId());
+        if (freshUser == null || !freshUser.isActive()) {
+            throw new SecurityException("Tai khoan admin nay da bi khoa.");
+        }
+        return freshUser;
+    }
+
     private void requireCanModerateUser(User actor, User targetUser) {
         int actorLevel = getAdminLevel(actor);
         int targetLevel = getAdminLevel(targetUser);

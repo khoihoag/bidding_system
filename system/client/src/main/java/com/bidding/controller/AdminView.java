@@ -70,6 +70,12 @@ public class AdminView implements Initializable {
     @FXML private Label userPageInfo;
     @FXML private Label userCountLabel;
 
+    @FXML private VBox createAdminBox;
+    @FXML private TextField newAdminUsernameField;
+    @FXML private TextField newAdminEmailField;
+    @FXML private TextField newAdminFullNameField;
+    @FXML private PasswordField newAdminPasswordField;
+
     @FXML private TableView<PendingItemRow> pendingItemTable;
     @FXML private TableColumn<PendingItemRow, String> colPendingItemId;
     @FXML private TableColumn<PendingItemRow, String> colPendingItemName;
@@ -135,6 +141,7 @@ public class AdminView implements Initializable {
         setupNetworkListeners();
         network.connectOnce();
         state.adminLoggedIn = "ADMIN".equals(UserSession.getInstance().getRole());
+        configureAdminLevelVisibility();
         showUsers();
     }
 
@@ -303,6 +310,32 @@ public class AdminView implements Initializable {
         } else {
             warnNotLoggedIn();
         }
+    }
+
+    @FXML
+    private void handleCreateAdminLevel1() {
+        if (UserSession.getInstance().getAdminLevel() < 2) {
+            AdminUiHelper.showAlert(Alert.AlertType.WARNING, "Khong du quyen",
+                    "Chi admin level 2 moi duoc tao admin level 1.");
+            return;
+        }
+
+        String username = newAdminUsernameField.getText().trim();
+        String email = newAdminEmailField.getText().trim();
+        String fullName = newAdminFullNameField.getText().trim();
+        String password = newAdminPasswordField.getText().trim();
+        if (username.isEmpty() || email.isEmpty() || fullName.isEmpty() || password.isEmpty()) {
+            AdminUiHelper.showAlert(Alert.AlertType.WARNING, "Thieu thong tin",
+                    "Vui long nhap day du thong tin admin level 1.");
+            return;
+        }
+
+        network.sendCreateAdminLevel1(username, email, fullName, password);
+        auditLog.append("CREATE_ADMIN_LEVEL1", "admin", username, "Dang cho...");
+        newAdminUsernameField.clear();
+        newAdminEmailField.clear();
+        newAdminFullNameField.clear();
+        newAdminPasswordField.clear();
     }
 
     @FXML
@@ -521,5 +554,13 @@ public class AdminView implements Initializable {
     private void warnNotLoggedIn() {
         AdminUiHelper.showAlert(Alert.AlertType.WARNING, "Chưa xác thực",
                 "Đang chờ đăng nhập admin...\nVui lòng thử lại sau vài giây.");
+    }
+
+    private void configureAdminLevelVisibility() {
+        boolean canCreateAdmin = state.adminLoggedIn && UserSession.getInstance().getAdminLevel() >= 2;
+        if (createAdminBox != null) {
+            createAdminBox.setVisible(canCreateAdmin);
+            createAdminBox.setManaged(canCreateAdmin);
+        }
     }
 }
