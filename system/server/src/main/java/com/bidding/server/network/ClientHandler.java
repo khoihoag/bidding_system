@@ -79,8 +79,15 @@ public class ClientHandler implements Runnable {
                         //lich su de vẽ biểu đồ
                         case "GET_AUCTION_HISTORY": auctionController.handleGetAuctionHistory(request);break;
                         case "GET_WON_ITEMS": itemController.handleGetWonItems();break;
-
-                        // Nhóm Quản Trị (Admin)
+                        // Nằm trong hàm xử lý JSON nhận được từ Client
+                        // Nằm trong hàm xử lý JSON nhận được từ Client
+                        case "FOLLOW_AUCTION": auctionController.handleFollowAuction(request); break;
+                        // Trong hàm xử lý Action chính của Server
+                        // Trong vòng switch-case xử lý lệnh từ Client của sếp
+                        case "GET_NOTIFICATIONS":
+                            // Sếp gọi controller nào quản lý thông báo? Nếu là AuctionController thì:
+                            auctionController.handleGetNotifications(request);
+                            break;
                         case "GET_ALL_USERS": adminController.handleGetAllUsers(); break;
                         case "FORCE_CLOSE": adminController.handleForceClose(request); break;
                         case "BAN_USER": adminController.handleBanUser(request); break;

@@ -97,28 +97,20 @@ public class MainController {
 
     @FXML
     private void handleViewNotificationDetail() {
-        if (notificationListView == null) return;
+        try {
+            // Tải cái giao diện hòm thư Sotheby's mà anh em mình vừa tạo
+            // (Sếp kiểm tra xem file Notifications.fxml của sếp nằm ở đâu thì sửa lại đường dẫn cho đúng nhé, ví dụ: "/fxml/Notifications.fxml")
+            javafx.scene.Parent view = javafx.fxml.FXMLLoader.load(getClass().getResource("/fxml/Notifications.fxml"));
+            // Dọn dẹp sạch sẽ cái ruột ở giữa màn hình
+            contentArea.getChildren().clear();
 
-        if (notificationListView.getItems().isEmpty()) {
-            showNotificationDetailDialog("Chi tiết thông báo", "Chưa có thông báo nào.");
-            return;
+            // Nhét nguyên trang Thông Báo hoành tráng vào
+            contentArea.getChildren().add(view);
+
+        } catch (Exception e) {
+            System.err.println("Toang! Lỗi chuyển trang Thông Báo: " + e.getMessage());
+            e.printStackTrace();
         }
-
-        StringBuilder detail = new StringBuilder();
-        for (int i = 0; i < notificationListView.getItems().size(); i++) {
-            NotificationEntry entry = notificationListView.getItems().get(i);
-            detail.append(i + 1)
-                    .append(". [")
-                    .append(entry.time())
-                    .append("] ")
-                    .append(entry.message());
-
-            if (i < notificationListView.getItems().size() - 1) {
-                detail.append("\n\n");
-            }
-        }
-
-        showNotificationDetailDialog("Chi tiết thông báo", detail.toString());
     }
 
     private void handleGlobalNotification(JsonObject json) {

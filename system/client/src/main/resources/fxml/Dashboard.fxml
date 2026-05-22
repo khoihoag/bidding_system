@@ -2,35 +2,63 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
+<?import javafx.scene.image.*?>
 
-<ScrollPane fitToWidth="true" style="-fx-background-color: transparent;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.bidding.controller.DashboardController">
-    <VBox spacing="20" styleClass="content-area">
-        <padding>
-            <Insets top="20" right="20" bottom="20" left="20"/>
-        </padding>
+<ScrollPane fitToWidth="true" hbarPolicy="NEVER" style="-fx-background-color: #FFFFFF;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.bidding.controller.DashboardController">
+
+    <VBox spacing="35" style="-fx-background-color: #FFFFFF; -fx-padding: 40;" maxWidth="Infinity">
 
         <HBox alignment="CENTER_LEFT">
-            <VBox spacing="5">
-                <Label text="🏛 Sảnh Đấu Giá" styleClass="page-title" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
-                <Label text="Các phiên đấu giá đang diễn ra trên toàn server" styleClass="page-subtitle" style="-fx-text-fill: #7f8c8d;"/>
+            <VBox spacing="8">
+                <Label text="SẢNH ĐẤU GIÁ" style="-fx-font-family: 'Georgia', 'Times New Roman', serif; -fx-font-size: 28px; -fx-text-fill: #111111; -fx-font-weight: normal;"/>
+                <Label text="Các phiên đấu giá nghệ thuật &amp; xa xỉ phẩm toàn cầu" style="-fx-font-size: 14px; -fx-text-fill: #6B7280;"/>
             </VBox>
             <Region HBox.hgrow="ALWAYS"/>
-            <Button text="🔄 Làm mới Sảnh" onAction="#handleRefresh" styleClass="action-button"/>
         </HBox>
 
-        <Separator/>
+        <StackPane fx:id="heroStackPane"
+                   prefHeight="550" minHeight="550" maxHeight="550"
+                   maxWidth="Infinity"
+                   style="-fx-background-color: #111111;">
 
-        <HBox alignment="CENTER_LEFT" spacing="12">
+            <ImageView fx:id="carouselImageView"
+                       preserveRatio="false"
+                       smooth="true"
+                       fitWidth="1366"
+                       fitHeight="550" />
+
+            <Region style="-fx-background-color: rgba(0,0,0,0.3);" />
+
+            <AnchorPane>
+                <VBox alignment="CENTER_LEFT" spacing="20" AnchorPane.bottomAnchor="80" AnchorPane.leftAnchor="60">
+                    <Label fx:id="lblCarouselTitle" text="Contemporary Art Auction"
+                           style="-fx-font-family: 'Georgia'; -fx-font-size: 42px; -fx-text-fill: #FFFFFF; -fx-font-weight: bold;"/>
+                    <Label fx:id="lblCarouselDesc" text="Khám phá những kiệt tác thế kỉ"
+                           style="-fx-font-size: 18px; -fx-text-fill: #E5E7EB; -fx-max-width: 500;" wrapText="true"/>
+
+                </VBox>
+
+                <Button text="‹" onAction="#handlePrevSlide" AnchorPane.leftAnchor="10" AnchorPane.topAnchor="250"
+                        style="-fx-background-color: transparent; -fx-text-fill: #FFFFFF; -fx-font-size: 40px; -fx-cursor: hand;"/>
+                <Button text="›" onAction="#handleNextSlide" AnchorPane.rightAnchor="10" AnchorPane.topAnchor="250"
+                        style="-fx-background-color: transparent; -fx-text-fill: #FFFFFF; -fx-font-size: 40px; -fx-cursor: hand;"/>
+
+                <HBox fx:id="carouselDots" alignment="CENTER" spacing="10" AnchorPane.bottomAnchor="30" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" />
+            </AnchorPane>
+        </StackPane>
+
+        <HBox alignment="CENTER_LEFT" spacing="20">
             <TextField fx:id="auctionSearchField"
-                       promptText="Tìm theo tên sản phẩm, mã phiên, loại, người bán..."
+                       promptText="Tìm kiếm tác phẩm, mã phiên, người bán..."
                        onAction="#handleAuctionSearch"
                        styleClass="input-field"
-                       prefWidth="420"
-                       maxWidth="520"
+                       style="-fx-font-size: 15px; -fx-padding: 10 0; -fx-border-width: 0 0 1 0; -fx-border-color: #D1D5DB; -fx-background-color: transparent; -fx-border-radius: 0;"
+                       prefWidth="500"
                        HBox.hgrow="ALWAYS"/>
-            <Button text="Xóa lọc" onAction="#clearAuctionSearch" styleClass="secondary-button"/>
+            <Button text="XÓA LỌC" onAction="#clearAuctionSearch" styleClass="secondary-button" style="-fx-border-width: 0; -fx-font-weight: bold;"/>
         </HBox>
 
-        <VBox fx:id="auctionContainer" spacing="20"/>
+        <VBox fx:id="auctionContainer" spacing="30"/>
+
     </VBox>
 </ScrollPane>

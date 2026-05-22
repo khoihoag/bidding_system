@@ -112,37 +112,44 @@ public class AuctionController {
 
     public void handleGetAuctions() {
         try {
-            // Lấy danh sách bằng đúng hàm của sếp
             List<Auction> activeAuctions = tongQuan.getAllAuctionsForDisplay();
-
             com.google.gson.JsonArray dataArray = new com.google.gson.JsonArray();
 
             for (Auction auc : activeAuctions) {
                 JsonObject aucObj = new JsonObject();
-                aucObj.addProperty("id", auc.getId());
 
+                // 1. Thông tin cơ bản
+                aucObj.addProperty("id", auc.getId());
                 aucObj.addProperty("currentPrice", auc.getCurrentPrice().get());
                 aucObj.addProperty("status", auc.getStatus() != null ? auc.getStatus().toString() : "UNKNOWN");
-                // Trong AuctionController.java
-                // ================= BỌC THÉP LỖI THỜI GIAN =================
+
+                // 2. Thời gian
                 aucObj.addProperty("startTime", auc.getStartTime() != null ? auc.getStartTime().toString() : LocalDateTime.now().toString());
                 aucObj.addProperty("endTime", auc.getEndTime() != null ? auc.getEndTime().toString() : LocalDateTime.now().plusHours(1).toString());
-                // ==========================================================
-                // ================= BƠM THÊM CỜ ĐẤU GIÁ NGƯỢC XUỐNG UI =================
+
+                // 3. Cờ đấu giá ngược & Follow
                 aucObj.addProperty("isReverse", auc.isReverse());
                 aucObj.addProperty("dropStep", auc.getDropStep());
+
+                boolean isFollowing = false;
+                if (client.getLoggedInUser() != null) {
+                    isFollowing = auc.getFollowerIds().contains(client.getLoggedInUser().getId());
+                }
+                aucObj.addProperty("isFollowing", isFollowing);
+
+                // 4. Người chiến thắng
                 if (auc.getCurrentWinner() != null) {
                     aucObj.addProperty("winnerId", auc.getCurrentWinner().getUsername());
                 } else {
                     aucObj.addProperty("winnerId", "---");
                 }
-                // Đóng gói an toàn thằng Item (NÉ User seller ra)
-                // Đóng gói an toàn thằng Item (NÉ User seller ra)
-                // Đóng gói an toàn thằng Item (NÉ User seller ra)
+
+                // 5. Đóng gói Item
                 if (auc.getItem() != null) {
                     aucObj.add("item", ItemJsonMapper.toJson(auc.getItem()));
                 }
 
+                // CHỈ ADD DUY NHẤT 1 LẦN Ở ĐÂY
                 dataArray.add(aucObj);
             }
 
@@ -150,12 +157,13 @@ public class AuctionController {
             JsonObject reply = new JsonObject();
             reply.addProperty("action", "AUCTIONS_LIST");
             reply.add("data", dataArray);
+
             if (client.getLoggedInUser() != null) {
                 double freshBal = baoVe.getFreshBalance(client.getLoggedInUser().getId());
                 client.getLoggedInUser().setBalance(freshBal);
                 reply.addProperty("balance", freshBal);
             }
-            // Gửi chuỗi JSON siêu an toàn về cho UI
+
             client.sendMessage(reply.toString());
 
         } catch (Exception e) {
@@ -293,6 +301,70 @@ public class AuctionController {
             client.sendMessage(reply.toString());
         } catch (Exception e) {
             client.sendError("Lỗi tải lịch sử: " + e.getMessage());
+        }
+    }
+    // ================= XỬ LÝ LỆNH THEO DÕI TỪ UI =================
+    public void handleFollowAuction(JsonObject request) {
+        if (client.getLoggedInUser() == null) {
+            client.sendError("Vui lòng đăng nhập để theo dõi phiên đấu giá!");
+            return;
+        }
+        try {
+            String auctionId = request.get("auctionId").getAsString();
+            String userId = client.getLoggedInUser().getId();
+
+            Auction auction = tongQuan.findAuctionById(auctionId);
+            if (auction == null) {
+                client.sendError("Không tìm thấy phiên đấu giá này!");
+                return;
+            }
+
+            // Gọi logic thêm follower (Sếp phải tự viết hàm addFollower trong Model hoặc Service nhé)
+            auction.addFollower(userId);
+            // Nếu dùng Database, sếp gọi: tongQuan.saveFollowerToDB(auctionId, userId);
+
+            // Phản hồi về UI cho vui (Thực ra UI mình đã tự đổi chữ thành ĐÃ THEO DÕI rồi)
+            client.sendMessage("{\"action\": \"FOLLOW_AUCTION_REPLY\", \"status\": \"SUCCESS\"}");
+            System.out.println("[Theo dõi] User " + client.getLoggedInUser().getUsername() + " đang hóng phiên: " + auctionId);
+
+        } catch (Exception e) {
+            client.sendError("Lỗi hệ thống khi theo dõi: " + e.getMessage());
+        }
+    }
+    // Sếp dán hàm này vào AuctionController.java
+    public void handleGetNotifications(JsonObject request) {
+        if (client.getLoggedInUser() == null) {
+            client.sendError("Vui lòng đăng nhập!");
+            return;
+        }
+
+        try {
+            String userId = client.getLoggedInUser().getId();
+            com.google.gson.JsonArray dataArray = new com.google.gson.JsonArray();
+
+            // Lấy thông báo từ Hòm Thư của ClientManager
+            List<JsonObject> myNotifs = com.bidding.server.network.ClientManager.mailbox.get(userId);
+
+            if (myNotifs != null && !myNotifs.isEmpty()) {
+                // Đảo ngược danh sách để thông báo mới nhất hiện lên trên
+                for (int i = myNotifs.size() - 1; i >= 0; i--) {
+                    dataArray.add(myNotifs.get(i));
+                }
+            } else {
+                // Nếu chưa có thông báo nào thì hiện câu chào mừng
+                JsonObject fakeNotif = new JsonObject();
+                fakeNotif.addProperty("message", "Chưa có thông báo mới nào. Hãy theo dõi các phiên đấu giá nhé!");
+                fakeNotif.addProperty("time", java.time.LocalTime.now().toString());
+                dataArray.add(fakeNotif);
+            }
+
+            JsonObject reply = new JsonObject();
+            reply.addProperty("action", "NOTIFICATIONS_LIST");
+            reply.add("data", dataArray);
+
+            client.sendMessage(reply.toString());
+        } catch (Exception e) {
+            client.sendError("Lỗi tải thông báo!");
         }
     }
 }

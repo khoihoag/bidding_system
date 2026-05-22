@@ -11,7 +11,8 @@ import javafx.scene.layout.VBox;
 public class AuctionDetailUiPresenter {
 
     private final AuctionDetailState state;
-    private final Label headerItemName;
+
+    private Button btnFollow;
     private final Label itemNameLabel;
     private final Label currentPriceLabel;
     private final Label statusBadgeHeader;
@@ -29,8 +30,8 @@ public class AuctionDetailUiPresenter {
     private final Button autoBidButton;
     private final VBox autoBidContainer;
 
-    public AuctionDetailUiPresenter(AuctionDetailState state,
-                                    Label headerItemName,
+    public AuctionDetailUiPresenter(Button btnFollow,AuctionDetailState state,
+
                                     Label itemNameLabel,
                                     Label currentPriceLabel,
                                     Label statusBadgeHeader,
@@ -48,7 +49,7 @@ public class AuctionDetailUiPresenter {
                                     Button autoBidButton,
                                     VBox autoBidContainer) {
         this.state = state;
-        this.headerItemName = headerItemName;
+        this.btnFollow = btnFollow;
         this.itemNameLabel = itemNameLabel;
         this.currentPriceLabel = currentPriceLabel;
         this.statusBadgeHeader = statusBadgeHeader;
@@ -68,19 +69,13 @@ public class AuctionDetailUiPresenter {
     }
 
     public void applyInitialStyles() {
-        headerItemName.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
-        currentPriceLabel.setStyle("-fx-font-size: 22px; -fx-text-fill: #27ae60; -fx-font-weight: bold;");
-        itemNameLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #34495e;");
-        bidButton.getStyleClass().add("action-button");
-        autoBidButton.getStyleClass().add("action-button");
-        bidAmountField.getStyleClass().add("detail-input");
-        maxBidField.getStyleClass().add("detail-input");
-        incrementField.getStyleClass().add("detail-input");
+
+
     }
 
     public void updateItemHeader(String itemName) {
         itemNameLabel.setText(itemName);
-        headerItemName.setText(itemName);
+
     }
 
     public void updateCurrentPrice(double price) {
@@ -148,7 +143,12 @@ public class AuctionDetailUiPresenter {
 
     public void setBidLoading(boolean loading) {
         bidButton.setDisable(loading);
-        bidButton.setText(loading ? "Đang gửi..." : "🔨 Đặt Giá Ngay");
+        // Vứt bỏ cái búa, dùng Text in hoa quyền lực
+        bidButton.setText(loading ? "ĐANG XỬ LÝ..." : "XÁC NHẬN ĐẶT GIÁ");
+
+        // Ép cứng lại style Đen Tuyền để đảm bảo không bao giờ bị "về zin" màu xám
+        bidButton.setStyle("-fx-background-color: #111111; -fx-text-fill: #FFFFFF; -fx-font-weight: bold; -fx-padding: 14; -fx-cursor: hand; -fx-font-size: 13px;");
+
         if (!loading) {
             clearBidError();
         }
@@ -156,7 +156,12 @@ public class AuctionDetailUiPresenter {
 
     public void setAutoBidLoading(boolean loading) {
         autoBidButton.setDisable(loading);
-        autoBidButton.setText(loading ? "Đang kích hoạt..." : "🤖 Kích Hoạt Auto-Bid");
+        // Vứt bỏ con Robot, dùng Text in hoa
+        autoBidButton.setText(loading ? "ĐANG KÍCH HOẠT..." : "KÍCH HOẠT AUTO-BID");
+
+        // Ép cứng lại style Trắng Viền Đen
+        autoBidButton.setStyle("-fx-background-color: #FFFFFF; -fx-text-fill: #111111; -fx-border-color: #111111; -fx-border-width: 1; -fx-font-weight: bold; -fx-padding: 14; -fx-cursor: hand; -fx-font-size: 13px;");
+
         if (!loading) {
             clearAutoBidError();
         }
@@ -229,8 +234,9 @@ public class AuctionDetailUiPresenter {
             incrementField.setManaged(true);
         }
         if (bidButton != null) {
-            bidButton.setText("🔨 Đặt Giá Ngay");
-            bidButton.setStyle("");
+            // Đổi chữ
+            bidButton.setText("XÁC NHẬN ĐẶT GIÁ");
+            bidButton.setStyle("-fx-background-color: #111111; -fx-text-fill: #FFFFFF; -fx-font-weight: bold; -fx-padding: 14; -fx-cursor: hand; -fx-font-size: 13px;");
         }
     }
 
@@ -289,5 +295,40 @@ public class AuctionDetailUiPresenter {
 
     public Button getAutoBidButton() {
         return autoBidButton;
+    }
+    public void setFollowButtonState(boolean followed) {
+        // ================= VŨ KHÍ CHỐNG CHỚP GIẬT =================
+        // Nếu nút ĐÃ Ở ĐÚNG TRẠNG THÁI rồi thì KHÔNG VẼ LẠI NỮA!
+        if (followed && "♥ ĐÃ THEO DÕI".equals(btnFollow.getText())) {
+            return;
+        }
+        if (!followed && "♡ THEO DÕI PHIÊN NÀY".equals(btnFollow.getText())) {
+            return;
+        }
+        // ==========================================================
+
+        if (followed) {
+            btnFollow.setText("♥ ĐÃ THEO DÕI");
+
+            // Ép style "xám xịt nhưng sang trọng" cho nút Đã Theo Dõi
+            btnFollow.setStyle("-fx-background-color: #F3F4F6; -fx-text-fill: #9CA3AF; "
+                    + "-fx-border-color: #E5E7EB; -fx-border-radius: 4; "
+                    + "-fx-background-radius: 4; -fx-font-weight: bold; -fx-padding: 10 20;");
+
+            // Tàng hình với chuột (Không dùng setDisable để JavaFX không xen vào phá màu)
+            btnFollow.setMouseTransparent(true);
+            btnFollow.setFocusTraversable(false);
+
+        } else {
+            btnFollow.setText("♡ THEO DÕI PHIÊN NÀY");
+
+            // TRẢ LẠI SỰ XỊN XÒ: Xóa sạch style nội tuyến để JavaFX tự động
+            // lấy lại CSS mặc định sếp đã thiết kế trong file .fxml / SceneBuilder!
+            btnFollow.setStyle("");
+
+            // Mở khóa chuột
+            btnFollow.setMouseTransparent(false);
+            btnFollow.setFocusTraversable(true);
+        }
     }
 }

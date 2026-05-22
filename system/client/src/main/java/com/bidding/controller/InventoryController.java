@@ -16,15 +16,14 @@ import javafx.scene.layout.VBox;
 
 import java.net.URL;
 import java.util.ResourceBundle;
-
+import javafx.scene.layout.FlowPane;
 public class InventoryController implements Initializable {
     @FXML private javafx.scene.control.CheckBox chkReverseNow, chkReverseSchedule;
     @FXML private javafx.scene.control.TextField txtDropStepNow, txtDropStepSchedule;
-    @FXML private ListView<String> wonItemsListView;
-
+    @FXML private FlowPane wonItemsGrid;
     // Kho RAM lưu trọn bộ JSON của từng món đồ (để làm Popup)
     private final java.util.Map<String, JsonObject> itemDatabase = new java.util.HashMap<>();
-    @FXML private ListView<String> inventoryListView;
+    @FXML private FlowPane inventoryGrid;
     @FXML private TextField txtItemIdSchedule, txtStartTime, txtEndTime;
     // --- Tab Bán Ngay ---
     @FXML private TextField txtItemIdNow;
@@ -83,21 +82,19 @@ public class InventoryController implements Initializable {
     @FXML
     private void handleSelectImages() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Chọn hình ảnh vật phẩm");
-        // Chỉ lọc các file ảnh cho đỡ rối
+        fileChooser.setTitle("Chọn hình ảnh vật phẩm (Có thể chọn nhiều)");
         fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg", "*.gif")
+                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg")
         );
 
-        // Cho phép chọn nhiều ảnh cùng lúc
-        List<File> files = fileChooser.showOpenMultipleDialog(inventoryListView.getScene().getWindow());
-
+        List<File> files = fileChooser.showOpenMultipleDialog(inventoryGrid.getScene().getWindow());
         if (files != null) {
             for (File file : files) {
                 String path = file.getAbsolutePath();
                 if (!selectedImagePaths.contains(path)) {
                     selectedImagePaths.add(path);
-                    listSelectedImages.getItems().add(path);
+                    // Hiển thị tên file vào list (Sếp có thể CSS cái list này cho đẹp hơn)
+                    listSelectedImages.getItems().add(file.getName());
                 }
             }
         }
@@ -132,11 +129,7 @@ public class InventoryController implements Initializable {
         handleRefreshInventory();
 
         // Bắt sự kiện click vào list đồ để điền nhanh ID
-        inventoryListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal != null && newVal.contains(" - ")) {
-                txtItemIdNow.setText(newVal.split(" - ")[0]);
-            }
-        });
+
         if (chkReverseNow != null) {
             chkReverseNow.setOnAction(e -> {
                 txtDropStepNow.setDisable(!chkReverseNow.isSelected());
@@ -299,22 +292,23 @@ public class InventoryController implements Initializable {
             try {
                 // 1. Xử lý danh sách vật phẩm trong kho
                 // 1. Xử lý danh sách vật phẩm trong kho
+                // 1. Xử lý danh sách vật phẩm trong kho (GIAO DIỆN LƯỚI SOTHEBY'S)
                 if ("ITEMS_LIST".equals(action)) {
-                    inventoryListView.getItems().clear();
-                    itemDatabase.clear(); // Xóa sạch kho tạm để nạp cái mới
+                    inventoryGrid.getChildren().clear(); // Xóa sạch lưới cũ
+                    itemDatabase.clear();
 
                     if (response.has("items")) {
                         for (JsonElement elem : response.getAsJsonArray("items")) {
                             JsonObject item = elem.getAsJsonObject();
                             String id = item.has("id") ? item.get("id").getAsString() : "UNKNOWN";
-                            String name = item.has("name") ? item.get("name").getAsString() : "Không tên";
-
-                            // Cất nguyên cục JSON vào kho RAM
                             itemDatabase.put(id, item);
-                            inventoryListView.getItems().add(id + " - " + name);
+
+                            // Gọi tà thuật tự vẽ thẻ Hình Ảnh
+                            VBox card = createItemCard(item);
+                            inventoryGrid.getChildren().add(card);
                         }
                     } else {
-                        inventoryListView.getItems().add("Kho đồ trống.");
+                        inventoryGrid.getChildren().add(new Label("Kho đồ trống. Hãy nhập thêm vật phẩm!"));
                     }
                 }
 
@@ -361,20 +355,23 @@ public class InventoryController implements Initializable {
                     }
                 }
                 // --- NHẬN DANH SÁCH CHIẾN LỢI PHẨM ---
+                // --- NHẬN DANH SÁCH CHIẾN LỢI PHẨM ---
                 else if ("WON_ITEMS_LIST".equals(action)) {
-                    wonItemsListView.getItems().clear();
+                    wonItemsGrid.getChildren().clear(); // Dọn dẹp lưới cũ
                     if (response.has("items")) {
                         for (JsonElement elem : response.getAsJsonArray("items")) {
                             JsonObject item = elem.getAsJsonObject();
                             String id = item.has("id") ? item.get("id").getAsString() : "UNKNOWN";
-                            String name = item.has("name") ? item.get("name").getAsString() : "Không tên";
 
-                            // Cất nguyên cục JSON vào kho RAM để lát vẽ Popup
+                            // Cất vào kho RAM
                             itemDatabase.put(id, item);
-                            wonItemsListView.getItems().add(id + " - " + name);
+
+                            // Tái sử dụng hàm vẽ Thẻ Ảnh chuẩn Sotheby's
+                            javafx.scene.layout.VBox card = createItemCard(item);
+                            wonItemsGrid.getChildren().add(card);
                         }
                     } else {
-                        wonItemsListView.getItems().add("Chưa có chiến lợi phẩm nào.");
+                        wonItemsGrid.getChildren().add(new Label("Chưa có chiến lợi phẩm nào. Hãy ra sảnh khô máu đi sếp!"));
                     }
                 }
                 else if ("ERROR".equals(action)) {
@@ -404,171 +401,14 @@ public class InventoryController implements Initializable {
 
         alert.showAndWait();
     }
-    @FXML
-    private void handleViewDetails() {
-        String selected = inventoryListView.getSelectionModel().getSelectedItem();
-        if (selected == null || !selected.contains(" - ")) {
-            showAlert(AlertType.WARNING, "Chưa chọn đồ", "Vui lòng chọn một vật phẩm trong danh sách bên trái!");
-            return;
-        }
 
-        String id = selected.split(" - ")[0];
-        JsonObject item = itemDatabase.get(id);
-        if (item == null) return;
-
-        Dialog<Void> dialog = new Dialog<>();
-        dialog.setTitle("Chi Tiết Vật Phẩm");
-        dialog.setHeaderText(item.has("name") ? item.get("name").getAsString() : "Không tên");
-
-        // ÉP CSS HOÀNG GIA CHO DIALOG
-        try {
-            dialog.getDialogPane().getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
-            dialog.getDialogPane().setStyle("-fx-background-color: #05070a;");
-        } catch (Exception e) {}
-        // 1. TĂNG KÍCH THƯỚC KHUNG CHỨA CHO DỄ NHÌN
-        VBox vbox = new VBox(10);
-        vbox.setStyle("-fx-padding: 20; -fx-font-size: 15px;");
-        vbox.setPrefWidth(500); // Ép chiều rộng to ra 500px
-
-        // 2. TĂNG KÍCH THƯỚC ẢNH
-        javafx.scene.image.ImageView imgView = new javafx.scene.image.ImageView();
-        imgView.setFitWidth(460); // Ảnh bự ra
-        imgView.setFitHeight(300);
-        imgView.setPreserveRatio(true);
-        if (item.has("images") && item.getAsJsonArray("images").size() > 0) {
-            String imgPath = item.getAsJsonArray("images").get(0).getAsString();
-            try {
-                File file = new File(imgPath);
-                if (file.exists()) {
-                    imgView.setImage(new javafx.scene.image.Image(file.toURI().toString()));
-                }
-            } catch (Exception e) { System.err.println("Lỗi load ảnh!"); }
-        } else {
-            vbox.getChildren().add(new Label("(Chưa có hình ảnh)"));
-        }
-
-        Label lblType = new Label("Loại: " + (item.has("type") ? item.get("type").getAsString() : "---"));
-        // ================= THÊM TÌNH TRẠNG VÀO ĐÂY =================
-        String conditionText = item.has("condition") ? item.get("condition").getAsString() : "---";
-        // Dịch qua tiếng Việt cho thân thiện luôn
-        if ("NEW".equals(conditionText)) conditionText = "Mới 100%";
-        else if ("USED".equals(conditionText)) conditionText = "Đã sử dụng";
-
-        Label lblCondition = new Label("Tình trạng: " + conditionText);
-        lblCondition.setStyle("-fx-font-style: italic; -fx-text-fill: #6b7a90;"); // Xóa màu cam cứng, đổi sang xám sang trọng
-
-        Label lblPrice = new Label("Giá khởi điểm: 0 đ");
-        lblPrice.getStyleClass().add("price-value"); // Dùng class mạ vàng của CSS
-        if (item.has("startingPrice")) {
-            java.text.NumberFormat fmt = java.text.NumberFormat.getNumberInstance(new java.util.Locale("vi", "VN"));
-            lblPrice.setText("Giá khởi điểm: " + fmt.format(item.get("startingPrice").getAsDouble()) + " đ");
-        }
-
-        Label lblDesc = new Label("Mô tả: " + (item.has("description") ? item.get("description").getAsString() : ""));
-        lblDesc.setWrapText(true);
-        lblDesc.setMaxWidth(480);
-
-        vbox.getChildren().addAll(imgView, lblType, lblCondition, lblPrice, new Separator(), lblDesc);
-        // 3. TỰ ĐỘNG QUÉT VÀ VẼ THÔNG SỐ CHI TIẾT (Tác giả, Hãng xe, Kích thước...)
-        if (item.has("specifications")) {
-            JsonObject specs = item.getAsJsonObject("specifications");
-            VBox extraBox = new VBox(8);
-            // Xóa màu cứng, gán class info-card để nó ăn bóng đổ xịn xò
-            extraBox.getStyleClass().add("info-card");
-            extraBox.setStyle("");
-
-            extraBox.getChildren().add(new Label("📋 Thông số chi tiết:"));
-            for (String key : specs.keySet()) {
-                String value = specs.get(key).getAsString();
-                extraBox.getChildren().add(new Label("  • " + key + ": " + value));
-            }
-            vbox.getChildren().add(extraBox);
-        }
-
-        dialog.getDialogPane().setContent(vbox);
-        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
-
-        // Ép Popup căn giữa màn hình app
-        dialog.initOwner(inventoryListView.getScene().getWindow());
-        dialog.showAndWait();
-    }
     @FXML
     private void handleRefreshWonItems() {
         JsonObject request = new JsonObject();
         request.addProperty("action", "GET_WON_ITEMS");
         networkClient.sendJson(request);
     }
-    @FXML
-    private void handleViewWonItemDetails() {
-        String selected = wonItemsListView.getSelectionModel().getSelectedItem();
-        if (selected == null || !selected.contains(" - ")) {
-            showAlert(AlertType.WARNING, "Chưa chọn đồ", "Vui lòng chọn một vật phẩm trong danh sách chiến lợi phẩm!");
-            return;
-        }
 
-        String id = selected.split(" - ")[0];
-        JsonObject item = itemDatabase.get(id);
-        if (item == null) return;
-
-        Dialog<Void> dialog = new Dialog<>();
-        dialog.setTitle("Chi Tiết Chiến Lợi Phẩm");
-        dialog.setHeaderText(item.has("name") ? item.get("name").getAsString() : "Không tên");
-        try {
-            dialog.getDialogPane().getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
-            dialog.getDialogPane().setStyle("-fx-background-color: #05070a;");
-        } catch (Exception e) {}
-        VBox vbox = new VBox(10);
-        vbox.setStyle("-fx-padding: 20; -fx-font-size: 15px;");
-        vbox.setPrefWidth(500);
-
-        javafx.scene.image.ImageView imgView = new javafx.scene.image.ImageView();
-        imgView.setFitWidth(460);
-        imgView.setFitHeight(300);
-        imgView.setPreserveRatio(true);
-        if (item.has("images") && item.getAsJsonArray("images").size() > 0) {
-            String imgPath = item.getAsJsonArray("images").get(0).getAsString();
-            try {
-                File file = new File(imgPath);
-                if (file.exists()) imgView.setImage(new javafx.scene.image.Image(file.toURI().toString()));
-            } catch (Exception e) { System.err.println("Lỗi load ảnh!"); }
-        } else {
-            vbox.getChildren().add(new Label("(Chưa có hình ảnh)"));
-        }
-
-        Label lblType = new Label("Loại: " + (item.has("type") ? item.get("type").getAsString() : "---"));
-
-        Label lblPrice = new Label("Giá khởi điểm: 0 đ");
-        lblPrice.getStyleClass().add("price-value"); // Dùng class mạ vàng
-        if (item.has("startingPrice")) {
-            java.text.NumberFormat fmt = java.text.NumberFormat.getNumberInstance(new java.util.Locale("vi", "VN"));
-            lblPrice.setText("Giá khởi điểm: " + fmt.format(item.get("startingPrice").getAsDouble()) + " đ");
-        }
-
-        Label lblDesc = new Label("Mô tả: " + (item.has("description") ? item.get("description").getAsString() : ""));
-        lblDesc.setWrapText(true);
-        lblDesc.setMaxWidth(480);
-
-        vbox.getChildren().addAll(imgView, lblType, lblPrice, new Separator(), lblDesc);
-
-        if (item.has("specifications")) {
-            JsonObject specs = item.getAsJsonObject("specifications");
-            VBox extraBox = new VBox(8);
-
-            // Xóa màu cứng, gán class info-card
-            extraBox.getStyleClass().add("info-card");
-            extraBox.setStyle("");
-
-            extraBox.getChildren().add(new Label("📋 Thông số chi tiết:"));
-            for (String key : specs.keySet()) {
-                extraBox.getChildren().add(new Label("  • " + key + ": " + specs.get(key).getAsString()));
-            }
-            vbox.getChildren().add(extraBox);
-        }
-
-        dialog.getDialogPane().setContent(vbox);
-        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
-        dialog.showAndWait();
-    }
     // ================= VŨ KHÍ ÉP NHẬP SỐ =================
     private void forceNumericOnly(javafx.scene.control.TextField textField) {
         if (textField == null) return;
@@ -580,5 +420,101 @@ public class InventoryController implements Initializable {
             }
         });
     }
+    @FXML
+    private void handleViewDetailsById(String id) {
+        JsonObject item = itemDatabase.get(id);
+        if (item == null) return;
+
+        // Chuyển việc vẽ giao diện cho "cỗ máy" ItemDetail.fxml xử lý
+        openXinyItemDetail(item);
+    }
+
+
+    // ================= CỖ MÁY CHUYỂN CẢNH SANG SHOWROOM XỊN =================
+    // ================= CỖ MÁY MỞ CỬA SỔ SHOWROOM XỊN =================
+    // ================= CỖ MÁY MỞ CỬA SỔ SHOWROOM XỊN =================
+    private void openXinyItemDetail(JsonObject selectedItemJson) {
+        try {
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/fxml/ItemDetail.fxml"));
+            javafx.scene.Parent detailRoot = loader.load();
+
+            com.bidding.controller.ItemDetailController controller = loader.getController();
+            controller.setItemData(selectedItemJson);
+
+            javafx.stage.Stage stage = new javafx.stage.Stage();
+
+            // ================= VŨ KHÍ XÓA VIỀN WINDOWS =================
+            stage.initStyle(javafx.stage.StageStyle.UNDECORATED); // <--- THÊM ĐÚNG DÒNG NÀY
+            // ===========================================================
+
+            stage.setTitle("Chi Tiết Vật Phẩm");
+            stage.setScene(new javafx.scene.Scene(detailRoot));
+            stage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+            stage.centerOnScreen();
+            stage.show();
+
+            controller.setGoBackCallback(() -> {
+                stage.close();
+            });
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showAlert(AlertType.ERROR, "Lỗi Giao Diện", "Không thể tải màn hình chi tiết: " + e.getMessage());
+        }
+    }
+    // =========================================================================
     // =====================================================
+    // ================= VŨ KHÍ TẠO LƯỚI ẢNH CHUẨN SOTHEBY'S =================
+    private VBox createItemCard(JsonObject item) {
+        String id = item.has("id") ? item.get("id").getAsString() : "";
+        String name = item.has("name") ? item.get("name").getAsString() : "Không tên";
+
+        VBox card = new VBox(15);
+        card.setPrefWidth(320); // Chiều rộng thẻ
+        card.setStyle("-fx-background-color: #FFFFFF; -fx-border-color: #E5E7EB; -fx-border-width: 1; -fx-padding: 15; -fx-cursor: hand; -fx-alignment: center;");
+
+        // 1. Xử lý Ảnh
+        javafx.scene.image.ImageView imgView = new javafx.scene.image.ImageView();
+        imgView.setFitWidth(280);
+        imgView.setFitHeight(350);
+        imgView.setPreserveRatio(true);
+        if (item.has("images") && item.getAsJsonArray("images").size() > 0) {
+            String imgPath = item.getAsJsonArray("images").get(0).getAsString();
+            try {
+                File file = new File(imgPath);
+                if (file.exists()) imgView.setImage(new javafx.scene.image.Image(file.toURI().toString()));
+            } catch (Exception e) {}
+        }
+
+        // 2. Tên tác phẩm và ID
+        Label lblName = new Label(name);
+        lblName.setStyle("-fx-font-family: 'Georgia', serif; -fx-font-size: 16px; -fx-text-fill: #111111;");
+
+        Label lblId = new Label("ID: " + id);
+        lblId.setStyle("-fx-font-size: 11px; -fx-text-fill: #6B7280;");
+
+        // 3. Nút Xem chi tiết gọn gàng
+        Button btnDetails = new Button("Xem chi tiết");
+        btnDetails.getStyleClass().add("secondary-button");
+        btnDetails.setStyle("-fx-font-size: 11px; -fx-padding: 5 10;");
+        btnDetails.setOnAction(e -> handleViewDetailsById(id)); // Mở popup
+
+        card.getChildren().addAll(imgView, lblName, lblId, btnDetails);
+
+        // 4. BẮT SỰ KIỆN CLICK VÀO ẢNH ĐỂ ĐIỀN ID VÀO FORM MỞ BÁN
+        card.setOnMouseClicked(e -> {
+            // Tẩy trắng toàn bộ thẻ khác
+            for (javafx.scene.Node node : inventoryGrid.getChildren()) {
+                node.setStyle("-fx-background-color: #FFFFFF; -fx-border-color: #E5E7EB; -fx-border-width: 1; -fx-padding: 15; -fx-cursor: hand; -fx-alignment: center;");
+            }
+            // Tô viền Đen Đậm cho thẻ đang được chọn (Chuẩn Sothebys)
+            card.setStyle("-fx-background-color: #F9FAFB; -fx-border-color: #111111; -fx-border-width: 2; -fx-padding: 15; -fx-cursor: hand; -fx-alignment: center;");
+
+            // Tự động bắn ID sang 2 ô txtItemId
+            if (txtItemIdNow != null) txtItemIdNow.setText(id);
+            if (txtItemIdSchedule != null) txtItemIdSchedule.setText(id);
+        });
+
+        return card;
+    }
 }

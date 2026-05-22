@@ -1,16 +1,55 @@
 /* ========================================================
-   ROYAL AUCTION THEME - ULTIMATE LUXURY EDITION
+   SOTHEBY'S PURE MINIMALIST THEME (100% BORDERLESS)
    ======================================================== */
-
-/* 1. NỀN TỔNG THỂ (Dùng Gradient từ Đen sâu thẳm sang Xanh bóng đêm) */
-.root {
+/* ========================================================
+   DIỆT LỖI Ô VUÔNG - ÉP DÙNG SEGOE UI CHO TOÀN BỘ HỆ THỐNG
+   ======================================================== */
+* {
     -fx-font-family: "Segoe UI", Arial, sans-serif;
-    -fx-base: #05070a;
-    -fx-background: #05070a;
-    -fx-background-color: linear-gradient(to bottom right, #05070a, #0f1522);
 }
 
-/* ÉP TRONG SUỐT CHO CÁC KHUNG CHỨA ĐỂ LỘ NỀN GRADIENT XỊN XÒ */
+/* ========================================================
+   STYLE CHO THANH MENU TOP (CHUẨN SOTHEBY'S)
+   ======================================================== */
+.top-nav-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: #111111;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-letter-spacing: 1.5px; /* Giãn chữ ra một tí cho sang */
+    -fx-cursor: hand;
+    -fx-padding: 5 10;
+}
+
+.top-nav-btn:hover {
+    -fx-text-fill: #888888; /* Khi lướt chuột qua, chữ mờ đi 1 chút rất tinh tế */
+}
+
+/* Gạch dưới khi nút được chọn đang ở trang đó */
+.top-nav-btn:focused, .top-nav-btn:default {
+    -fx-border-color: transparent transparent #111111 transparent;
+    -fx-border-width: 0 0 2 0;
+}
+
+.logout-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: #111111;
+    -fx-font-size: 12px;
+    -fx-underline: true;
+    -fx-cursor: hand;
+    -fx-padding: 5 0 0 0;
+}
+.logout-btn:hover {
+    -fx-text-fill: #D10000; /* Nút đăng xuất hover đỏ nhẹ */
+}
+/* 1. NỀN TỔNG THỂ (Trắng tuyệt đối, không pha xám) */
+.root {
+    -fx-font-family: "Segoe UI", Arial, sans-serif;
+    -fx-base: #FFFFFF;
+    -fx-background: #FFFFFF;
+    -fx-background-color: #FFFFFF;
+}
+
 .scroll-pane, .scroll-pane .viewport, .split-pane {
     -fx-background-color: transparent;
     -fx-background: transparent;
@@ -19,351 +58,251 @@
 .tab-pane .tab-header-area .tab-header-background { -fx-background-color: transparent; }
 
 /* ========================================================
-   2. CÁC THẺ (CARDS) - BỎ VIỀN CỨNG, THÊM GLOW SHADOW
+   2. CÁC THẺ (CARDS) - TÀNG HÌNH HOÀN TOÀN
    ======================================================== */
 .auction-card, .info-card, .stat-card {
-    /* Nền thẻ hơi trong suốt để hòa quyện với nền tổng */
-    -fx-background-color: rgba(22, 26, 35, 0.85);
-    -fx-background-radius: 16;
-    /* XÓA VIỀN CỨNG */
-    -fx-border-color: rgba(212, 175, 55, 0.15); /* Viền mạ vàng siêu siêu mỏng */
-    -fx-border-radius: 16;
-    -fx-border-width: 1;
-    /* Đổ bóng sâu tạo cảm giác kính 3D */
-    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.9), 25, 0, 0, 10);
-    -fx-padding: 20;
+    -fx-background-color: #FFFFFF;
+    -fx-border-width: 0; /* KHÔNG VIỀN */
+    -fx-effect: none;    /* KHÔNG BÓNG ĐỔ */
+    -fx-padding: 15;
 }
 
 /* ========================================================
-   3. NÚT BẤM (BUTTONS) - HIỆU ỨNG KIM LOẠI (METALLIC GOLD)
+   3. NÚT BẤM (BUTTONS) - LÕI TRẮNG VIỀN ĐEN MỎNG
    ======================================================== */
 .action-button, .primary-button, .card-view-btn {
-    /* Dùng Gradient pha 3 màu Vàng để tạo độ bóng kim loại */
-    -fx-background-color: linear-gradient(to bottom right, #f9df9f, #d4af37, #9e7f1e);
-    -fx-text-fill: #000000; /* Chữ đen xì cho ngầu */
-    -fx-font-weight: bold;
-    -fx-font-size: 14px;
-    -fx-background-radius: 8;
+    -fx-background-color: #FFFFFF;
+    -fx-text-fill: #111111;
+    -fx-border-color: #D1D5DB; /* Viền xám cực mỏng, thanh lịch */
+    -fx-border-width: 1;
+    -fx-border-radius: 0; /* Nút vuông vức */
+    -fx-background-radius: 0;
+    -fx-font-weight: normal; /* Chữ mỏng, không in đậm thô */
+    -fx-font-size: 13px;
     -fx-padding: 10 20;
     -fx-cursor: hand;
-    /* Bóng đổ phát sáng màu vàng */
-    -fx-effect: dropshadow(three-pass-box, rgba(212, 175, 55, 0.4), 10, 0, 0, 0);
+    -fx-letter-spacing: 1px;
 }
 
+/* Hover đổi viền thành đen đậm giống nút BID của Sotheby's */
 .action-button:hover, .primary-button:hover, .card-view-btn:hover {
-    -fx-background-color: linear-gradient(to bottom right, #fbf0c8, #e5c058, #b08d22);
-    -fx-effect: dropshadow(three-pass-box, rgba(212, 175, 55, 0.7), 15, 0, 0, 0);
-    -fx-translate-y: -2; /* Hover vào nút nẩy nhẹ lên */
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #111111;
+    -fx-text-fill: #111111;
 }
 
-/* Nút phụ (Đen viền vàng) */
 .secondary-button {
-    -fx-background-color: rgba(0,0,0,0.5);
-    -fx-text-fill: #d4af37;
-    -fx-border-color: #d4af37;
-    -fx-border-radius: 8;
-    -fx-background-radius: 8;
-    -fx-font-weight: bold;
+    -fx-background-color: transparent;
+    -fx-text-fill: #6B7280;
+    -fx-border-width: 0;
+    -fx-font-weight: normal;
     -fx-cursor: hand;
 }
-.secondary-button:hover { -fx-background-color: rgba(212, 175, 55, 0.1); }
+.secondary-button:hover {
+    -fx-text-fill: #111111;
+}
 
 /* ========================================================
-   4. MENU SIDEBAR (SANG CHẢNH HÓA)
+   4. MENU SIDEBAR (THANH ĐIỀU HƯỚNG TRÁI)
    ======================================================== */
 .sidebar {
-    -fx-background-color: rgba(10, 13, 20, 0.95);
-    -fx-border-color: rgba(255,255,255,0.05);
-    -fx-border-width: 0 1 0 0;
-    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.8), 20, 0, 5, 0);
+    -fx-background-color: #FFFFFF;
+    -fx-border-width: 0; /* Xóa luôn cái viền bên phải */
 }
 .menu-button {
     -fx-background-color: transparent;
-    -fx-text-fill: #8a94a6;
-    -fx-font-size: 15px;
+    -fx-text-fill: #6B7280;
+    -fx-font-size: 14px;
     -fx-padding: 15 20;
     -fx-alignment: center-left;
     -fx-cursor: hand;
 }
 .menu-button:hover, .menu-button:focused, .menu-btn-active {
-    -fx-background-color: linear-gradient(to right, rgba(212, 175, 55, 0.15), transparent);
-    -fx-text-fill: #d4af37;
-    -fx-border-color: #d4af37;
-    -fx-border-width: 0 0 0 4;
-}
-
-.notification-box {
-    -fx-background-color: rgba(22, 26, 35, 0.72);
-    -fx-background-radius: 8;
-    -fx-border-color: rgba(212, 175, 55, 0.18);
-    -fx-border-radius: 8;
-    -fx-border-width: 1;
-    -fx-padding: 10;
-}
-
-.notification-title {
-    -fx-text-fill: #d4af37;
-    -fx-font-size: 13px;
-    -fx-font-weight: bold;
-}
-
-.notification-clear-btn {
     -fx-background-color: transparent;
-    -fx-text-fill: #8a94a6;
-    -fx-border-color: #343b4d;
-    -fx-border-radius: 5;
-    -fx-background-radius: 5;
-    -fx-font-size: 11px;
-    -fx-padding: 3 8;
-    -fx-cursor: hand;
-}
-
-.notification-clear-btn:hover {
-    -fx-text-fill: #d4af37;
-    -fx-border-color: #d4af37;
-    -fx-background-color: rgba(212, 175, 55, 0.08);
-}
-
-.notification-detail-btn {
-    -fx-background-color: rgba(212, 175, 55, 0.08);
-    -fx-text-fill: #d4af37;
-    -fx-border-color: rgba(212, 175, 55, 0.45);
-    -fx-border-radius: 6;
-    -fx-background-radius: 6;
-    -fx-font-size: 12px;
-    -fx-font-weight: bold;
-    -fx-padding: 6 10;
-    -fx-cursor: hand;
-}
-
-.notification-detail-btn:hover {
-    -fx-background-color: rgba(212, 175, 55, 0.16);
-    -fx-border-color: #d4af37;
-}
-
-.notification-list {
-    -fx-background-color: transparent;
-    -fx-border-color: transparent;
-}
-
-.notification-list .list-cell {
-    -fx-background-color: transparent;
-    -fx-text-fill: #d7dde8;
-    -fx-font-size: 11px;
-    -fx-padding: 6 4;
-    -fx-wrap-text: true;
-}
-
-.notification-list .list-cell:empty {
-    -fx-padding: 0;
+    -fx-text-fill: #111111;
+    -fx-border-color: #111111;
+    -fx-border-width: 0 0 0 2; /* Chỉ để lại 1 vạch đen rất mỏng bên trái */
 }
 
 /* ========================================================
    5. CHỮ & TIÊU ĐỀ (TYPOGRAPHY)
    ======================================================== */
-/* Tiêu đề chính: Dùng Font có chân (Serif) mạ vàng để tạo nét Cổ Điển Hoàng Gia */
-/* ========================================================
-   5. CHỮ & TIÊU ĐỀ (TYPOGRAPHY)
-   ======================================================== */
-/* Tiêu đề chính: Trả về Segoe UI để diệt tận gốc bệnh ô vuông Tiếng Việt */
-.page-title, .section-title, .card-name {
-    -fx-text-fill: linear-gradient(to right, #f9df9f, #d4af37);
-    -fx-font-family: "Segoe UI", Arial, sans-serif;
-    -fx-font-size: 22px;
-    -fx-font-weight: bold;
+/* Tên tác phẩm dùng font có chân (Serif) để sang trọng như tranh vẽ */
+.card-name, .page-title, .section-title {
+    -fx-text-fill: #111111;
+    -fx-font-family: "Georgia", "Times New Roman", serif; /* BÍ QUYẾT SANG TRỌNG ĐÂY SẾP */
+    -fx-font-size: 20px;
+    -fx-font-weight: normal;
 }
+.page-title { -fx-font-size: 28px; }
+
 .price-value, .card-price, .stat-number {
-    -fx-text-fill: #d4af37 !important;
+    -fx-text-fill: #111111 !important;
     -fx-font-family: "Segoe UI", Arial, sans-serif;
-    -fx-font-weight: bold;
+    -fx-font-weight: normal;
 }
+.page-subtitle, .hint-label, .card-id, .stat-desc { -fx-text-fill: #6B7280; }
+.field-label, .info-value { -fx-text-fill: #4B5563; }
 
-/* Các chữ text phụ */
-.page-subtitle, .hint-label, .card-id, .stat-desc { -fx-text-fill: #6b7a90; }
-.field-label, .info-value { -fx-text-fill: #e0e6ed; }
 /* ========================================================
-   6. TÂN TRANG TABLEVIEW & LISTVIEW (Xóa nét WinXP)
+   6. BẢNG BIỂU & DANH SÁCH (TABLEVIEW / LISTVIEW)
    ======================================================== */
 .table-view, .list-view {
-    -fx-background-color: transparent;
-    -fx-border-color: transparent;
+    -fx-background-color: #FFFFFF;
+    -fx-border-width: 0;
 }
 .table-view .column-header-background, .table-view .column-header {
-    -fx-background-color: rgba(22, 26, 35, 0.9);
-    -fx-border-color: transparent;
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: transparent transparent #E5E7EB transparent;
 }
 .table-view .column-header .label {
-    -fx-text-fill: #d4af37;
-    -fx-font-weight: bold;
+    -fx-text-fill: #111111;
+    -fx-font-weight: normal;
 }
 .table-row-cell, .list-cell {
-    -fx-background-color: transparent;
-    -fx-text-fill: #e0e6ed;
-    -fx-border-color: rgba(255, 255, 255, 0.05);
+    -fx-background-color: #FFFFFF;
+    -fx-text-fill: #111111;
+    -fx-border-color: #F3F4F6;
     -fx-border-width: 0 0 1 0;
 }
-.table-row-cell:hover, .list-cell:hover { -fx-background-color: rgba(212, 175, 55, 0.05); }
+.table-row-cell:hover, .list-cell:hover { -fx-background-color: #F9FAFB; }
 .table-row-cell:selected, .list-cell:selected {
-    -fx-background-color: rgba(212, 175, 55, 0.15);
-    -fx-text-fill: #d4af37;
+    -fx-background-color: #F3F4F6;
+    -fx-text-fill: #111111;
 }
 
 /* ========================================================
-   7. LÀM ĐẸP THANH CUỘN (SCROLLBAR) TÀNG HÌNH
+   7. Ô NHẬP LIỆU & COMBOBOX
    ======================================================== */
-.scroll-bar:vertical, .scroll-bar:horizontal {
-    -fx-background-color: transparent;
-}
-.scroll-bar:vertical .thumb, .scroll-bar:horizontal .thumb {
-    -fx-background-color: #2a2e39;
-    -fx-background-radius: 10;
-}
-.scroll-bar:vertical .thumb:hover, .scroll-bar:horizontal .thumb:hover {
-    -fx-background-color: #d4af37;
-}
-
-/* ========================================================
-   8. NHÃN TRẠNG THÁI & Ô NHẬP LIỆU
-   ======================================================== */
-.badge-running { -fx-background-color: #d4af37; -fx-text-fill: #000; -fx-font-weight: bold;}
-.input-field, .text-field {
-    -fx-background-color: rgba(0,0,0,0.3);
-    -fx-text-fill: #fff;
-    -fx-border-color: #343b4d;
-    -fx-border-radius: 6;
-    -fx-padding: 10;
+.input-field, .text-field, .combo-box {
+    -fx-background-color: #FFFFFF;
+    -fx-text-fill: #111111;
+    -fx-border-color: #D1D5DB;
+    -fx-border-width: 0 0 1 0; /* Chỉ để gạch chân như Form điền tay */
+    -fx-border-radius: 0;
+    -fx-padding: 8 0;
 }
 .input-field:focused, .text-field:focused {
-    -fx-border-color: #d4af37;
-    -fx-effect: dropshadow(three-pass-box, rgba(212, 175, 55, 0.3), 5, 0, 0, 0);
+    -fx-border-color: #111111;
 }
 
-/* DÁT VÀNG BIỂU ĐỒ */
-.default-color0.chart-series-line { -fx-stroke: #d4af37; -fx-stroke-width: 3px; }
-.default-color0.chart-line-symbol { -fx-background-color: #d4af37, #05070a; -fx-padding: 5px; }
 /* ========================================================
-   9. TẨY PHÈN TAB PANE (MENU BẢNG THAO TÁC)
+   8. SANG CHẢNH HÓA CÁC POPUP (ALERT / DIALOG PANE)
+   ======================================================== */
+.dialog-pane {
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E5E7EB;
+    -fx-border-width: 1;
+}
+.dialog-pane .content .label, .dialog-pane .header-panel .label {
+    -fx-text-fill: #111111;
+}
+.dialog-pane .header-panel {
+    -fx-background-color: #FFFFFF;
+}
+.dialog-pane .header-panel .label {
+    -fx-font-family: "Georgia", serif;
+    -fx-font-size: 22px;
+}
+.dialog-pane .button {
+    -fx-background-color: #FFFFFF;
+    -fx-text-fill: #111111;
+    -fx-border-color: #D1D5DB;
+    -fx-border-radius: 0;
+    -fx-padding: 8 20;
+    -fx-cursor: hand;
+}
+.dialog-pane .button:hover {
+    -fx-border-color: #111111;
+}
+/* ========================================================
+   BIỂU ĐỒ SOTHEBY'S (HẮC HÓA 100%)
+   ======================================================== */
+/* 1. Đổi màu đường thẳng thành Đen đậm */
+.chart-series-line {
+    -fx-stroke: #111111;
+    -fx-stroke-width: 2.5px;
+}
+
+/* 2. Đổi màu các điểm chốt (dấu chấm) thành Lõi Trắng, Viền Đen */
+.chart-line-symbol {
+    -fx-background-color: #111111, #FFFFFF;
+    -fx-background-insets: 0, 2;
+    -fx-background-radius: 5px;
+    -fx-padding: 4px;
+}
+
+/* 3. Xóa các đường kẻ lưới rối mắt bên trong biểu đồ */
+.chart-plot-background {
+    -fx-background-color: transparent;
+}
+.chart-vertical-grid-lines {
+    -fx-stroke: transparent;
+}
+.chart-horizontal-grid-lines {
+    -fx-stroke: #E5E7EB; /* Chỉ giữ lại đường kẻ ngang màu xám siêu nhạt */
+}
+
+/* 4. Ép màu chữ trục X, Y thành xám đậm */
+.axis {
+    -fx-tick-label-fill: #4B5563;
+}
+/* ========================================================
+   LỘT XÁC TAB PANE (KHO ĐỒ, CHIẾN LỢI PHẨM) CHUẨN SOTHEBY'S
    ======================================================== */
 
-/* Làm trong suốt cái nền đằng sau các Tab */
+/* 1. Xóa sạch cái nền xám xịt đằng sau dải Tab */
 .tab-pane .tab-header-area .tab-header-background {
     -fx-background-color: transparent;
 }
 
-/* Định dạng hình dáng cái Tab (Nút bấm) */
+/* 2. Style cho từng cái Tab (Trạng thái bình thường) */
 .tab-pane .tab {
     -fx-background-color: transparent;
-    -fx-border-color: transparent;
-    -fx-padding: 8 20;
+    -fx-padding: 10 25 10 25; /* Tạo không gian rộng rãi xung quanh chữ */
     -fx-cursor: hand;
+    -fx-background-radius: 0; /* Bỏ bo góc mặc định */
+    -fx-background-insets: 0;
 }
 
-/* Chữ của Tab khi CHƯA được chọn (Màu xám kim loại tàng hình) */
-.tab-pane .tab-label {
-    -fx-text-fill: #6b7a90;
-    -fx-font-size: 15px;
+/* 3. Màu chữ của Tab (Trạng thái bình thường) */
+.tab-pane .tab .tab-label {
+    -fx-text-fill: #6B7280; /* Màu xám thanh lịch */
+    -fx-font-size: 14px;
     -fx-font-weight: bold;
-    -fx-font-family: "Segoe UI", Arial, sans-serif;
 }
 
-/* Khi lướt chuột qua (Sáng nhẹ lên) */
-.tab-pane .tab:hover .tab-label {
-    -fx-text-fill: #a5b3ce;
-}
-
-/* ========================================================
-   KHI TAB ĐƯỢC CHỌN (GLOW VÀNG HOÀNG GIA & GẠCH CHÂN)
-   ======================================================== */
+/* 4. Style khi Tab ĐƯỢC CHỌN (Gạch dưới viền đen) */
 .tab-pane .tab:selected {
     -fx-background-color: transparent;
-    /* Gạch dưới đáy màu vàng Gold cực sang */
-    -fx-border-color: transparent transparent #d4af37 transparent;
-    -fx-border-width: 0 0 3 0;
+    -fx-border-color: transparent transparent #111111 transparent; /* Chỉ hiện viền dưới màu đen */
+    -fx-border-width: 0 0 2 0; /* Độ nét viền dưới */
 }
 
+/* 5. Màu chữ khi Tab ĐƯỢC CHỌN */
 .tab-pane .tab:selected .tab-label {
-    -fx-text-fill: #d4af37;
-    /* Đổ bóng chữ để nó phát sáng trong đêm */
-    -fx-effect: dropshadow(three-pass-box, rgba(212, 175, 55, 0.5), 10, 0, 0, 0);
+    -fx-text-fill: #111111; /* Đen đậm quyền lực */
 }
 
-/* ========================================================
-   VŨ KHÍ TỐI THƯỢNG: DIỆT CÁI VIỀN XANH DƯƠNG RẺ TIỀN
-   ======================================================== */
-.tab-pane:focused .tab-header-area .headers-region .tab:selected .focus-indicator {
-    -fx-border-width: 0;
-    -fx-border-color: transparent;
+/* 6. Xóa cái viền "chấm bi" xấu xí khi click chuột vào Tab */
+.tab-pane .tab:focused {
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
 }
-/* ========================================================
-   10. SANG CHẢNH HÓA CÁC POPUP (ALERT / DIALOG PANE)
-   ======================================================== */
-.dialog-pane {
-    -fx-background-color: #05070a; /* Ép nền đen bóng đêm */
-    -fx-border-color: #d4af37;
-    -fx-border-width: 1;
-}
-
-/* Chữ trong Popup */
-.dialog-pane .content .label, .dialog-pane .header-panel .label {
-    -fx-text-fill: #e0e6ed;
-    -fx-font-family: "Segoe UI", Arial, sans-serif;
+/* Tăng độ nét và khoảng cách cho danh sách ảnh */
+.list-cell {
+    -fx-padding: 10;
+    -fx-font-size: 13px;
+    -fx-text-fill: #111111;
+    -fx-background-color: #FFFFFF;
+    -fx-border-color: #E5E7EB;
+    -fx-border-width: 0 0 1 0;
 }
 
-/* Thanh tiêu đề của Popup (Nếu có) */
-.dialog-pane .header-panel {
-    -fx-background-color: #161a23;
+.list-cell:filled:selected {
+    -fx-background-color: #F3F4F6;
 }
-.dialog-pane .header-panel .label {
-    -fx-text-fill: #d4af37;
-    -fx-font-size: 18px;
-    -fx-font-weight: bold;
-}
-
-/* Biến nút "Close", "OK" của Popup thành nút Vàng */
-.dialog-pane .button {
-    -fx-background-color: transparent;
-    -fx-text-fill: #d4af37;
-    -fx-border-color: #d4af37;
-    -fx-border-radius: 6;
-    -fx-padding: 8 20;
-    -fx-cursor: hand;
-    -fx-font-weight: bold;
-}
-.dialog-pane .button:hover {
-    -fx-background-color: #d4af37;
-    -fx-text-fill: #05070a; /* Chữ đen nền vàng */
-}
-/* ========================================================
-   11. FIX LỖI COMBOBOX (MENU XỔ XUỐNG BỊ TRONG SUỐT)
-   ======================================================== */
-
-/* Đổ nền đen đặc và đóng viền Vàng cho cái bảng xổ xuống */
-.combo-box-popup .list-view {
-    -fx-background-color: #05070a; /* Nền đen bóng đêm để che khuất chữ bên dưới */
-    -fx-border-color: #d4af37;     /* Viền vàng Gold */
-    -fx-border-width: 1;
-    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.8), 15, 0, 0, 5); /* Bơm thêm bóng đổ 3D */
-}
-
-/* Định dạng từng dòng chữ bên trong menu */
-.combo-box-popup .list-cell {
-    -fx-background-color: transparent;
-    -fx-text-fill: #e0e6ed; /* Màu xám kim loại */
-    -fx-padding: 8 15;
-    -fx-cursor: hand;
-}
-
-/* Hiệu ứng khi sếp di chuột ngang qua các dòng */
-.combo-box-popup .list-cell:hover {
-    -fx-background-color: rgba(212, 175, 55, 0.15); /* Phủ lớp vàng mỏng mờ mờ */
-    -fx-text-fill: #d4af37; /* Chữ phát sáng màu vàng */
-}
-
-/* Dòng đang được chọn (Click vào rồi) */
-.combo-box-popup .list-cell:filled:selected {
-    -fx-background-color: rgba(212, 175, 55, 0.25);
-    -fx-text-fill: #d4af37;
-    -fx-font-weight: bold;
-    -fx-border-color: transparent transparent transparent #d4af37; /* Gạch chỉ vàng viền trái */
-    -fx-border-width: 0 0 0 3;
+#imageDropZone:hover {
+    -fx-background-color: #F3F4F6;
+    -fx-border-color: #111111; /* Đổi viền thành màu đen khi di chuột vào */
 }

@@ -9,53 +9,41 @@
             stylesheets="@../css/style.css"
             styleClass="root">
 
-    <left>
-        <VBox styleClass="sidebar" prefWidth="220" spacing="10">
-            <padding>
-                <Insets top="30" right="10" bottom="20" left="10"/>
-            </padding>
+    <top>
+        <VBox style="-fx-background-color: #FFFFFF; -fx-border-color: #E5E7EB; -fx-border-width: 0 0 1 0;">
+            <HBox alignment="CENTER_LEFT" spacing="40" style="-fx-padding: 15 40;">
 
-            <!-- ĐÃ CẬP NHẬT: Thêm nhãn số dư và nút nạp tiền -->
-            <VBox alignment="CENTER" spacing="5">
-                <Label text="🏆 BidVault" style="-fx-text-fill: white; -fx-font-size: 20px; -fx-font-weight: bold;"/>
-                <Label text="Xin chào," style="-fx-text-fill: #bdc3c7; -fx-font-size: 12px;"/>
-                <Label fx:id="lblUsername" text="User" style="-fx-text-fill: #d4af37; -fx-font-weight: bold;"/>
-                <Label fx:id="balanceLabel" text="Số dư: 0 ₫" style="-fx-text-fill: #e5c058; -fx-font-weight: bold; -fx-font-size: 14px;" />
+                <Label text="BidVault." style="-fx-font-family: 'Georgia', 'Times New Roman', serif; -fx-font-size: 32px; -fx-text-fill: #111111;"/>
 
-                <Button text="💳 Nạp tiền" onAction="#handleOpenDeposit"
-                        style="-fx-background-color: transparent; -fx-border-color: #d4af37; -fx-text-fill: #d4af37; -fx-font-size: 11px; -fx-border-radius: 15; -fx-cursor: hand;">
-                    <VBox.margin><Insets top="5"/></VBox.margin>
-                </Button>
+                <Region HBox.hgrow="ALWAYS"/>
 
-                <VBox.margin><Insets bottom="20"/></VBox.margin>
-            </VBox>
-
-            <Button fx:id="btnDashboard" text="🏛 Sảnh Đấu Giá" onAction="#handleDashboard" styleClass="menu-button" maxWidth="Infinity"/>
-            <Button fx:id="btnInventory" text="📦 Kho Đồ &amp; Đăng Bán" onAction="#handleInventory" styleClass="menu-button" maxWidth="Infinity"/>
-            <Button fx:id="btnHistory" text="📋 Lịch Sử Đặt Giá" onAction="#handleHistory" styleClass="menu-button" maxWidth="Infinity"/>
-
-            <VBox spacing="8" styleClass="notification-box">
-                <HBox alignment="CENTER_LEFT" spacing="6">
-                    <Label text="🔔 Thông báo" styleClass="notification-title"/>
+                <HBox alignment="CENTER" spacing="35">
+                    <Button fx:id="btnDashboard" text="SẢNH ĐẤU GIÁ" onAction="#handleDashboard" styleClass="top-nav-btn"/>
+                    <Button fx:id="btnInventory" text="KHO ĐỒ &amp; ĐĂNG BÁN" onAction="#handleInventory" styleClass="top-nav-btn"/>
+                    <Button fx:id="btnHistory" text="LỊCH SỬ ĐẶT GIÁ" onAction="#handleHistory" styleClass="top-nav-btn"/>
+                    <Button text="THÔNG BÁO" onAction="#handleViewNotificationDetail" styleClass="top-nav-btn"/>
                 </HBox>
-                <Button text="Xem chi tiết"
-                        onAction="#handleViewNotificationDetail"
-                        styleClass="notification-detail-btn"
-                        maxWidth="Infinity"/>
-                <ListView fx:id="notificationListView"
-                          prefHeight="150"
-                          maxHeight="150"
-                          focusTraversable="false"
-                          styleClass="notification-list"/>
-            </VBox>
 
-            <Region VBox.vgrow="ALWAYS"/>
-            <Button text="🚪 Đăng Xuất" onAction="#handleLogout" styleClass="logout-button" maxWidth="Infinity"/>
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <VBox alignment="CENTER_RIGHT" spacing="5">
+                    <HBox alignment="CENTER_RIGHT" spacing="5">
+                        <Label text="Xin chào," style="-fx-font-size: 13px; -fx-text-fill: #6B7280;"/>
+                        <Label fx:id="lblUsername" text="User" style="-fx-font-size: 13px; -fx-text-fill: #111111; -fx-font-weight: bold;"/>
+                    </HBox>
+                    <HBox alignment="CENTER_RIGHT" spacing="15">
+                        <Label fx:id="balanceLabel" text="0 đ" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #111111;"/>
+                        <Button text="Nạp tiền" onAction="#handleOpenDeposit" styleClass="secondary-button" style="-fx-padding: 4 10; -fx-font-size: 11px;"/>
+                    </HBox>
+                    <Button text="Đăng xuất" onAction="#handleLogout" styleClass="logout-btn"/>
+                </VBox>
+            </HBox>
         </VBox>
-    </left>
+    </top>
 
     <center>
-        <StackPane fx:id="contentArea">
+        <StackPane fx:id="contentArea" style="-fx-background-color: #FFFFFF;">
         </StackPane>
     </center>
+
 </BorderPane>

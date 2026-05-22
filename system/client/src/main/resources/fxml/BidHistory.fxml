@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.geometry.Insets?>
@@ -7,124 +6,65 @@
 <BorderPane xmlns="http://javafx.com/javafx/21"
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.bidding.controller.BidHistoryController"
-            styleClass="main-root"
+            style="-fx-background-color: #FFFFFF;"
             prefWidth="1200" prefHeight="750">
 
     <top>
-        <HBox styleClass="content-header" alignment="CENTER_LEFT" spacing="16">
-            <Button text="← Quay lại"
-                    onAction="#handleBack"
-                    styleClass="secondary-button"/>
-            <VBox spacing="2">
-                <Label text="Lịch Sử Đấu Giá Của Tôi"
-                       styleClass="page-title"/>
-                <Label fx:id="subtitleLabel"
-                       text="Toàn bộ các lượt đặt giá của bạn"
-                       styleClass="page-subtitle"/>
+        <HBox alignment="CENTER_LEFT" spacing="25" style="-fx-padding: 25 40; -fx-border-color: #E5E7EB; -fx-border-width: 0 0 1 0; -fx-background-color: #FFFFFF;">
+            <Button text="QUAY LẠI" onAction="#handleBack" styleClass="secondary-button" style="-fx-padding: 8 15;"/>
+            <VBox spacing="5">
+                <Label text="LỊCH SỬ ĐẤU GIÁ" style="-fx-font-family: 'Georgia', 'Times New Roman', serif; -fx-font-size: 24px; -fx-text-fill: #111111;"/>
+                <Label fx:id="subtitleLabel" text="Hồ sơ giao dịch &amp; đặt giá của bạn" style="-fx-font-size: 13px; -fx-text-fill: #6B7280;"/>
             </VBox>
             <Region HBox.hgrow="ALWAYS"/>
-            <Button text="🔄 Làm mới"
-                    onAction="#handleRefresh"
-                    styleClass="secondary-button"/>
+            <Button text="LÀM MỚI" onAction="#handleRefresh" styleClass="secondary-button" style="-fx-padding: 8 20;"/>
         </HBox>
     </top>
 
     <center>
-        <VBox styleClass="content-area" spacing="16">
-            <padding>
-                <Insets top="24" right="24" bottom="24" left="24"/>
-            </padding>
+        <VBox spacing="30" style="-fx-padding: 40; -fx-background-color: #FFFFFF;">
 
-            <HBox spacing="16">
-
-                <VBox styleClass="stat-card" HBox.hgrow="ALWAYS" alignment="CENTER" spacing="4">
-                    <Label fx:id="totalBidsStatLabel"
-                           text="0"
-                           styleClass="stat-number"/>
-                    <Label text="Tổng lượt đặt"
-                           styleClass="stat-desc"/>
+            <HBox spacing="25">
+                <VBox HBox.hgrow="ALWAYS" alignment="CENTER_LEFT" spacing="8" style="-fx-padding: 20; -fx-border-color: #E5E7EB; -fx-border-width: 1;">
+                    <Label text="TỔNG LƯỢT ĐẶT" style="-fx-font-size: 11px; -fx-text-fill: #6B7280; -fx-font-weight: bold; -fx-letter-spacing: 1px;"/>
+                    <Label fx:id="totalBidsStatLabel" text="0" style="-fx-font-family: 'Georgia', serif; -fx-font-size: 32px; -fx-text-fill: #111111;"/>
                 </VBox>
 
-                <VBox styleClass="stat-card" HBox.hgrow="ALWAYS" alignment="CENTER" spacing="4">
-                    <Label fx:id="acceptedBidsStatLabel"
-                           text="0"
-                           styleClass="stat-number stat-number-success"/>
-                    <Label text="Được chấp nhận"
-                           styleClass="stat-desc"/>
+                <VBox HBox.hgrow="ALWAYS" alignment="CENTER_LEFT" spacing="8" style="-fx-padding: 20; -fx-border-color: #E5E7EB; -fx-border-width: 1;">
+                    <Label text="ĐƯỢC CHẤP NHẬN" style="-fx-font-size: 11px; -fx-text-fill: #6B7280; -fx-font-weight: bold; -fx-letter-spacing: 1px;"/>
+                    <Label fx:id="acceptedBidsStatLabel" text="0" style="-fx-font-family: 'Georgia', serif; -fx-font-size: 32px; -fx-text-fill: #111111;"/>
                 </VBox>
 
-                <VBox styleClass="stat-card" HBox.hgrow="ALWAYS" alignment="CENTER" spacing="4">
-                    <Label fx:id="rejectedBidsStatLabel"
-                           text="0"
-                           styleClass="stat-number stat-number-danger"/>
-                    <Label text="Bị từ chối"
-                           styleClass="stat-desc"/>
+                <VBox HBox.hgrow="ALWAYS" alignment="CENTER_LEFT" spacing="8" style="-fx-padding: 20; -fx-border-color: #E5E7EB; -fx-border-width: 1;">
+                    <Label text="BỊ TỪ CHỐI" style="-fx-font-size: 11px; -fx-text-fill: #6B7280; -fx-font-weight: bold; -fx-letter-spacing: 1px;"/>
+                    <Label fx:id="rejectedBidsStatLabel" text="0" style="-fx-font-family: 'Georgia', serif; -fx-font-size: 32px; -fx-text-fill: #111111;"/>
                 </VBox>
 
-                <VBox styleClass="stat-card" HBox.hgrow="ALWAYS" alignment="CENTER" spacing="4">
-                    <Label fx:id="highestBidStatLabel"
-                           text="0 ₫"
-                           styleClass="stat-number stat-number-accent"/>
-                    <Label text="Lượt đặt cao nhất"
-                           styleClass="stat-desc"/>
+                <VBox HBox.hgrow="ALWAYS" alignment="CENTER_LEFT" spacing="8" style="-fx-padding: 20; -fx-border-color: #111111; -fx-border-width: 2; -fx-background-color: #F9FAFB;">
+                    <Label text="MỨC GIÁ CAO NHẤT" style="-fx-font-size: 11px; -fx-text-fill: #111111; -fx-font-weight: bold; -fx-letter-spacing: 1px;"/>
+                    <Label fx:id="highestBidStatLabel" text="0 ₫" style="-fx-font-family: 'Georgia', serif; -fx-font-size: 32px; -fx-text-fill: #111111;"/>
                 </VBox>
-
             </HBox>
 
-            <HBox spacing="12" alignment="CENTER_LEFT">
-                <Label text="Lọc theo trạng thái:" styleClass="field-label"/>
-                <ComboBox fx:id="statusFilterCombo"
-                          promptText="Tất cả"
-                          onAction="#handleFilterChange"
-                          styleClass="input-field"
-                          prefWidth="180"/>
+            <HBox spacing="15" alignment="CENTER_LEFT">
+                <Label text="Lọc theo trạng thái:" style="-fx-font-size: 13px; -fx-text-fill: #111111; -fx-font-weight: bold;"/>
+                <ComboBox fx:id="statusFilterCombo" promptText="Tất cả" onAction="#handleFilterChange" styleClass="combo-box" prefWidth="180"/>
                 <Region HBox.hgrow="ALWAYS"/>
-                <Label fx:id="recordCountLabel"
-                       text=""
-                       styleClass="hint-label"/>
+                <Label fx:id="recordCountLabel" text="" style="-fx-font-size: 13px; -fx-text-fill: #6B7280;"/>
             </HBox>
 
-            <TableView fx:id="historyTable"
-                       VBox.vgrow="ALWAYS"
-                       styleClass="history-table">
-
+            <TableView fx:id="historyTable" VBox.vgrow="ALWAYS" styleClass="table-view" style="-fx-border-width: 1; -fx-border-color: #E5E7EB;">
                 <columns>
-
-                    <TableColumn fx:id="colIndex"
-                                 text="#"
-                                 prefWidth="50"
-                                 resizable="false"
-                                 sortable="false"/>
-
-                    <TableColumn fx:id="colAuctionId"
-                                 text="Mã Phiên Đấu Giá"
-                                 prefWidth="200"/>
-
-                    <TableColumn fx:id="colBidAmount"
-                                 text="Số Tiền Đặt (₫)"
-                                 prefWidth="180"/>
-
-                    <TableColumn fx:id="colBidTime"
-                                 text="Thời Gian Đặt"
-                                 prefWidth="180"/>
-
-                    <TableColumn fx:id="colBidType"
-                                 text="Loại"
-                                 prefWidth="130"/>
-
-                    <TableColumn fx:id="colStatus"
-                                 text="Trạng Thái"
-                                 prefWidth="150"/>
-
+                    <TableColumn fx:id="colIndex" text="#" prefWidth="60" resizable="false" sortable="false"/>
+                    <TableColumn fx:id="colAuctionId" text="Mã Phiên Đấu Giá" prefWidth="250"/>
+                    <TableColumn fx:id="colBidAmount" text="Số Tiền Đặt (₫)" prefWidth="200"/>
+                    <TableColumn fx:id="colBidTime" text="Thời Gian Đặt" prefWidth="200"/>
+                    <TableColumn fx:id="colBidType" text="Loại Lệnh" prefWidth="150"/>
+                    <TableColumn fx:id="colStatus" text="Trạng Thái" prefWidth="150"/>
                 </columns>
-
             </TableView>
 
-            <Label fx:id="statusLabel"
-                   text=""
-                   styleClass="hint-label"
-                   alignment="CENTER"/>
-
+            <Label fx:id="statusLabel" text="" style="-fx-text-fill: #6B7280; -fx-font-style: italic;" alignment="CENTER"/>
         </VBox>
     </center>
 

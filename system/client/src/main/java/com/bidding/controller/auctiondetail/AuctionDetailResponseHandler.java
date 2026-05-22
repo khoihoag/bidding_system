@@ -5,7 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
-
+import com.bidding.controller.AuctionDetailController;
 /**
  * Parses inbound socket messages for the auction detail screen.
  */
@@ -16,17 +16,18 @@ public class AuctionDetailResponseHandler {
     private final AuctionDetailUiPresenter ui;
     private final AuctionDetailChartBinder chartBinder;
     private final AuctionDetailCountdown countdown;
-
+    private final AuctionDetailController controller;
     public AuctionDetailResponseHandler(Class<?> resourceClass,
                                         AuctionDetailState state,
                                         AuctionDetailUiPresenter ui,
                                         AuctionDetailChartBinder chartBinder,
-                                        AuctionDetailCountdown countdown) {
+                                        AuctionDetailCountdown countdown, AuctionDetailController controller) {
         this.resourceClass = resourceClass;
         this.state = state;
         this.ui = ui;
         this.chartBinder = chartBinder;
         this.countdown = countdown;
+        this.controller= controller;
     }
 
     public void handle(JsonObject json) {
@@ -143,9 +144,19 @@ public class AuctionDetailResponseHandler {
 
             state.currentSelectedAuction = auction;
             String itemName = "Không rõ tên";
+
             if (auction.has("item") && auction.get("item").isJsonObject()) {
                 JsonObject item = auction.getAsJsonObject("item");
                 itemName = AuctionDetailFormats.getStringSafe(item, "name");
+
+                // ==============================================================
+                // DÂY CÁP MA THUẬT ĐÂY RỒI: TRUYỀN DATA SANG CONTROLLER VẼ ẢNH!
+                // ==============================================================
+                final JsonObject finalItem = item;
+                Platform.runLater(() -> {
+                    controller.renderSothebysItemDetails(finalItem);
+                });
+                // ==============================================================
             }
 
             double currentPrice = auction.has("currentPrice")
@@ -156,16 +167,32 @@ public class AuctionDetailResponseHandler {
             String winnerId = auction.has("winnerId") ? auction.get("winnerId").getAsString() : "---";
             boolean isReverse = auction.has("isReverse") && auction.get("isReverse").getAsBoolean();
 
+            // 1. Phải khai báo biến isFollowing từ JSON trước khi dùng!
+            boolean isFollowing = auction.has("isFollowing") && auction.get("isFollowing").getAsBoolean();
+
             final String finalItemName = itemName;
             final double finalPrice = currentPrice;
             final String finalStatus = status;
             final String finalStartTime = startTimeStr;
             final String finalEndTime = endTimeStr;
             final String finalWinner = winnerId;
+
+            // 2. Chỉ để 1 dòng finalIsReverse thôi
             final boolean finalIsReverse = isReverse;
 
+            // 3. Khai báo biến finalIsFollowing chuẩn xác
+            final boolean finalIsFollowing = isFollowing;
+
             Platform.runLater(() -> applyAuctionInfo(
-                    finalItemName, finalPrice, finalStatus, finalStartTime, finalEndTime, finalWinner, finalIsReverse));
+                    finalItemName,
+                    finalPrice,
+                    finalStatus,
+                    finalStartTime,
+                    finalEndTime,
+                    finalWinner,
+                    finalIsReverse,
+                    finalIsFollowing
+            ));
             break;
         }
     }
@@ -176,11 +203,16 @@ public class AuctionDetailResponseHandler {
                                   String startTimeStr,
                                   String endTimeStr,
                                   String winnerId,
-                                  boolean isReverse) {
+                                  boolean isReverse,
+                                  boolean isFollowing) { // <--- Thêm biến này vào signature
+
         ui.updateItemHeader(itemName);
         ui.updateCurrentPrice(currentPrice);
         ui.updateStatusBadge(status);
         ui.updateWinner(winnerId);
+
+        // Xử lý nút Theo dõi ngay tại đây dựa trên trạng thái Server gửi về
+        ui.setFollowButtonState(isFollowing);
 
         if ("OPEN".equals(status)) {
             if (startTimeStr != null && !startTimeStr.isEmpty()) {
