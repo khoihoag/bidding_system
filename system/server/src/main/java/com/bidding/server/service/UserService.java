@@ -20,12 +20,13 @@ public class UserService {
             throw new RuntimeException("Sai tài khoản hoặc mật khẩu!");
         }
 
-        if (!user.isActive()) {
-            throw new RuntimeException("Tài khoản của bạn đã bị Admin khóa mõm!");
+        User freshUser = repository.findById(user.getId());
+        if (freshUser == null || !freshUser.isActive()) {
+            throw new RuntimeException("Tài khoản của bạn đã bị admin khóa.");
         }
 
         System.out.println("[UserService.java] User đăng nhập thành công: " + username);
-        return user;
+        return freshUser;
     }
     // ================= XỬ LÝ ĐĂNG KÝ =================
     public void register(String username, String password, String email, String fullName) {

@@ -21,6 +21,7 @@ public class AuthController {
         String pass = request.get("password").getAsString();
 
         try {
+            client.setLoggedInUser(null);
             User loggedInUser = baoVe.login(user, pass);
             client.setLoggedInUser(loggedInUser);
             int adminLevel = getAdminLevel(loggedInUser);
@@ -33,6 +34,7 @@ public class AuthController {
                     loggedInUser.getBalance()
             ));
         } catch (Exception e) {
+            client.setLoggedInUser(null);
             client.sendError(e.getMessage());
         }
     }

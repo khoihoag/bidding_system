@@ -323,7 +323,7 @@ public class InventoryController implements Initializable {
                 else if ("ADD_ITEM_REPLY".equals(action)) {
                     String status = response.has("status") ? response.get("status").getAsString() : "ERROR";
                     if ("SUCCESS".equals(status)) {
-                        String msg = response.has("message") ? response.get("message").getAsString() : "Da gui san pham va dang cho admin duyet.";
+                        String msg = response.has("message") ? response.get("message").getAsString() : "Đã gửi sản phẩm và đang chờ admin duyệt.";
                         showAlert(AlertType.INFORMATION, "Thành công", msg);
                         handleRefreshInventory();
                         // Clear form nhập đồ mới
@@ -391,12 +391,12 @@ public class InventoryController implements Initializable {
 
     private String approvalStatusLabel(String status) {
         if (status == null || status.isEmpty()) {
-            return "Da duyet";
+            return "Đã duyệt";
         }
         return switch (status) {
-            case "PENDING" -> "Cho duyet";
-            case "REJECTED" -> "Bi tu choi";
-            case "APPROVED" -> "Da duyet";
+            case "PENDING" -> "Chờ duyệt";
+            case "REJECTED" -> "Bị từ chối";
+            case "APPROVED" -> "Đã duyệt";
             default -> status;
         };
     }
@@ -482,12 +482,12 @@ public class InventoryController implements Initializable {
         lblDesc.setWrapText(true);
         lblDesc.setMaxWidth(480);
         String approvalStatus = item.has("approvalStatus") ? item.get("approvalStatus").getAsString() : "APPROVED";
-        Label lblApproval = new Label("Trang thai duyet: " + approvalStatusLabel(approvalStatus));
+        Label lblApproval = new Label("Trạng thái duyệt: " + approvalStatusLabel(approvalStatus));
         lblApproval.setStyle("-fx-font-weight: bold; -fx-text-fill: #d4af37;");
 
         vbox.getChildren().addAll(imgView, lblType, lblCondition, lblApproval, lblPrice, new Separator(), lblDesc);
         if ("REJECTED".equals(approvalStatus) && item.has("rejectionReason") && !item.get("rejectionReason").isJsonNull()) {
-            Label lblRejectReason = new Label("Ly do tu choi: " + item.get("rejectionReason").getAsString());
+            Label lblRejectReason = new Label("Lý do từ chối: " + item.get("rejectionReason").getAsString());
             lblRejectReason.setWrapText(true);
             lblRejectReason.setStyle("-fx-text-fill: #ff6b6b;");
             vbox.getChildren().add(lblRejectReason);

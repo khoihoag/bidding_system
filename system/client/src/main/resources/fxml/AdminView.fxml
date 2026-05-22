@@ -38,7 +38,7 @@
                     styleClass="nav-btn" maxWidth="Infinity"
                     style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
 
-            <Button fx:id="navApprovals" text="Duyet san pham"
+            <Button fx:id="navApprovals" text="Duyệt sản phẩm"
                     onAction="#showApprovals"
                     styleClass="nav-btn" maxWidth="Infinity"
                     style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
@@ -159,13 +159,13 @@
                 </HBox>
 
                 <VBox fx:id="createAdminBox" spacing="10" styleClass="toolbar-row">
-                    <Label text="Tao admin level 1" styleClass="section-subtitle" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    <Label text="Tạo admin level 1" styleClass="section-subtitle" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
                     <HBox spacing="10">
                         <TextField fx:id="newAdminUsernameField" promptText="Username" HBox.hgrow="ALWAYS" styleClass="search-field"/>
                         <TextField fx:id="newAdminEmailField" promptText="Email" HBox.hgrow="ALWAYS" styleClass="search-field"/>
-                        <TextField fx:id="newAdminFullNameField" promptText="Ho ten" HBox.hgrow="ALWAYS" styleClass="search-field"/>
+                        <TextField fx:id="newAdminFullNameField" promptText="Họ tên" HBox.hgrow="ALWAYS" styleClass="search-field"/>
                         <PasswordField fx:id="newAdminPasswordField" promptText="Password" HBox.hgrow="ALWAYS" styleClass="search-field"/>
-                        <Button text="Tao admin L1" onAction="#handleCreateAdminLevel1" styleClass="btn-gold"/>
+                        <Button text="Tạo admin L1" onAction="#handleCreateAdminLevel1" styleClass="btn-gold"/>
                     </HBox>
                 </VBox>
 
@@ -195,21 +195,21 @@
 
                 <HBox alignment="CENTER_LEFT" spacing="12">
                     <VBox>
-                        <Label text="Duyet san pham" styleClass="section-title" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
-                        <Label text="Kiem tra san pham user gui len truoc khi mo dau gia" styleClass="section-subtitle" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                        <Label text="Duyệt sản phẩm" styleClass="section-title" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                        <Label text="Kiểm tra sản phẩm người dùng gửi lên trước khi mở đấu giá" styleClass="section-subtitle" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
                     </VBox>
                     <Region HBox.hgrow="ALWAYS"/>
-                    <Button text="Tai lai" onAction="#showApprovals" styleClass="btn-outline" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    <Button text="Tải lại" onAction="#showApprovals" styleClass="btn-outline" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
                 </HBox>
 
                 <TableView fx:id="pendingItemTable" VBox.vgrow="ALWAYS" styleClass="table-view">
                     <columns>
                         <TableColumn fx:id="colPendingItemId" text="ID" prefWidth="170"/>
-                        <TableColumn fx:id="colPendingItemName" text="San pham" prefWidth="220"/>
-                        <TableColumn fx:id="colPendingItemSeller" text="Nguoi ban" prefWidth="180"/>
-                        <TableColumn fx:id="colPendingItemType" text="Loai" prefWidth="100"/>
-                        <TableColumn fx:id="colPendingItemPrice" text="Gia khoi diem" prefWidth="140"/>
-                        <TableColumn fx:id="colPendingItemAction" text="Hanh dong" prefWidth="220"/>
+                        <TableColumn fx:id="colPendingItemName" text="Sản phẩm" prefWidth="220"/>
+                        <TableColumn fx:id="colPendingItemSeller" text="Người bán" prefWidth="180"/>
+                        <TableColumn fx:id="colPendingItemType" text="Loại" prefWidth="100"/>
+                        <TableColumn fx:id="colPendingItemPrice" text="Giá khởi điểm" prefWidth="140"/>
+                        <TableColumn fx:id="colPendingItemAction" text="Hành động" prefWidth="220"/>
                     </columns>
                 </TableView>
 

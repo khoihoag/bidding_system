@@ -203,7 +203,7 @@ public class AdminView implements Initializable {
         req.addProperty("action", "APPROVE_ITEM");
         req.addProperty("itemId", itemId);
         sendRequest(req);
-        appendAuditRow("APPROVE_ITEM", UserSession.getInstance().getUsername(), name + " (ID: " + itemId + ")", "Dang cho...");
+        appendAuditRow("APPROVE_ITEM", UserSession.getInstance().getUsername(), name + " (ID: " + itemId + ")", "Đang chờ...");
     }
 
     private void sendRejectItem(String itemId, String name, String reason) {
@@ -213,13 +213,13 @@ public class AdminView implements Initializable {
         req.addProperty("itemId", itemId);
         req.addProperty("reason", reason);
         sendRequest(req);
-        appendAuditRow("REJECT_ITEM", UserSession.getInstance().getUsername(), name + " (ID: " + itemId + ")", "Dang cho...");
+        appendAuditRow("REJECT_ITEM", UserSession.getInstance().getUsername(), name + " (ID: " + itemId + ")", "Đang chờ...");
     }
 
     @FXML private void handleCreateAdminLevel1() {
         if (!checkConnected()) return;
         if (adminLevel < 2) {
-            showAlert(Alert.AlertType.WARNING, "Khong du quyen", "Chi admin level 2 moi duoc tao admin level 1.");
+            showAlert(Alert.AlertType.WARNING, "Không đủ quyền", "Chỉ admin level 2 mới được tạo admin level 1.");
             return;
         }
 
@@ -228,7 +228,7 @@ public class AdminView implements Initializable {
         String fullName = newAdminFullNameField.getText().trim();
         String password = newAdminPasswordField.getText().trim();
         if (username.isEmpty() || email.isEmpty() || fullName.isEmpty() || password.isEmpty()) {
-            showAlert(Alert.AlertType.WARNING, "Thieu thong tin", "Vui long nhap day du thong tin admin level 1.");
+            showAlert(Alert.AlertType.WARNING, "Thiếu thông tin", "Vui lòng nhập đầy đủ thông tin admin level 1.");
             return;
         }
 
@@ -239,7 +239,7 @@ public class AdminView implements Initializable {
         req.addProperty("fullName", fullName);
         req.addProperty("password", password);
         sendRequest(req);
-        appendAuditRow("CREATE_ADMIN_LEVEL1", UserSession.getInstance().getUsername(), username, "Dang cho...");
+        appendAuditRow("CREATE_ADMIN_LEVEL1", UserSession.getInstance().getUsername(), username, "Đang chờ...");
     }
 
     // ==================== NAVIGATION ====================
@@ -312,7 +312,12 @@ public class AdminView implements Initializable {
         confirm.setTitle("Đăng xuất");
         confirm.setHeaderText("Bạn có chắc muốn đăng xuất?");
         confirm.showAndWait().ifPresent(btn -> {
-            if (btn == ButtonType.OK) { adminLoggedIn = false; Platform.exit(); }
+            if (btn == ButtonType.OK) {
+                adminLoggedIn = false;
+                NetworkClient.getInstance().setMessageHandler(null);
+                UserSession.getInstance().clear();
+                AppNavigator.navigate("Login.fxml");
+            }
         });
     }
 
@@ -437,9 +442,9 @@ public class AdminView implements Initializable {
 
     private Callback<TableColumn<PendingItemRow, Void>, TableCell<PendingItemRow, Void>> buildApprovalButtonColumn() {
         return param -> new TableCell<>() {
-            private final Button detailBtn = new Button("Chi tiet");
-            private final Button approveBtn = new Button("Duyet");
-            private final Button rejectBtn = new Button("Tu choi");
+            private final Button detailBtn = new Button("Chi tiết");
+            private final Button approveBtn = new Button("Duyệt");
+            private final Button rejectBtn = new Button("Từ chối");
             private final HBox actions = new HBox(8, detailBtn, approveBtn, rejectBtn);
             {
                 detailBtn.getStyleClass().add("btn-outline");
@@ -465,21 +470,21 @@ public class AdminView implements Initializable {
         JsonObject item = row.getItemJson();
         StringBuilder details = new StringBuilder();
         details.append("ID: ").append(row.getId()).append("\n");
-        details.append("San pham: ").append(row.getName()).append("\n");
-        details.append("Nguoi ban: ").append(row.getSeller()).append("\n");
-        details.append("Loai: ").append(row.getType()).append("\n");
-        details.append("Gia khoi diem: ").append(row.getPriceFormatted()).append("\n\n");
+        details.append("Sản phẩm: ").append(row.getName()).append("\n");
+        details.append("Người bán: ").append(row.getSeller()).append("\n");
+        details.append("Loại: ").append(row.getType()).append("\n");
+        details.append("Giá khởi điểm: ").append(row.getPriceFormatted()).append("\n\n");
         details.append(getStr(item, "description"));
 
-        showAlert(Alert.AlertType.INFORMATION, "Chi tiet san pham", details.toString());
+        showAlert(Alert.AlertType.INFORMATION, "Chi tiết sản phẩm", details.toString());
     }
 
     private void confirmApproveItem(PendingItemRow row) {
         if (row == null) return;
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-        confirm.setTitle("Duyet san pham");
+        confirm.setTitle("Duyệt sản phẩm");
         confirm.setHeaderText(row.getName());
-        confirm.setContentText("Duyet san pham nay de nguoi ban co the mo phien dau gia?");
+        confirm.setContentText("Duyệt sản phẩm này để người bán có thể mở phiên đấu giá?");
         confirm.showAndWait().ifPresent(btn -> {
             if (btn == ButtonType.OK) sendApproveItem(row.getId(), row.getName());
         });
@@ -488,9 +493,9 @@ public class AdminView implements Initializable {
     private void confirmRejectItem(PendingItemRow row) {
         if (row == null) return;
         TextInputDialog dialog = new TextInputDialog();
-        dialog.setTitle("Tu choi san pham");
+        dialog.setTitle("Từ chối sản phẩm");
         dialog.setHeaderText(row.getName());
-        dialog.setContentText("Ly do tu choi:");
+        dialog.setContentText("Lý do từ chối:");
         dialog.showAndWait().ifPresent(reason -> sendRejectItem(row.getId(), row.getName(), reason));
     }
 
@@ -880,27 +885,27 @@ public class AdminView implements Initializable {
     private void handleApprovalMutationReply(JsonObject res, String actionName) {
         String status = getStr(res, "status");
         if ("SUCCESS".equals(status)) {
-            showAlert(Alert.AlertType.INFORMATION, "Thanh cong", getStr(res, "message"));
+            showAlert(Alert.AlertType.INFORMATION, "Thành công", getStr(res, "message"));
             requestPendingItems();
         } else {
-            showAlert(Alert.AlertType.ERROR, "Loi", getStr(res, "message"));
+            showAlert(Alert.AlertType.ERROR, "Lỗi", getStr(res, "message"));
         }
-        updateLastAuditDetail(actionName, "Da xu ly: " + status);
+        updateLastAuditDetail(actionName, "Đã xử lý: " + status);
     }
 
     private void handleCreateAdminLevel1Reply(JsonObject res) {
         String status = getStr(res, "status");
         if ("SUCCESS".equals(status)) {
-            showAlert(Alert.AlertType.INFORMATION, "Thanh cong", getStr(res, "message"));
+            showAlert(Alert.AlertType.INFORMATION, "Thành công", getStr(res, "message"));
             newAdminUsernameField.clear();
             newAdminEmailField.clear();
             newAdminFullNameField.clear();
             newAdminPasswordField.clear();
             requestAllUsers();
         } else {
-            showAlert(Alert.AlertType.ERROR, "Loi", getStr(res, "message"));
+            showAlert(Alert.AlertType.ERROR, "Lỗi", getStr(res, "message"));
         }
-        updateLastAuditDetail("CREATE_ADMIN_LEVEL1", "Da xu ly: " + status);
+        updateLastAuditDetail("CREATE_ADMIN_LEVEL1", "Đã xử lý: " + status);
     }
 
     /**
@@ -1022,11 +1027,11 @@ public class AdminView implements Initializable {
                 "SUCCESS".equals(status) ? "OK " + message : "Lỗi: " + message);
 
         if ("SUCCESS".equals(status)) {
-            showAlert(Alert.AlertType.INFORMATION, "ThÃ nh cÃ´ng",
+            showAlert(Alert.AlertType.INFORMATION, "Thành công",
                     message.isEmpty() ? "Đã khóa tài khoản thành công!" : message);
             requestAllUsers();
         } else {
-            showAlert(Alert.AlertType.ERROR, "Lá»—i khÃ³a tÃ i khoáº£n",
+            showAlert(Alert.AlertType.ERROR, "Lỗi khóa tài khoản",
                     message.isEmpty() ? "Không thể khóa tài khoản." : message);
         }
     }
@@ -1078,6 +1083,14 @@ public class AdminView implements Initializable {
 
     private void handleError(JsonObject res) {
         String msg = getStr(res, "message");
+        if (msg.toLowerCase().contains("admin nay da bi khoa")) {
+            adminLoggedIn = false;
+            NetworkClient.getInstance().setMessageHandler(null);
+            UserSession.getInstance().clear();
+            showAlert(Alert.AlertType.ERROR, "Tài khoản bị khóa", "Tài khoản admin này đã bị khóa.");
+            AppNavigator.navigate("Login.fxml");
+            return;
+        }
         if (!msg.isEmpty()) showAlert(Alert.AlertType.ERROR, "Lỗi từ server", msg);
     }
 
@@ -1339,7 +1352,7 @@ public class AdminView implements Initializable {
         public String getSeller()         { return seller; }
         public String getType()           { return type; }
         public double getStartingPrice()  { return startingPrice; }
-        public String getPriceFormatted() { return String.format("VNÄ %,.0f", startingPrice); }
+        public String getPriceFormatted() { return String.format("VNĐ %,.0f", startingPrice); }
         public JsonObject getItemJson()   { return itemJson; }
     }
 
