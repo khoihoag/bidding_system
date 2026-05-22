@@ -12,12 +12,15 @@ import com.bidding.server.repository.UserRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class AdminService {
     private final AuctionService auctionService;
     private final UserRepository userRepository;
     private final AuctionRepository auctionRepository;
     private final ItemRepository itemRepository;
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    private static final Pattern PASSWORD_PATTERN = Pattern.compile("^(?=.*[A-Za-z])(?=.*\\d).{6,}$");
 
     public AdminService(UserRepository userRepository, AuctionService auctionService) {
         this(userRepository, auctionService, auctionService.getAuctionRepository(), new ItemRepository());
@@ -179,6 +182,14 @@ public class AdminService {
 
         String normalizedUsername = username.trim();
         String normalizedEmail = email.trim();
+        String normalizedPassword = password.trim();
+
+        if (!EMAIL_PATTERN.matcher(normalizedEmail).matches()) {
+            throw new RuntimeException("Email khong dung dinh dang.");
+        }
+        if (!PASSWORD_PATTERN.matcher(normalizedPassword).matches()) {
+            throw new RuntimeException("Mat khau phai co it nhat 6 ky tu, gom ca chu va so.");
+        }
 
         if (userRepository.findByUsername(normalizedUsername) != null) {
             throw new RuntimeException("Username da ton tai.");
@@ -187,7 +198,7 @@ public class AdminService {
             throw new RuntimeException("Email da ton tai.");
         }
 
-        Admin newAdmin = new Admin(null, normalizedUsername, normalizedEmail, password.trim(), fullName.trim(), 1);
+        Admin newAdmin = new Admin(null, normalizedUsername, normalizedEmail, normalizedPassword, fullName.trim(), 1);
         userRepository.saveOrUpdate(newAdmin);
         return newAdmin;
     }

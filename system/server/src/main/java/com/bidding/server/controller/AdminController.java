@@ -5,6 +5,7 @@ import com.bidding.server.model.transaction.BiddingTransactionEntity;
 import com.bidding.server.model.user.Admin;
 import com.bidding.server.model.user.User;
 import com.bidding.server.network.ClientHandler;
+import com.bidding.server.network.ClientManager;
 import com.bidding.server.service.AdminService;
 import com.bidding.server.service.AuctionService;
 import com.bidding.server.utils.ItemJsonMapper;
@@ -17,11 +18,13 @@ public class AdminController {
     private final ClientHandler client;
     private final AdminService adminService;
     private final AuctionService tongQuan;
+    private final ClientManager clientManager;
 
-    public AdminController(ClientHandler client, AdminService adminService, AuctionService tongQuan) {
+    public AdminController(ClientHandler client, AdminService adminService, AuctionService tongQuan, ClientManager clientManager) {
         this.client = client;
         this.adminService = adminService;
         this.tongQuan = tongQuan;
+        this.clientManager = clientManager;
     }
 
     public void handleGetAllUsers() {
@@ -60,6 +63,9 @@ public class AdminController {
 
             if (success) {
                 sendStatus("BAN_USER_REPLY", "SUCCESS", "Da khoa tai khoan thanh cong!");
+                if (clientManager != null) {
+                    clientManager.notifyUserAccountBanned(targetUserId);
+                }
                 System.out.println("[Admin] " + client.getLoggedInUser().getUsername() + " banned user ID: " + targetUserId);
             } else {
                 client.sendError("Khong tim thay nguoi dung co ID nay.");

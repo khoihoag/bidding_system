@@ -179,4 +179,19 @@ public class ClientManager implements AuctionObserver {
             }
         }
     }
+
+    public void notifyUserAccountBanned(String userId) {
+        if (userId == null || userId.isEmpty()) return;
+
+        JsonObject json = new JsonObject();
+        json.addProperty("action", "ACCOUNT_BANNED");
+        json.addProperty("message", "Tai khoan cua ban da bi admin khoa.");
+
+        for (ClientHandler client : activeClients) {
+            if (client.getLoggedInUser() != null && userId.equals(client.getLoggedInUser().getId())) {
+                client.setLoggedInUser(null);
+                client.sendMessage(json.toString());
+            }
+        }
+    }
 }

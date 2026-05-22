@@ -34,7 +34,7 @@ public class ClientHandler implements Runnable {
         this.authController = new AuthController(this, userService);
         this.itemController = new ItemController(this, itemService, auctionService);
         this.auctionController = new AuctionController(this, auctionService, itemService, clientManager, userService);
-        this.adminController = new AdminController(this, adminService, auctionService);
+        this.adminController = new AdminController(this, adminService, auctionService, clientManager);
     }
 
     @Override
