@@ -46,6 +46,10 @@ public class AuctionController {
 
             Item item = quanLyKho.findById(itemId);
             if (item == null) { client.sendError("Không tìm thấy sản phẩm này!"); return; }
+            if (!item.isApprovedForAuction()) {
+                client.sendError("San pham nay chua duoc admin duyet nen khong the mo phien dau gia.");
+                return;
+            }
 
             // ================= BỌC THÉP LỖI DỮ LIỆU RÁC =================
             if (item.getSellerId() == null || item.getSellerId().isEmpty()) {
@@ -85,6 +89,10 @@ public class AuctionController {
 
             Item item = quanLyKho.findById(itemId);
             if (item == null) { client.sendError("Không tìm thấy sản phẩm này!"); return; }
+            if (!item.isApprovedForAuction()) {
+                client.sendError("San pham nay chua duoc admin duyet nen khong the dat lich dau gia.");
+                return;
+            }
 
             // ================= BỌC THÉP LỖI DỮ LIỆU RÁC =================
             if (item.getSellerId() == null || item.getSellerId().isEmpty()) {
@@ -152,6 +160,7 @@ public class AuctionController {
                     itemObj.addProperty("description", item.getDescription());
                     itemObj.addProperty("sellerId", item.getSellerId());
                     itemObj.addProperty("sellerFullName", item.getSellerFullName());
+                    itemObj.addProperty("approvalStatus", item.getEffectiveApprovalStatus().name());
 
                     // Lấy mảng đường dẫn ảnh
                     if (item.getImages() != null && !item.getImages().isEmpty()) {
@@ -300,7 +309,7 @@ public class AuctionController {
     public void handleGetAuctionHistory(JsonObject request) {
         try {
             String auctionId = request.get("auctionId").getAsString();
-            Auction auction = tongQuan.getActiveAuctions().stream()
+            Auction auction = tongQuan.getAllAuctionsForDisplay().stream()
                     .filter(a -> a.getId().equals(auctionId))
                     .findFirst().orElse(null);
 
@@ -317,8 +326,20 @@ public class AuctionController {
                         .sorted((tx1, tx2) -> tx1.getBidTime().compareTo(tx2.getBidTime()))
                         .forEach(tx -> {
                             JsonObject point = new JsonObject();
+                            point.addProperty("auctionId", auctionId);
                             point.addProperty("timestamp", tx.getBidTime().toString());
                             point.addProperty("price", tx.getBidAmount());
+                            if (tx.getBidder() != null) {
+                                point.addProperty("bidderId", tx.getBidder().getId());
+                                point.addProperty("bidderName", tx.getBidder().getUsername());
+                                point.addProperty("bidderEmail", tx.getBidder().getEmail());
+                            } else {
+                                point.addProperty("bidderId", "---");
+                                point.addProperty("bidderName", "---");
+                                point.addProperty("bidderEmail", "---");
+                            }
+                            point.addProperty("isAuto", tx.isAutoBid());
+                            point.addProperty("status", tx.getStatus() != null ? tx.getStatus().name() : "UNKNOWN");
                             dataArray.add(point);
                         });
                 // ============================================================
@@ -326,6 +347,7 @@ public class AuctionController {
 
             JsonObject reply = new JsonObject();
             reply.addProperty("action", "AUCTION_HISTORY_REPLY");
+            reply.addProperty("auctionId", auctionId);
             reply.add("data", dataArray);
             client.sendMessage(reply.toString());
         } catch (Exception e) {

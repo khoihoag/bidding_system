@@ -1,5 +1,6 @@
 package com.bidding.server.repository;
 
+import com.bidding.server.enums.ItemApprovalStatus;
 import com.bidding.server.model.item.Item;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -48,6 +49,15 @@ public class ItemRepository {
         }
     }
     // Hàm lấy tất cả vật phẩm (Ví dụ để hiển thị lên trang chủ)
+    public List<Item> findByApprovalStatus(ItemApprovalStatus status) {
+        try (Session session = factory.openSession()) {
+            String hql = "FROM Item i WHERE i.approvalStatus = :status";
+            return session.createQuery(hql, Item.class)
+                    .setParameter("status", status)
+                    .list();
+        }
+    }
+
     public List<Item> findAll() {
         try (Session session = factory.openSession()) {
             return session.createQuery("FROM Item", Item.class).list();

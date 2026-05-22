@@ -1,5 +1,6 @@
 package com.bidding.server.service;
 
+import com.bidding.server.enums.ItemApprovalStatus;
 import com.bidding.server.model.item.Item;
 import com.bidding.server.model.user.User;
 import com.bidding.server.repository.ItemRepository;
@@ -17,6 +18,10 @@ public class ItemService {
     public Item createItem(User actor, Item requestItem) {
         requestItem.setSellerId(actor.getId());
         requestItem.setSellerFullName(actor.getFullName());
+        requestItem.setApprovalStatus(ItemApprovalStatus.PENDING);
+        requestItem.setReviewedByAdminId(null);
+        requestItem.setReviewedAt(null);
+        requestItem.setRejectionReason(null);
 
         itemRepository.saveOrUpdate(requestItem);
         return requestItem;
@@ -34,6 +39,10 @@ public class ItemService {
 
         existingItem.setName(updateData.getName());
         existingItem.setDescription(updateData.getDescription());
+        existingItem.setApprovalStatus(ItemApprovalStatus.PENDING);
+        existingItem.setReviewedByAdminId(null);
+        existingItem.setReviewedAt(null);
+        existingItem.setRejectionReason(null);
 
         itemRepository.saveOrUpdate(existingItem);
         return existingItem;

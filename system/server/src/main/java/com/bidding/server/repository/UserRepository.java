@@ -35,6 +35,24 @@ public class UserRepository {
         }
     }
 
+    public User findByUsername(String username) {
+        try (Session session = factory.openSession()) {
+            String hql = "FROM User WHERE username = :u";
+            Query<User> query = session.createQuery(hql, User.class);
+            query.setParameter("u", username);
+            return query.uniqueResult();
+        }
+    }
+
+    public User findByEmail(String email) {
+        try (Session session = factory.openSession()) {
+            String hql = "FROM User WHERE email = :e";
+            Query<User> query = session.createQuery(hql, User.class);
+            query.setParameter("e", email);
+            return query.uniqueResult();
+        }
+    }
+
     // ========================================================
     // VŨ KHÍ MỚI: TÌM USER ĐỂ LOGIN
     // ========================================================

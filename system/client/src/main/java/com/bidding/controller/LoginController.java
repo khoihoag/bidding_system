@@ -35,6 +35,7 @@ public class LoginController {
 
         loginButton.setDisable(true);
         errorLabel.setVisible(false);
+        UserSession.getInstance().clear();
 
         JsonObject request = new JsonObject();
         request.addProperty("action", "LOGIN");
@@ -77,6 +78,7 @@ public class LoginController {
         UserSession session = UserSession.getInstance();
         session.setUserId(response.has("myId") ? response.get("myId").getAsString() : "");
         session.setRole(response.has("role") ? response.get("role").getAsString() : "USER");
+        session.setAdminLevel(response.has("adminLevel") ? response.get("adminLevel").getAsInt() : 0);
         session.setUsername(usernameField.getText().trim());
         session.setBalance(response.has("balance") ? response.get("balance").getAsDouble() : 0.0);
 

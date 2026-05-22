@@ -2,6 +2,8 @@ package com.bidding.server.model.item;
 
 import java.util.List;
 import java.util.Map;
+import java.time.LocalDateTime;
+import com.bidding.server.enums.ItemApprovalStatus;
 import com.bidding.server.enums.ItemCondition;
 import com.bidding.server.model.core.Entity;
 import jakarta.persistence.*;
@@ -45,6 +47,19 @@ public abstract class Item extends Entity {
     @Column(name = "item_condition")
     private ItemCondition condition;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "approval_status")
+    private ItemApprovalStatus approvalStatus = ItemApprovalStatus.APPROVED;
+
+    @Column(name = "reviewed_by_admin_id")
+    private String reviewedByAdminId;
+
+    @Column(name = "reviewed_at")
+    private LocalDateTime reviewedAt;
+
+    @Column(name = "rejection_reason", columnDefinition = "TEXT")
+    private String rejectionReason;
+
     public Item() {
         super();
     }
@@ -61,6 +76,15 @@ public abstract class Item extends Entity {
         this.sellerId = sellerId;
         this.sellerFullName = sellerFullName;
         this.condition = condition;
+        this.approvalStatus = ItemApprovalStatus.APPROVED;
+    }
+
+    public ItemApprovalStatus getEffectiveApprovalStatus() {
+        return approvalStatus != null ? approvalStatus : ItemApprovalStatus.APPROVED;
+    }
+
+    public boolean isApprovedForAuction() {
+        return getEffectiveApprovalStatus() == ItemApprovalStatus.APPROVED;
     }
 
     public abstract String getCategory();

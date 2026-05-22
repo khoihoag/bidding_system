@@ -1,6 +1,7 @@
 package com.bidding.server.service;
 
 import com.bidding.server.enums.UserRole;
+import com.bidding.server.enums.ItemApprovalStatus;
 import com.bidding.server.model.item.Art;
 import com.bidding.server.model.item.Item;
 import com.bidding.server.model.user.User;
@@ -56,6 +57,7 @@ class ItemServiceTest {
 
         assertEquals(owner.getId(), result.getSellerId());
         assertEquals(owner.getFullName(), result.getSellerFullName());
+        assertEquals(ItemApprovalStatus.PENDING, result.getApprovalStatus());
         verify(itemRepository, times(1)).saveOrUpdate(requestItem);
     }
 

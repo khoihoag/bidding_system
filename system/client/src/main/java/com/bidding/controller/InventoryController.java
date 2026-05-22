@@ -311,7 +311,8 @@ public class InventoryController implements Initializable {
 
                             // Cất nguyên cục JSON vào kho RAM
                             itemDatabase.put(id, item);
-                            inventoryListView.getItems().add(id + " - " + name);
+                            String approvalStatus = item.has("approvalStatus") ? item.get("approvalStatus").getAsString() : "APPROVED";
+                            inventoryListView.getItems().add(id + " - " + name + " [" + approvalStatusLabel(approvalStatus) + "]");
                         }
                     } else {
                         inventoryListView.getItems().add("Kho đồ trống.");
@@ -322,7 +323,8 @@ public class InventoryController implements Initializable {
                 else if ("ADD_ITEM_REPLY".equals(action)) {
                     String status = response.has("status") ? response.get("status").getAsString() : "ERROR";
                     if ("SUCCESS".equals(status)) {
-                        showAlert(AlertType.INFORMATION, "Thành công", "Đã nhập đồ vào kho!");
+                        String msg = response.has("message") ? response.get("message").getAsString() : "Đã gửi sản phẩm và đang chờ admin duyệt.";
+                        showAlert(AlertType.INFORMATION, "Thành công", msg);
                         handleRefreshInventory();
                         // Clear form nhập đồ mới
                         txtNewName.clear(); txtNewPrice.clear(); txtNewDesc.clear();
@@ -385,6 +387,18 @@ public class InventoryController implements Initializable {
                 System.err.println("Lỗi parse JSON Inventory: " + e.getMessage());
             }
         });
+    }
+
+    private String approvalStatusLabel(String status) {
+        if (status == null || status.isEmpty()) {
+            return "Đã duyệt";
+        }
+        return switch (status) {
+            case "PENDING" -> "Chờ duyệt";
+            case "REJECTED" -> "Bị từ chối";
+            case "APPROVED" -> "Đã duyệt";
+            default -> status;
+        };
     }
 
     private void showAlert(AlertType type, String title, String content) {
@@ -467,8 +481,17 @@ public class InventoryController implements Initializable {
         Label lblDesc = new Label("Mô tả: " + (item.has("description") ? item.get("description").getAsString() : ""));
         lblDesc.setWrapText(true);
         lblDesc.setMaxWidth(480);
+        String approvalStatus = item.has("approvalStatus") ? item.get("approvalStatus").getAsString() : "APPROVED";
+        Label lblApproval = new Label("Trạng thái duyệt: " + approvalStatusLabel(approvalStatus));
+        lblApproval.setStyle("-fx-font-weight: bold; -fx-text-fill: #d4af37;");
 
-        vbox.getChildren().addAll(imgView, lblType, lblCondition, lblPrice, new Separator(), lblDesc);
+        vbox.getChildren().addAll(imgView, lblType, lblCondition, lblApproval, lblPrice, new Separator(), lblDesc);
+        if ("REJECTED".equals(approvalStatus) && item.has("rejectionReason") && !item.get("rejectionReason").isJsonNull()) {
+            Label lblRejectReason = new Label("Lý do từ chối: " + item.get("rejectionReason").getAsString());
+            lblRejectReason.setWrapText(true);
+            lblRejectReason.setStyle("-fx-text-fill: #ff6b6b;");
+            vbox.getChildren().add(lblRejectReason);
+        }
         // 3. TỰ ĐỘNG QUÉT VÀ VẼ THÔNG SỐ CHI TIẾT (Tác giả, Hãng xe, Kích thước...)
         if (item.has("specifications")) {
             JsonObject specs = item.getAsJsonObject("specifications");

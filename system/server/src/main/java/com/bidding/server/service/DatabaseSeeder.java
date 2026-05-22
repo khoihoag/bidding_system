@@ -5,6 +5,7 @@ import com.bidding.server.enums.UserRole;
 import com.bidding.server.model.item.Art;
 import com.bidding.server.model.item.Electronics;
 import com.bidding.server.model.item.Vehicle;
+import com.bidding.server.model.user.Admin;
 import com.bidding.server.model.user.User;
 import com.bidding.server.repository.ItemRepository;
 import com.bidding.server.repository.UserRepository;
@@ -24,7 +25,7 @@ public final class DatabaseSeeder {
             return;
         }
 
-        User admin = new User("admin-demo", "admin", "admin@bidviet.local", "admin123", "Quan tri vien", UserRole.ADMIN);
+        User admin = new Admin("admin-demo", "admin", "admin@bidviet.local", "admin123", "Quan tri vien", 2);
         admin.setBalance(10_000_000);
 
         User seller = new User("seller-demo", "seller", "seller@bidviet.local", "seller123", "Nguoi ban demo", UserRole.USER);

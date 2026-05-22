@@ -54,6 +54,8 @@ public class ItemController {
                 itemObj.addProperty("description", item.getDescription());
                 itemObj.addProperty("sellerId", item.getSellerId());
                 itemObj.addProperty("sellerFullName", item.getSellerFullName());
+                itemObj.addProperty("approvalStatus", item.getEffectiveApprovalStatus().name());
+                itemObj.addProperty("rejectionReason", item.getRejectionReason());
 
                 if (item.getImages() != null && !item.getImages().isEmpty()) {
                     com.google.gson.JsonArray imgArray = new com.google.gson.JsonArray();
@@ -141,7 +143,7 @@ public class ItemController {
             }
 
             quanLyKho.createItem(client.getLoggedInUser(), newItem);
-            client.sendMessage("{\"action\": \"ADD_ITEM_REPLY\", \"status\": \"SUCCESS\"}");
+            client.sendMessage("{\"action\": \"ADD_ITEM_REPLY\", \"status\": \"SUCCESS\", \"message\": \"San pham da duoc gui va dang cho admin duyet.\"}");
 
         } catch (Exception e) {
             client.sendError("Lỗi khi đăng bán vật phẩm: " + e.getMessage());
@@ -295,6 +297,8 @@ public class ItemController {
                 itemObj.addProperty("description", item.getDescription());
                 itemObj.addProperty("sellerId", item.getSellerId());
                 itemObj.addProperty("sellerFullName", item.getSellerFullName());
+                itemObj.addProperty("approvalStatus", item.getEffectiveApprovalStatus().name());
+                itemObj.addProperty("rejectionReason", item.getRejectionReason());
 
                 if (item.getImages() != null && !item.getImages().isEmpty()) {
                     com.google.gson.JsonArray imgArray = new com.google.gson.JsonArray();
