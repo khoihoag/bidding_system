@@ -125,6 +125,10 @@ public class MainController {
         if (json == null || !json.has("action")) return;
 
         String action = json.get("action").getAsString();
+        if ("ACCOUNT_BANNED".equals(action)) {
+            handleAccountBanned();
+            return;
+        }
         if (!"GLOBAL_NOTIFY".equals(action)) return;
 
         String message = json.has("message") && !json.get("message").isJsonNull()
@@ -132,6 +136,15 @@ public class MainController {
                 : "Có thông báo mới từ hệ thống.";
 
         addNotification(message, json);
+    }
+
+    private void handleAccountBanned() {
+        Platform.runLater(() -> {
+            NetworkClient.getInstance().removeGlobalMessageListener(notificationListener);
+            NetworkClient.getInstance().setMessageHandler(null);
+            UserSession.getInstance().clear();
+            AppNavigator.navigate("Login.fxml");
+        });
     }
 
     public void addNotification(String message) {

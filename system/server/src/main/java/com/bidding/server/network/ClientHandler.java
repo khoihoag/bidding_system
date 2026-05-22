@@ -36,7 +36,8 @@ public class ClientHandler implements Runnable {
         // Cấp phát vũ khí cho các đệ tử
         this.authController = new AuthController(this, baoVe);
         this.itemController = new ItemController(this, quanLyKho, tongQuan);
-        this.auctionController = new AuctionController(this, tongQuan, quanLyKho, loaPhuong, baoVe);        this.adminController = new AdminController(this, adminService, tongQuan);
+        this.auctionController = new AuctionController(this, tongQuan, quanLyKho, loaPhuong, baoVe);
+        this.adminController = new AdminController(this, adminService, tongQuan, loaPhuong);
     }
 
     @Override

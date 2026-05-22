@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.regex.Pattern;
 
 public class AdminView implements Initializable {
 
@@ -134,6 +135,8 @@ public class AdminView implements Initializable {
     private TableView<BidRow> bidHistoryTable;
     private Label bidHistorySummary;
     private String bidHistoryAuctionId;
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    private static final Pattern PASSWORD_PATTERN = Pattern.compile("^(?=.*[A-Za-z])(?=.*\\d).{6,}$");
 
     // ==================== INIT ====================
     @Override
@@ -229,6 +232,14 @@ public class AdminView implements Initializable {
         String password = newAdminPasswordField.getText().trim();
         if (username.isEmpty() || email.isEmpty() || fullName.isEmpty() || password.isEmpty()) {
             showAlert(Alert.AlertType.WARNING, "Thiếu thông tin", "Vui lòng nhập đầy đủ thông tin admin level 1.");
+            return;
+        }
+        if (!EMAIL_PATTERN.matcher(email).matches()) {
+            showAlert(Alert.AlertType.WARNING, "Email không hợp lệ", "Vui lòng nhập email đúng định dạng, ví dụ: admin1@example.com.");
+            return;
+        }
+        if (!PASSWORD_PATTERN.matcher(password).matches()) {
+            showAlert(Alert.AlertType.WARNING, "Mật khẩu không hợp lệ", "Mật khẩu phải có ít nhất 6 ký tự, gồm cả chữ và số.");
             return;
         }
 
@@ -805,6 +816,7 @@ public class AdminView implements Initializable {
             case "AUCTION_HISTORY_REPLY" -> handleAuctionHistoryReply(response);
             case "HISTORY_REPLY"     -> handleHistoryReply(response);
             case "GLOBAL_NOTIFY"     -> handleGlobalNotify(response);
+            case "ACCOUNT_BANNED"    -> handleAccountBanned();
             case "ERROR"             -> handleError(response);
         }
     }
@@ -1081,14 +1093,17 @@ public class AdminView implements Initializable {
         if (adminLoggedIn) requestAllAuctions();
     }
 
+    private void handleAccountBanned() {
+        adminLoggedIn = false;
+        NetworkClient.getInstance().setMessageHandler(null);
+        UserSession.getInstance().clear();
+        AppNavigator.navigate("Login.fxml");
+    }
+
     private void handleError(JsonObject res) {
         String msg = getStr(res, "message");
         if (msg.toLowerCase().contains("admin nay da bi khoa")) {
-            adminLoggedIn = false;
-            NetworkClient.getInstance().setMessageHandler(null);
-            UserSession.getInstance().clear();
-            showAlert(Alert.AlertType.ERROR, "Tài khoản bị khóa", "Tài khoản admin này đã bị khóa.");
-            AppNavigator.navigate("Login.fxml");
+            handleAccountBanned();
             return;
         }
         if (!msg.isEmpty()) showAlert(Alert.AlertType.ERROR, "Lỗi từ server", msg);
