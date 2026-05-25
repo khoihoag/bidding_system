@@ -7,10 +7,21 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Separator;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import com.google.gson.JsonObject;
 
 import java.io.IOException;
@@ -33,6 +44,9 @@ public class MainController {
     @FXML private Button btnDashboard;
     @FXML private Button btnInventory;
     @FXML private Button btnHistory;
+    @FXML private Button btnNotifications;
+    @FXML private Button btnSettings;
+    @FXML private Button btnLogout;
     @FXML
     private Label balanceLabel;
     @FXML
@@ -78,6 +92,28 @@ public class MainController {
     }
 
     @FXML
+    private void handleLogoutConfirm() {
+        setActiveMenu(btnLogout);
+
+        ButtonType logoutType = new ButtonType("Đăng xuất", ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelType = new ButtonType("Hủy", ButtonBar.ButtonData.CANCEL_CLOSE);
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "", logoutType, cancelType);
+        confirm.setTitle("Xác nhận đăng xuất");
+        confirm.setHeaderText("Bạn có chắc chắn muốn đăng xuất?");
+        confirm.setContentText("Phiên làm việc hiện tại sẽ kết thúc.");
+        confirm.setGraphic(null);
+        try {
+            confirm.getDialogPane().getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
+        } catch (Exception ignored) {
+        }
+
+        confirm.showAndWait().ifPresent(type -> {
+            if (type == logoutType) {
+                handleLogout();
+            }
+        });
+    }
+
     private void handleLogout() {
         // Xóa thông tin user và ngắt mạng hiện tại
         NetworkClient.getInstance().removeGlobalMessageListener(notificationListener);
@@ -97,6 +133,7 @@ public class MainController {
 
     @FXML
     private void handleViewNotificationDetail() {
+        setActiveMenu(btnNotifications);
         try {
             // Tải cái giao diện hòm thư Sotheby's mà anh em mình vừa tạo
             // (Sếp kiểm tra xem file Notifications.fxml của sếp nằm ở đâu thì sửa lại đường dẫn cho đúng nhé, ví dụ: "/fxml/Notifications.fxml")
@@ -111,6 +148,22 @@ public class MainController {
             System.err.println("Toang! Lỗi chuyển trang Thông Báo: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    @FXML
+    private void handleSettings() {
+        setActiveMenu(btnSettings);
+        VBox settingsView = buildSettingsView();
+        settingsView.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+
+        ScrollPane scrollPane = new ScrollPane(settingsView);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.getStyleClass().add("content-surface");
+
+        contentArea.getChildren().clear();
+        contentArea.getChildren().add(scrollPane);
+        StackPane.setAlignment(scrollPane, javafx.geometry.Pos.TOP_LEFT);
     }
 
     private void handleGlobalNotification(JsonObject json) {
@@ -147,13 +200,42 @@ public class MainController {
 
     private void setupNotificationList() {
         if (notificationListView == null) return;
+        notificationListView.setPlaceholder(new Label("Chưa có thông báo"));
         notificationListView.setCellFactory(list -> new javafx.scene.control.ListCell<>() {
             @Override
             protected void updateItem(NotificationEntry item, boolean empty) {
                 super.updateItem(item, empty);
-                setText(empty || item == null ? null : item.toString());
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                    return;
+                }
+
+                Label icon = new Label("✉");
+                icon.getStyleClass().add("sidebar-notification-icon");
+                StackPane iconWrap = new StackPane(icon);
+                iconWrap.getStyleClass().add("sidebar-notification-icon-wrap");
+
+                Label message = new Label(shortMessage(item.message()));
+                message.getStyleClass().add("sidebar-notification-message");
+
+                Label time = new Label(item.time() + " xem chi tiết");
+                time.getStyleClass().add("sidebar-notification-time");
+
+                javafx.scene.layout.VBox textBox = new javafx.scene.layout.VBox(1, message, time);
+                javafx.scene.layout.HBox row = new javafx.scene.layout.HBox(8, iconWrap, textBox);
+                row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+                setText(null);
+                setGraphic(row);
             }
         });
+    }
+
+    private String shortMessage(String message) {
+        if (message == null || message.isBlank()) {
+            return "Thông báo mới";
+        }
+        return message.length() > 18 ? message.substring(0, 18) + "..." : message;
     }
 
     private void showNotificationDetailDialog(String title, String content) {
@@ -170,7 +252,6 @@ public class MainController {
         alert.getDialogPane().setContent(detailArea);
         try {
             alert.getDialogPane().getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
-            alert.getDialogPane().setStyle("-fx-background-color: #05070a;");
         } catch (Exception e) {
             System.err.println("Lỗi load CSS cho dialog chi tiết thông báo!");
         }
@@ -202,10 +283,129 @@ public class MainController {
         btnDashboard.getStyleClass().remove("menu-btn-active");
         btnInventory.getStyleClass().remove("menu-btn-active");
         btnHistory.getStyleClass().remove("menu-btn-active");
+        if (btnNotifications != null) {
+            btnNotifications.getStyleClass().remove("menu-btn-active");
+        }
+        if (btnSettings != null) {
+            btnSettings.getStyleClass().remove("menu-btn-active");
+        }
+        if (btnLogout != null) {
+            btnLogout.getStyleClass().remove("menu-btn-active");
+        }
 
         if (activeBtn != null) {
             activeBtn.getStyleClass().add("menu-btn-active");
         }
+    }
+
+    private VBox buildSettingsView() {
+        VBox page = new VBox(22);
+        page.getStyleClass().add("settings-page");
+
+        Label title = new Label("Cài đặt tài khoản");
+        title.getStyleClass().add("settings-title");
+        Label subtitle = new Label("Quản lý thông tin cá nhân và bảo mật tài khoản của bạn.");
+        subtitle.getStyleClass().add("settings-subtitle");
+        VBox heading = new VBox(6, title, subtitle);
+
+        VBox card = new VBox(20);
+        card.getStyleClass().add("settings-card");
+
+        HBox personalTitle = settingsSectionTitle("/images/icons/user.png", "Thông tin cá nhân");
+
+        TextField nameField = new TextField(UserSession.getInstance().getUsername() != null
+                ? UserSession.getInstance().getUsername()
+                : "");
+        nameField.getStyleClass().add("settings-field");
+
+        TextField emailChangeField = new TextField();
+        emailChangeField.setPromptText("Nhập email mới");
+        emailChangeField.getStyleClass().add("settings-field");
+
+        TextField emailField = new TextField();
+        emailField.setText("Email không thể thay đổi");
+        emailField.setDisable(true);
+        emailField.getStyleClass().add("settings-field");
+
+        HBox infoRow = new HBox(14,
+                fieldBox("Đổi email", emailChangeField),
+                fieldBox("Email hiện tại", emailField)
+        );
+
+        HBox securityTitle = settingsSectionTitle("/images/icons/padlock.png", "Bảo mật & Mật khẩu");
+
+        PasswordField currentPassword = new PasswordField();
+        currentPassword.setPromptText("Nhập mật khẩu hiện tại");
+        currentPassword.getStyleClass().add("settings-field");
+        PasswordField newPassword = new PasswordField();
+        newPassword.setPromptText("Nhập mật khẩu mới");
+        newPassword.getStyleClass().add("settings-field");
+        PasswordField confirmPassword = new PasswordField();
+        confirmPassword.setPromptText("Nhập lại mật khẩu mới");
+        confirmPassword.getStyleClass().add("settings-field");
+
+        Button cancelBtn = new Button("Hủy");
+        cancelBtn.getStyleClass().add("settings-cancel-button");
+        cancelBtn.setOnAction(e -> handleDashboard());
+
+        Button saveBtn = new Button("Lưu thay đổi");
+        saveBtn.getStyleClass().add("settings-save-button");
+        saveBtn.setOnAction(e -> {
+            String username = nameField.getText().trim();
+            if (!username.isEmpty()) {
+                UserSession.getInstance().setUsername(username);
+                lblUsername.setText(username);
+            }
+        });
+
+        Region footerSpacer = new Region();
+        HBox.setHgrow(footerSpacer, javafx.scene.layout.Priority.ALWAYS);
+        HBox actions = new HBox(12, footerSpacer, cancelBtn, saveBtn);
+
+        card.getChildren().addAll(
+                personalTitle,
+                fieldBox("Họ và tên", nameField),
+                infoRow,
+                new Separator(),
+                securityTitle,
+                fieldBox("Mật khẩu hiện tại", currentPassword),
+                fieldBox("Mật khẩu mới", newPassword),
+                fieldBox("Xác nhận mật khẩu mới", confirmPassword),
+                new Separator(),
+                actions
+        );
+
+        page.getChildren().addAll(heading, card);
+        return page;
+    }
+
+    private VBox fieldBox(String labelText, TextField field) {
+        Label label = new Label(labelText);
+        label.getStyleClass().add("settings-field-label");
+        VBox box = new VBox(7, label, field);
+        box.setMinWidth(260);
+        HBox.setHgrow(box, javafx.scene.layout.Priority.ALWAYS);
+        return box;
+    }
+
+    private HBox settingsSectionTitle(String iconPath, String text) {
+        Label label = new Label(text);
+        label.getStyleClass().add("settings-section-title");
+        HBox title = new HBox(9, iconView(iconPath, 16), label);
+        title.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        return title;
+    }
+
+    private ImageView iconView(String iconPath, double size) {
+        ImageView icon = new ImageView();
+        try {
+            icon.setImage(new Image(getClass().getResourceAsStream(iconPath)));
+        } catch (Exception ignored) {
+        }
+        icon.setFitWidth(size);
+        icon.setFitHeight(size);
+        icon.setPreserveRatio(true);
+        return icon;
     }
     @FXML
     private void handleOpenDeposit() {
@@ -216,7 +416,6 @@ public class MainController {
         dialog.setContentText("Số tiền (VNĐ):");
         try {
             dialog.getDialogPane().getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
-            dialog.getDialogPane().setStyle("-fx-background-color: #05070a;");
 
             // Xóa cái icon dấu chấm hỏi màu xanh dương mặc định cho nó ngầu
             dialog.setGraphic(null);

@@ -2,48 +2,113 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
+<?import javafx.scene.image.*?>
+<?import java.lang.String?>
 
 <BorderPane xmlns="http://javafx.com/javafx/21"
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.bidding.controller.MainController"
             stylesheets="@../css/style.css"
-            styleClass="root">
+            styleClass="app-root"
+            prefWidth="1366"
+            prefHeight="768">
 
-    <top>
-        <VBox style="-fx-background-color: #FFFFFF; -fx-border-color: #E5E7EB; -fx-border-width: 0 0 1 0;">
-            <HBox alignment="CENTER_LEFT" spacing="40" style="-fx-padding: 15 40;">
+    <left>
+        <VBox minWidth="220" prefWidth="220" maxWidth="220" spacing="18" styleClass="sidebar">
+            <padding>
+                <Insets top="26" right="12" bottom="10" left="12"/>
+            </padding>
 
-                <Label text="BidVault." style="-fx-font-family: 'Georgia', 'Times New Roman', serif; -fx-font-size: 32px; -fx-text-fill: #111111;"/>
-
-                <Region HBox.hgrow="ALWAYS"/>
-
-                <HBox alignment="CENTER" spacing="35">
-                    <Button fx:id="btnDashboard" text="SẢNH ĐẤU GIÁ" onAction="#handleDashboard" styleClass="top-nav-btn"/>
-                    <Button fx:id="btnInventory" text="KHO ĐỒ &amp; ĐĂNG BÁN" onAction="#handleInventory" styleClass="top-nav-btn"/>
-                    <Button fx:id="btnHistory" text="LỊCH SỬ ĐẶT GIÁ" onAction="#handleHistory" styleClass="top-nav-btn"/>
-                    <Button text="THÔNG BÁO" onAction="#handleViewNotificationDetail" styleClass="top-nav-btn"/>
-                </HBox>
-
-                <Region HBox.hgrow="ALWAYS"/>
-
-                <VBox alignment="CENTER_RIGHT" spacing="5">
-                    <HBox alignment="CENTER_RIGHT" spacing="5">
-                        <Label text="Xin chào," style="-fx-font-size: 13px; -fx-text-fill: #6B7280;"/>
-                        <Label fx:id="lblUsername" text="User" style="-fx-font-size: 13px; -fx-text-fill: #111111; -fx-font-weight: bold;"/>
-                    </HBox>
-                    <HBox alignment="CENTER_RIGHT" spacing="15">
-                        <Label fx:id="balanceLabel" text="0 đ" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #111111;"/>
-                        <Button text="Nạp tiền" onAction="#handleOpenDeposit" styleClass="secondary-button" style="-fx-padding: 4 10; -fx-font-size: 11px;"/>
-                    </HBox>
-                    <Button text="Đăng xuất" onAction="#handleLogout" styleClass="logout-btn"/>
-                </VBox>
+            <HBox alignment="CENTER_LEFT" spacing="8" styleClass="sidebar-brand-row">
+                <StackPane styleClass="sidebar-logo-box">
+                    <Label text="◇" style="-fx-font-size: 20px; -fx-text-fill: #ffffff;"/>
+                </StackPane>
+                <Label text="BidVault" styleClass="sidebar-brand"/>
             </HBox>
+
+            <VBox alignment="CENTER" spacing="4" visible="false" managed="false">
+                <Label text="Xin chào," style="-fx-font-size: 13px; -fx-text-fill: #111827;"/>
+                <Label fx:id="lblUsername" text="User" style="-fx-font-size: 14px; -fx-text-fill: #111827; -fx-font-weight: 800;"/>
+                <Label fx:id="balanceLabel" text="Số dư: 0 ₫" style="-fx-font-size: 15px; -fx-text-fill: #111827; -fx-font-weight: 800;"/>
+            </VBox>
+
+            <Region minHeight="10"/>
+
+            <VBox spacing="10" styleClass="sidebar-menu">
+                <Button fx:id="btnDashboard" text="Sảnh Đấu Giá" onAction="#handleDashboard" maxWidth="Infinity" styleClass="menu-button">
+                    <graphic>
+                        <ImageView fitWidth="16" fitHeight="16" preserveRatio="true">
+                            <image><Image url="@../images/icons/auction.png"/></image>
+                        </ImageView>
+                    </graphic>
+                </Button>
+                <Button fx:id="btnInventory" text="Kho Đồ &amp; Đăng Bán" onAction="#handleInventory" maxWidth="Infinity" styleClass="menu-button">
+                    <graphic>
+                        <ImageView fitWidth="16" fitHeight="16" preserveRatio="true">
+                            <image><Image url="@../images/icons/inventory.png"/></image>
+                        </ImageView>
+                    </graphic>
+                </Button>
+                <Button fx:id="btnHistory" text="Lịch Sử Đặt Giá" onAction="#handleHistory" maxWidth="Infinity" styleClass="menu-button">
+                    <graphic>
+                        <ImageView fitWidth="16" fitHeight="16" preserveRatio="true">
+                            <image><Image url="@../images/icons/history.png"/></image>
+                        </ImageView>
+                    </graphic>
+                </Button>
+                <Button fx:id="btnNotifications" text="Thông báo" onAction="#handleViewNotificationDetail" maxWidth="Infinity" styleClass="menu-button">
+                    <graphic>
+                        <ImageView fitWidth="16" fitHeight="16" preserveRatio="true">
+                            <image><Image url="@../images/icons/notification.png"/></image>
+                        </ImageView>
+                    </graphic>
+                </Button>
+            </VBox>
+
+            <Button text="Nạp tiền" onAction="#handleOpenDeposit" maxWidth="Infinity" styleClass="deposit-button"/>
+
+            <Region VBox.vgrow="ALWAYS"/>
+
+            <VBox spacing="8" styleClass="sidebar-notification-card">
+                <HBox alignment="CENTER_LEFT" spacing="8">
+                    <ImageView fitWidth="16" fitHeight="16" preserveRatio="true">
+                        <image><Image url="@../images/icons/notification.png"/></image>
+                    </ImageView>
+                    <Label text="Thông báo" styleClass="sidebar-notification-title"/>
+                </HBox>
+                <ListView fx:id="notificationListView" prefHeight="82" maxHeight="82" styleClass="sidebar-notification-list"/>
+                <Button text="Xem chi tiết" onAction="#handleViewNotificationDetail" maxWidth="Infinity" styleClass="sidebar-detail-button"/>
+            </VBox>
+
+            <VBox spacing="8" styleClass="sidebar-footer-menu">
+                <Button fx:id="btnSettings" text="Cài đặt" onAction="#handleSettings" maxWidth="Infinity">
+                    <styleClass>
+                        <String fx:value="menu-button"/>
+                        <String fx:value="sidebar-footer-button"/>
+                    </styleClass>
+                    <graphic>
+                        <ImageView fitWidth="16" fitHeight="16" preserveRatio="true">
+                            <image><Image url="@../images/icons/setting.png"/></image>
+                        </ImageView>
+                    </graphic>
+                </Button>
+                <Button fx:id="btnLogout" text="Đăng xuất" onAction="#handleLogoutConfirm" maxWidth="Infinity">
+                    <styleClass>
+                        <String fx:value="menu-button"/>
+                        <String fx:value="sidebar-footer-button"/>
+                    </styleClass>
+                    <graphic>
+                        <ImageView fitWidth="16" fitHeight="16" preserveRatio="true">
+                            <image><Image url="@../images/icons/logout.png"/></image>
+                        </ImageView>
+                    </graphic>
+                </Button>
+            </VBox>
         </VBox>
-    </top>
+    </left>
 
     <center>
-        <StackPane fx:id="contentArea" style="-fx-background-color: #FFFFFF;">
-        </StackPane>
+        <StackPane fx:id="contentArea" styleClass="content-surface"/>
     </center>
 
 </BorderPane>

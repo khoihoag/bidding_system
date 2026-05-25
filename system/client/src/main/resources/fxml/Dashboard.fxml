@@ -4,61 +4,58 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.image.*?>
 
-<ScrollPane fitToWidth="true" hbarPolicy="NEVER" style="-fx-background-color: #FFFFFF;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.bidding.controller.DashboardController">
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.bidding.controller.DashboardController"
+            stylesheets="@../css/style.css"
+            styleClass="content-surface">
 
-    <VBox spacing="35" style="-fx-background-color: #FFFFFF; -fx-padding: 40;" maxWidth="Infinity">
+    <top>
+        <HBox alignment="CENTER_LEFT" prefHeight="64" minHeight="64" maxHeight="64" styleClass="dashboard-header">
+            <padding>
+                <Insets top="0" right="24" bottom="0" left="24"/>
+            </padding>
 
-        <HBox alignment="CENTER_LEFT">
-            <VBox spacing="8">
-                <Label text="SẢNH ĐẤU GIÁ" style="-fx-font-family: 'Georgia', 'Times New Roman', serif; -fx-font-size: 28px; -fx-text-fill: #111111; -fx-font-weight: normal;"/>
-                <Label text="Các phiên đấu giá nghệ thuật &amp; xa xỉ phẩm toàn cầu" style="-fx-font-size: 14px; -fx-text-fill: #6B7280;"/>
-            </VBox>
+            <Label text="Sảnh Đấu Giá" styleClass="page-title"/>
             <Region HBox.hgrow="ALWAYS"/>
-        </HBox>
 
-        <StackPane fx:id="heroStackPane"
-                   prefHeight="550" minHeight="550" maxHeight="550"
-                   maxWidth="Infinity"
-                   style="-fx-background-color: #111111;">
-
-            <ImageView fx:id="carouselImageView"
-                       preserveRatio="false"
-                       smooth="true"
-                       fitWidth="1366"
-                       fitHeight="550" />
-
-            <Region style="-fx-background-color: rgba(0,0,0,0.3);" />
-
-            <AnchorPane>
-                <VBox alignment="CENTER_LEFT" spacing="20" AnchorPane.bottomAnchor="80" AnchorPane.leftAnchor="60">
-                    <Label fx:id="lblCarouselTitle" text="Contemporary Art Auction"
-                           style="-fx-font-family: 'Georgia'; -fx-font-size: 42px; -fx-text-fill: #FFFFFF; -fx-font-weight: bold;"/>
-                    <Label fx:id="lblCarouselDesc" text="Khám phá những kiệt tác thế kỉ"
-                           style="-fx-font-size: 18px; -fx-text-fill: #E5E7EB; -fx-max-width: 500;" wrapText="true"/>
-
+            <HBox alignment="CENTER" spacing="0" styleClass="dashboard-header-actions">
+                <VBox alignment="CENTER_LEFT" spacing="2" prefWidth="170" minWidth="170" styleClass="dashboard-balance-box">
+                    <Label text="Số dư hiện tại" styleClass="dashboard-balance-caption"/>
+                    <Label fx:id="dashboardBalanceLabel" text="0 đ" styleClass="dashboard-balance-value"/>
                 </VBox>
 
-                <Button text="‹" onAction="#handlePrevSlide" AnchorPane.leftAnchor="10" AnchorPane.topAnchor="250"
-                        style="-fx-background-color: transparent; -fx-text-fill: #FFFFFF; -fx-font-size: 40px; -fx-cursor: hand;"/>
-                <Button text="›" onAction="#handleNextSlide" AnchorPane.rightAnchor="10" AnchorPane.topAnchor="250"
-                        style="-fx-background-color: transparent; -fx-text-fill: #FFFFFF; -fx-font-size: 40px; -fx-cursor: hand;"/>
-
-                <HBox fx:id="carouselDots" alignment="CENTER" spacing="10" AnchorPane.bottomAnchor="30" AnchorPane.leftAnchor="0" AnchorPane.rightAnchor="0" />
-            </AnchorPane>
-        </StackPane>
-
-        <HBox alignment="CENTER_LEFT" spacing="20">
-            <TextField fx:id="auctionSearchField"
-                       promptText="Tìm kiếm tác phẩm, mã phiên, người bán..."
-                       onAction="#handleAuctionSearch"
-                       styleClass="input-field"
-                       style="-fx-font-size: 15px; -fx-padding: 10 0; -fx-border-width: 0 0 1 0; -fx-border-color: #D1D5DB; -fx-background-color: transparent; -fx-border-radius: 0;"
-                       prefWidth="500"
-                       HBox.hgrow="ALWAYS"/>
-            <Button text="XÓA LỌC" onAction="#clearAuctionSearch" styleClass="secondary-button" style="-fx-border-width: 0; -fx-font-weight: bold;"/>
+                <HBox alignment="CENTER_LEFT" fillHeight="false" spacing="12" prefWidth="220" minWidth="220" styleClass="dashboard-user-panel">
+                    <StackPane styleClass="avatar-circle dashboard-avatar">
+                        <ImageView fitWidth="20" fitHeight="20" preserveRatio="true">
+                            <image><Image url="@../images/icons/user.png"/></image>
+                        </ImageView>
+                    </StackPane>
+                    <VBox spacing="1" HBox.hgrow="ALWAYS">
+                        <Label fx:id="dashboardUsernameLabel" text="Người info" styleClass="dashboard-user-name"/>
+                        <Label fx:id="dashboardHandleLabel" text="owaycwhmanh" styleClass="dashboard-user-handle"/>
+                    </VBox>
+                </HBox>
+            </HBox>
         </HBox>
+    </top>
 
-        <VBox fx:id="auctionContainer" spacing="30"/>
+    <center>
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="content-surface">
+            <VBox spacing="24" styleClass="dashboard-body">
+                <HBox alignment="CENTER_LEFT" spacing="12" styleClass="dashboard-search-row">
+                    <StackPane HBox.hgrow="ALWAYS">
+                        <TextField fx:id="auctionSearchField"
+                                   promptText="Tìm theo tên sản phẩm, mã phiên, loại, người bán..."
+                                   onAction="#handleAuctionSearch"
+                                   styleClass="dashboard-search-field"/>
+                        <Label text="⌕" styleClass="dashboard-search-icon" mouseTransparent="true" StackPane.alignment="CENTER_LEFT"/>
+                    </StackPane>
+                    <Button text="Xóa lọc" onAction="#clearAuctionSearch" styleClass="filter-clear-button"/>
+                </HBox>
 
-    </VBox>
-</ScrollPane>
+                <VBox fx:id="auctionContainer" spacing="22"/>
+            </VBox>
+        </ScrollPane>
+    </center>
+</BorderPane>

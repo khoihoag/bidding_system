@@ -4,60 +4,91 @@
 <?import javafx.scene.chart.*?>
 <?import javafx.scene.image.*?>
 
-<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.bidding.controller.AuctionDetailController" style="-fx-background-color: #FFFFFF;" prefWidth="1200" prefHeight="750">
-
-    <top>
-        <HBox alignment="CENTER_LEFT" spacing="20" style="-fx-padding: 20 40; -fx-border-color: #E5E7EB; -fx-border-width: 0 0 1 0; -fx-background-color: #FFFFFF;">
-            <Button text="← QUAY LẠI" onAction="#handleBack" styleClass="secondary-button" style="-fx-border-width: 0; -fx-font-weight: bold; -fx-font-size: 12px; -fx-letter-spacing: 1px;"/>
-            <Region HBox.hgrow="ALWAYS"/>
-            <VBox alignment="CENTER_RIGHT">
-                <Label fx:id="headerAuctionId" text="ID: ..." style="-fx-font-size: 12px; -fx-text-fill: #6B7280;"/>
-                <Label fx:id="statusBadgeHeader" text="ĐANG DIỄN RA" style="-fx-text-fill: #111111; -fx-font-weight: bold; -fx-font-size: 11px; -fx-border-color: #111111; -fx-border-width: 1; -fx-padding: 5 15; -fx-letter-spacing: 1px;"/>
-            </VBox>
-        </HBox>
-    </top>
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.bidding.controller.AuctionDetailController"
+            stylesheets="@../css/style.css"
+            styleClass="content-surface"
+            prefWidth="1200"
+            prefHeight="750">
 
     <center>
         <StackPane>
 
-            <ScrollPane fx:id="showcaseView" fitToWidth="true" style="-fx-background-color: transparent; -fx-background: #FFFFFF;">
-                <HBox spacing="60" style="-fx-padding: 40 60;">
-
-                    <VBox HBox.hgrow="ALWAYS" spacing="30" maxWidth="750">
-                        <StackPane style="-fx-background-color: #F9FAFB; -fx-padding: 30; -fx-border-color: #E5E7EB; -fx-border-width: 1;">
-                            <ImageView fx:id="showcaseImageView" fitWidth="600" fitHeight="450" preserveRatio="true" smooth="true"/>
-                        </StackPane>
-
-                        <VBox spacing="15">
-                            <Label text="Giới thiệu tác phẩm" style="-fx-font-family: 'Georgia', 'Times New Roman', serif; -fx-font-size: 24px; -fx-text-fill: #111111;"/>
-                            <Label fx:id="showcaseDescLabel" wrapText="true" style="-fx-font-size: 16px; -fx-text-fill: #4B5563; -fx-line-spacing: 8px;"/>
+            <ScrollPane fx:id="showcaseView" fitToWidth="true" hbarPolicy="NEVER" styleClass="content-surface">
+                <VBox spacing="24" styleClass="auction-detail-page">
+                    <HBox alignment="CENTER_LEFT" spacing="20" styleClass="auction-detail-action-header">
+                        <VBox spacing="8">
+                            <Button text="← Quay lại" onAction="#handleBack" styleClass="auction-detail-back-button"/>
+                            <Label text="Trang chủ  ›  Sảnh đấu giá  ›  Chi tiết phiên" styleClass="auction-detail-breadcrumb"/>
                         </VBox>
-                        <VBox fx:id="showcaseSpecsBox" spacing="10" style="-fx-border-color: #E5E7EB; -fx-border-width: 1 0 0 0; -fx-padding: 20 0 0 0;"/>
-                    </VBox>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <HBox alignment="CENTER_RIGHT" spacing="12" styleClass="auction-detail-status-wrap">
+                            <Label fx:id="statusBadgeHeader" text="ĐANG DIỄN RA" styleClass="auction-detail-status-badge"/>
+                            <Label fx:id="headerAuctionId" text="ID: ..." styleClass="auction-detail-id-label"/>
+                        </HBox>
+                    </HBox>
 
-                    <VBox minWidth="380" maxWidth="450" spacing="30">
-                        <Label fx:id="showcaseNameLabel" wrapText="true" text="Đang tải..." style="-fx-font-family: 'Georgia', 'Times New Roman', serif; -fx-font-size: 38px; -fx-text-fill: #111111;"/>
-
-                        <Separator style="-fx-border-color: #E5E7EB; -fx-border-width: 1 0 0 0;"/>
-
-                        <VBox spacing="5">
-                            <Label text="Lô đóng cửa (Còn lại)" style="-fx-font-size: 12px; -fx-text-fill: #6B7280; -fx-font-weight: bold;"/>
-                            <Label fx:id="showcaseTimeLabel" text="--:--:--" style="-fx-font-size: 16px; -fx-text-fill: #D10000; -fx-font-weight: bold;"/>
+                    <HBox spacing="24" alignment="TOP_LEFT">
+                        <VBox spacing="18" HBox.hgrow="ALWAYS" styleClass="auction-detail-media-column">
+                            <VBox spacing="16" styleClass="auction-detail-image-card">
+                                <StackPane styleClass="auction-detail-image-frame">
+                                    <ImageView fx:id="showcaseImageView" fitWidth="620" fitHeight="465" preserveRatio="true" smooth="true"/>
+                                </StackPane>
+                                <HBox spacing="12">
+                                    <StackPane styleClass="auction-detail-thumb-active">
+                                        <Label text="1" styleClass="auction-detail-thumb-label"/>
+                                    </StackPane>
+                                    <StackPane styleClass="auction-detail-thumb-muted">
+                                        <Label text="+" styleClass="auction-detail-thumb-label"/>
+                                    </StackPane>
+                                </HBox>
+                            </VBox>
                         </VBox>
 
-                        <VBox spacing="5">
-                            <Label text="Giá thầu hiện tại" style="-fx-font-size: 12px; -fx-text-fill: #6B7280; -fx-font-weight: bold;"/>
-                            <Label fx:id="showcasePriceLabel" text="0 ₫" style="-fx-font-family: 'Georgia', 'Times New Roman', serif; -fx-font-size: 42px; -fx-text-fill: #111111;"/>
-                            <Label fx:id="showcaseWinnerLabel" text="---" style="-fx-font-size: 13px; -fx-text-fill: #6B7280;"/>
-                        </VBox>
+                        <VBox spacing="20" minWidth="430" prefWidth="500" maxWidth="540">
+                            <VBox spacing="18" styleClass="auction-detail-info-card">
+                                <Label fx:id="showcaseNameLabel" wrapText="true" text="Đang tải..." styleClass="auction-detail-title"/>
 
-                        <VBox spacing="12">
-                            <Button text="THAM GIA ĐẤU THẦU" onAction="#handleEnterTradingRoom" style="-fx-background-color: #111111; -fx-text-fill: #FFFFFF; -fx-font-weight: bold; -fx-font-size: 14px; -fx-padding: 18; -fx-cursor: hand;" maxWidth="Infinity"/>
+                                <HBox alignment="CENTER_LEFT" spacing="24" styleClass="auction-detail-price-row">
+                                    <VBox spacing="6" HBox.hgrow="ALWAYS">
+                                        <Label text="Giá thầu hiện tại" styleClass="auction-detail-caption"/>
+                                        <Label fx:id="showcasePriceLabel" text="0 ₫" styleClass="auction-detail-price"/>
+                                    </VBox>
+                                    <VBox spacing="6" alignment="CENTER_RIGHT">
+                                        <Label text="Thời gian còn lại" styleClass="auction-detail-caption"/>
+                                        <Label fx:id="showcaseTimeLabel" text="--:--:--" styleClass="auction-detail-time"/>
+                                    </VBox>
+                                </HBox>
 
-                            <Button fx:id="btnFollow" text="♡ THEO DÕI PHIÊN NÀY" onAction="#handleFollowAuction" style="-fx-background-color: #FFFFFF; -fx-text-fill: #111111; -fx-border-color: #111111; -fx-border-width: 1; -fx-font-weight: bold; -fx-font-size: 13px; -fx-padding: 14; -fx-cursor: hand;" maxWidth="Infinity"/>
+                                <HBox alignment="CENTER_LEFT" spacing="14">
+                                    <StackPane styleClass="auction-detail-user-dot">
+                                        <Label text="👤" style="-fx-font-size: 16px;"/>
+                                    </StackPane>
+                                    <VBox spacing="3" HBox.hgrow="ALWAYS">
+                                        <Label text="Người dẫn đầu" styleClass="auction-detail-caption"/>
+                                        <Label fx:id="showcaseWinnerLabel" text="---" styleClass="auction-detail-winner"/>
+                                    </VBox>
+                                </HBox>
+
+                                <HBox spacing="12" alignment="CENTER_LEFT">
+                                    <Button text="Đấu giá" onAction="#handleEnterTradingRoom" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="auction-detail-bid-button"/>
+                                    <Button fx:id="btnFollow" text="♡ Theo dõi" onAction="#handleFollowAuction" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="auction-detail-follow-button"/>
+                                </HBox>
+                            </VBox>
+
+                            <VBox spacing="10" styleClass="auction-detail-info-card">
+                                <Label text="Mô tả phiên đấu giá" styleClass="auction-detail-card-heading"/>
+                                <Label fx:id="showcaseDescLabel" wrapText="true" styleClass="auction-detail-description"/>
+                            </VBox>
+
+                            <VBox spacing="10" styleClass="auction-detail-info-card">
+                                <Label text="Thông số chi tiết" styleClass="auction-detail-card-heading"/>
+                                <VBox fx:id="showcaseSpecsBox" spacing="8" styleClass="auction-detail-specs"/>
+                            </VBox>
                         </VBox>
-                    </VBox>
-                </HBox>
+                    </HBox>
+                </VBox>
             </ScrollPane>
 
 

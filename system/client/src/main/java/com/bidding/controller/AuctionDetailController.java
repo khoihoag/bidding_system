@@ -146,11 +146,6 @@ public class AuctionDetailController {
         // 3. Khôi phục toàn bộ thông số chi tiết (Loại, Tình trạng, Thuộc tính riêng)
         showcaseSpecsBox.getChildren().clear();
 
-        // Tiêu đề nhỏ phân khu
-        Label specTitle = new Label("THÔNG SỐ CHI TIẾT");
-        specTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: #111111; -fx-padding: 0 0 10 0;");
-        showcaseSpecsBox.getChildren().add(specTitle);
-
         // -- Thêm Loại --
         String type = item.has("type") && !item.get("type").isJsonNull() ? item.get("type").getAsString() : "Khác";
         addSpecRow("Phân loại", type);
@@ -220,8 +215,10 @@ public class AuctionDetailController {
         com.bidding.network.NetworkClient.getInstance().sendJson(request);
 
         // Đổi giao diện nút thành "Đã Theo Dõi" và khóa lại cho ngầu
-        btnFollow.setText("♥ ĐÃ THEO DÕI");
-        btnFollow.setStyle("-fx-background-color: #F9FAFB; -fx-text-fill: #111111; -fx-border-color: #D1D5DB; -fx-border-width: 1; -fx-font-weight: bold; -fx-font-size: 13px; -fx-padding: 14;");
+        btnFollow.setText("♥ Đã theo dõi");
+        btnFollow.setStyle("");
+        btnFollow.getStyleClass().remove("auction-detail-follow-button");
+        btnFollow.getStyleClass().add("auction-detail-followed-button");
         btnFollow.setDisable(true);
     }
 }

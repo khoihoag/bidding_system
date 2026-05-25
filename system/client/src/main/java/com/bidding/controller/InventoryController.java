@@ -21,8 +21,10 @@ public class InventoryController implements Initializable {
     @FXML private javafx.scene.control.CheckBox chkReverseNow, chkReverseSchedule;
     @FXML private javafx.scene.control.TextField txtDropStepNow, txtDropStepSchedule;
     @FXML private FlowPane wonItemsGrid;
+    @FXML private Button btnViewSelectedItem;
     // Kho RAM lưu trọn bộ JSON của từng món đồ (để làm Popup)
     private final java.util.Map<String, JsonObject> itemDatabase = new java.util.HashMap<>();
+    private String selectedItemId;
     @FXML private FlowPane inventoryGrid;
     @FXML private TextField txtItemIdSchedule, txtStartTime, txtEndTime;
     // --- Tab Bán Ngay ---
@@ -296,6 +298,9 @@ public class InventoryController implements Initializable {
                 if ("ITEMS_LIST".equals(action)) {
                     inventoryGrid.getChildren().clear(); // Xóa sạch lưới cũ
                     itemDatabase.clear();
+                    selectedItemId = null;
+                    if (txtItemIdNow != null) txtItemIdNow.clear();
+                    if (txtItemIdSchedule != null) txtItemIdSchedule.clear();
 
                     if (response.has("items")) {
                         for (JsonElement elem : response.getAsJsonArray("items")) {
@@ -393,7 +398,6 @@ public class InventoryController implements Initializable {
         // ================= ÉP CSS HOÀNG GIA CHO ALERT =================
         try {
             alert.getDialogPane().getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
-            alert.getDialogPane().setStyle("-fx-background-color: #05070a;");
         } catch (Exception e) {
             System.err.println("Không load được CSS cho Alert!");
         }
@@ -420,6 +424,15 @@ public class InventoryController implements Initializable {
             }
         });
     }
+    @FXML
+    private void handleViewSelectedItem() {
+        if (selectedItemId == null || selectedItemId.isBlank()) {
+            showAlert(AlertType.INFORMATION, "Chưa chọn vật phẩm", "Vui lòng chọn một vật phẩm trong kho trước.");
+            return;
+        }
+        handleViewDetailsById(selectedItemId);
+    }
+
     @FXML
     private void handleViewDetailsById(String id) {
         JsonObject item = itemDatabase.get(id);
@@ -469,15 +482,25 @@ public class InventoryController implements Initializable {
         String id = item.has("id") ? item.get("id").getAsString() : "";
         String name = item.has("name") ? item.get("name").getAsString() : "Không tên";
 
-        VBox card = new VBox(15);
-        card.setPrefWidth(320); // Chiều rộng thẻ
-        card.setStyle("-fx-background-color: #FFFFFF; -fx-border-color: #E5E7EB; -fx-border-width: 1; -fx-padding: 15; -fx-cursor: hand; -fx-alignment: center;");
+        VBox card = new VBox(10);
+        card.getStyleClass().add("auction-card");
+        card.setPrefWidth(190);
+        card.setMinWidth(190);
+        card.setMaxWidth(190);
+        card.setAlignment(javafx.geometry.Pos.CENTER);
+        card.setStyle("-fx-cursor: hand;");
 
-        // 1. Xử lý Ảnh
+        javafx.scene.layout.StackPane imageBox = new javafx.scene.layout.StackPane();
+        imageBox.setPrefSize(162, 110);
+        imageBox.setMinSize(162, 110);
+        imageBox.setMaxSize(162, 110);
+        imageBox.setStyle("-fx-background-color: #d1d5db; -fx-background-radius: 6;");
+
         javafx.scene.image.ImageView imgView = new javafx.scene.image.ImageView();
-        imgView.setFitWidth(280);
-        imgView.setFitHeight(350);
-        imgView.setPreserveRatio(true);
+        imgView.setFitWidth(162);
+        imgView.setFitHeight(110);
+        imgView.setPreserveRatio(false);
+        imgView.setSmooth(true);
         if (item.has("images") && item.getAsJsonArray("images").size() > 0) {
             String imgPath = item.getAsJsonArray("images").get(0).getAsString();
             try {
@@ -485,32 +508,34 @@ public class InventoryController implements Initializable {
                 if (file.exists()) imgView.setImage(new javafx.scene.image.Image(file.toURI().toString()));
             } catch (Exception e) {}
         }
+        imageBox.getChildren().add(imgView);
 
-        // 2. Tên tác phẩm và ID
         Label lblName = new Label(name);
-        lblName.setStyle("-fx-font-family: 'Georgia', serif; -fx-font-size: 16px; -fx-text-fill: #111111;");
+        lblName.getStyleClass().add("card-name");
+        lblName.setWrapText(true);
+        lblName.setAlignment(javafx.geometry.Pos.CENTER);
+        lblName.setMaxWidth(165);
 
-        Label lblId = new Label("ID: " + id);
-        lblId.setStyle("-fx-font-size: 11px; -fx-text-fill: #6B7280;");
+        Label lblId = new Label(id);
+        lblId.getStyleClass().add("card-id");
+        lblId.setWrapText(true);
+        lblId.setAlignment(javafx.geometry.Pos.CENTER);
+        lblId.setMaxWidth(165);
 
-        // 3. Nút Xem chi tiết gọn gàng
         Button btnDetails = new Button("Xem chi tiết");
         btnDetails.getStyleClass().add("secondary-button");
         btnDetails.setStyle("-fx-font-size: 11px; -fx-padding: 5 10;");
-        btnDetails.setOnAction(e -> handleViewDetailsById(id)); // Mở popup
+        btnDetails.setOnAction(e -> handleViewDetailsById(id));
 
-        card.getChildren().addAll(imgView, lblName, lblId, btnDetails);
+        card.getChildren().addAll(imageBox, lblName, lblId, btnDetails);
 
-        // 4. BẮT SỰ KIỆN CLICK VÀO ẢNH ĐỂ ĐIỀN ID VÀO FORM MỞ BÁN
         card.setOnMouseClicked(e -> {
-            // Tẩy trắng toàn bộ thẻ khác
             for (javafx.scene.Node node : inventoryGrid.getChildren()) {
-                node.setStyle("-fx-background-color: #FFFFFF; -fx-border-color: #E5E7EB; -fx-border-width: 1; -fx-padding: 15; -fx-cursor: hand; -fx-alignment: center;");
+                node.setStyle("-fx-cursor: hand;");
             }
-            // Tô viền Đen Đậm cho thẻ đang được chọn (Chuẩn Sothebys)
-            card.setStyle("-fx-background-color: #F9FAFB; -fx-border-color: #111111; -fx-border-width: 2; -fx-padding: 15; -fx-cursor: hand; -fx-alignment: center;");
+            card.setStyle("-fx-cursor: hand; -fx-border-color: #d2aa2a; -fx-border-width: 2; -fx-border-radius: 8;");
 
-            // Tự động bắn ID sang 2 ô txtItemId
+            selectedItemId = id;
             if (txtItemIdNow != null) txtItemIdNow.setText(id);
             if (txtItemIdSchedule != null) txtItemIdSchedule.setText(id);
         });

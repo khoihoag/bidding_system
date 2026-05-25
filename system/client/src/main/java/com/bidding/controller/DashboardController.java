@@ -46,6 +46,9 @@ public class DashboardController {
             "Modern Art"
     };
     private void setupCarousel() {
+        if (carouselImageView == null || lblCarouselTitle == null || carouselDots == null) {
+            return;
+        }
         updateSlide();
 
         // TỰ ĐỘNG CHUYỂN CẢNH SAU 5 GIÂY (PHÁP THUẬT REALTIME)
@@ -98,6 +101,9 @@ public class DashboardController {
 
     @FXML
     private TextField auctionSearchField;
+    @FXML private Label dashboardUsernameLabel;
+    @FXML private Label dashboardHandleLabel;
+    @FXML private Label dashboardBalanceLabel;
 
     private final NetworkClient networkClient = NetworkClient.getInstance();
     private final NumberFormat currencyFmt = NumberFormat.getNumberInstance(Locale.forLanguageTag("vi-VN"));
@@ -106,11 +112,26 @@ public class DashboardController {
     @FXML
     public void initialize() {
         networkClient.setMessageHandler(this::handleServerMessage);
+        setupDashboardHeader();
         setupSearch();
-
-        // Chỉ giữ lại 2 dòng này thôi, bỏ hết mấy dòng .bind() đi
-        setupCarousel();
         requestAuctions();
+    }
+
+    private void setupDashboardHeader() {
+        UserSession session = UserSession.getInstance();
+        String username = session.getUsername();
+        if (dashboardUsernameLabel != null) {
+            dashboardUsernameLabel.setText(username != null && !username.isBlank() ? username : "Người info");
+        }
+        if (dashboardHandleLabel != null) {
+            dashboardHandleLabel.setText(username != null && !username.isBlank() ? username : "owaycwhmanh");
+        }
+        updateDashboardBalance();
+    }
+
+    private void updateDashboardBalance() {
+        if (dashboardBalanceLabel == null) return;
+        dashboardBalanceLabel.setText(currencyFmt.format(UserSession.getInstance().getBalance()) + " đ");
     }
 
     private void setupSearch() {
@@ -138,6 +159,35 @@ public class DashboardController {
         renderAuctions(getFilteredAuctions());
     }
 
+    @FXML
+    private void handleEditProfile() {
+        String currentUsername = UserSession.getInstance().getUsername();
+        javafx.scene.control.TextInputDialog dialog = new javafx.scene.control.TextInputDialog(
+                currentUsername != null ? currentUsername : ""
+        );
+        dialog.setTitle("Thông tin người dùng");
+        dialog.setHeaderText("Sửa thông tin người dùng");
+        dialog.setContentText("Tên hiển thị:");
+        try {
+            dialog.getDialogPane().getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
+        } catch (Exception ignored) {
+        }
+
+        dialog.showAndWait().ifPresent(value -> {
+            String username = value.trim();
+            if (username.isEmpty()) return;
+            UserSession.getInstance().setUsername(username);
+            setupDashboardHeader();
+        });
+    }
+
+    @FXML
+    private void handleDashboardLogout() {
+        networkClient.setMessageHandler(null);
+        UserSession.getInstance().clear();
+        AppNavigator.navigate("Login.fxml");
+    }
+
     private void requestAuctions() {
         System.out.println("[Dashboard] Đang yêu cầu danh sách đấu giá...");
         JsonObject request = new JsonObject();
@@ -156,6 +206,7 @@ public class DashboardController {
             if (MainController.getInstance() != null) {
                 MainController.getInstance().updateBalanceDisplay();
             }
+            Platform.runLater(this::updateDashboardBalance);
         }
         // ==========================================================
 
@@ -200,14 +251,9 @@ public class DashboardController {
             return;
         }
 
-        Label runningHeader = buildSectionHeader("PHIÊN ĐANG ĐẤU GIÁ", "#d4af37", 10);
-        javafx.scene.layout.HBox runningPane = buildAuctionRow();
-
-        Label upcomingHeader = buildSectionHeader("PHIÊN CHUẨN BỊ ĐẤU GIÁ", "#d4af37", 30);
-        javafx.scene.layout.HBox upcomingPane = buildAuctionRow();
-
-        Label endedHeader = buildSectionHeader("PHIÊN ĐÃ KẾT THÚC", "#95a5a6", 30);
-        javafx.scene.layout.HBox endedPane = buildAuctionRow();
+        javafx.scene.layout.HBox runningRow = buildAuctionRow();
+        javafx.scene.layout.HBox upcomingRow = buildAuctionRow();
+        javafx.scene.layout.HBox endedRow = buildAuctionRow();
 
         for (com.google.gson.JsonElement element : data) {
             try {
@@ -248,44 +294,48 @@ public class DashboardController {
                 }
 
                 javafx.scene.layout.VBox card = buildAuctionCard(auctionId, itemName, currentPrice, status, imagePath, timeLabelText, targetTimeStr);
-
                 if (isEnded) {
-                    endedPane.getChildren().add(card);
+                    endedRow.getChildren().add(card);
                 } else if (isUpcoming) {
-                    upcomingPane.getChildren().add(card);
+                    upcomingRow.getChildren().add(card);
                 } else {
-                    runningPane.getChildren().add(card);
+                    runningRow.getChildren().add(card);
                 }
             } catch (Exception e) {
                 System.err.println("Lỗi vẽ thẻ đấu giá: " + e.getMessage());
             }
         }
 
-        if (!runningPane.getChildren().isEmpty()) {
-            auctionContainer.getChildren().addAll(runningHeader, buildHorizontalAuctionScroll(runningPane));
-        }
-        if (!upcomingPane.getChildren().isEmpty()) {
-            auctionContainer.getChildren().addAll(upcomingHeader, buildHorizontalAuctionScroll(upcomingPane));
-        }
-        if (!endedPane.getChildren().isEmpty()) {
-            auctionContainer.getChildren().addAll(endedHeader, buildHorizontalAuctionScroll(endedPane));
-        }
-
-        if (runningPane.getChildren().isEmpty() && upcomingPane.getChildren().isEmpty() && endedPane.getChildren().isEmpty()) {
+        if (runningRow.getChildren().isEmpty() && upcomingRow.getChildren().isEmpty() && endedRow.getChildren().isEmpty()) {
             showEmptyAuctionsMessage();
+        } else {
+            addAuctionSection("Đang đấu giá", runningRow);
+            addAuctionSection("Chuẩn bị đấu giá", upcomingRow);
+            addAuctionSection("Đã kết thúc", endedRow);
         }
+    }
+
+    private void addAuctionSection(String title, javafx.scene.layout.HBox row) {
+        if (row.getChildren().isEmpty()) {
+            return;
+        }
+        auctionContainer.getChildren().addAll(
+                buildSectionHeader(title, "#111827", 0),
+                buildHorizontalAuctionScroll(row)
+        );
     }
 
     private Label buildSectionHeader(String text, String color, int topPadding) {
         Label header = new Label(text);
-        header.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: " + color + "; -fx-padding: " + topPadding + " 0 10 5;");
+        header.getStyleClass().add("dashboard-section-title");
+        header.setStyle("-fx-text-fill: " + color + "; -fx-padding: " + topPadding + " 0 0 0;");
         return header;
     }
 
     private javafx.scene.layout.HBox buildAuctionRow() {
-        javafx.scene.layout.HBox row = new javafx.scene.layout.HBox(20);
+        javafx.scene.layout.HBox row = new javafx.scene.layout.HBox(24);
         row.setFillHeight(false);
-        row.setMinHeight(380);
+        row.setMinHeight(370);
         return row;
     }
 
@@ -296,9 +346,9 @@ public class DashboardController {
         scrollPane.setHbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.AS_NEEDED);
         scrollPane.setVbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.NEVER);
         scrollPane.setPannable(true);
-        scrollPane.setStyle("-fx-background-color: transparent; -fx-background: transparent; -fx-padding: 0 0 8 0;");
+        scrollPane.getStyleClass().add("dashboard-auction-strip");
         scrollPane.setMinHeight(390);
-        scrollPane.setPrefHeight(600);
+        scrollPane.setPrefHeight(400);
         return scrollPane;
     }
 
@@ -408,25 +458,24 @@ public class DashboardController {
     // ... (Giữ nguyên hàm handleRealtimeBidUpdate và mapStatus như cũ) ...
 
     private VBox buildAuctionCard(String auctionId, String itemName, double currentPrice, String status, String imagePath, String timeLabelText, String targetTimeStr){
-        // 1. TẠO THẺ (CARD) - Tối giản, không ép cứng chiều cao
-        VBox card = new VBox(15);
-        card.getStyleClass().add("auction-card");
-        card.setPrefWidth(320); // Mở rộng thẻ
-        // Xóa sạch minSize, maxSize để thẻ tự co giãn theo độ dài của tên tác phẩm
-        card.setStyle("-fx-background-color: #FFFFFF; -fx-padding: 15;");
+        VBox card = new VBox(14);
+        card.getStyleClass().addAll("auction-card", "dashboard-auction-card");
+        card.setPrefWidth(312);
+        card.setMinWidth(312);
+        card.setMaxWidth(312);
+        card.setMinHeight(374);
         card.setUserData(auctionId);
 
-        // 2. KHU VỰC ẢNH SẢN PHẨM - Ép dáng dọc khổng lồ 280x350
         javafx.scene.layout.StackPane imageContainer = new javafx.scene.layout.StackPane();
-        imageContainer.setPrefSize(280, 350);
-        imageContainer.setMinSize(280, 350);
-        // Nền xám cực kỳ nhạt, tàng hình làm không gian tranh
-        imageContainer.setStyle("-fx-background-color: #F9FAFB;");
+        imageContainer.getStyleClass().add("dashboard-card-image-box");
+        imageContainer.setPrefSize(274, 180);
+        imageContainer.setMinSize(274, 180);
+        imageContainer.setMaxSize(274, 180);
 
         javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView();
-        imageView.setFitWidth(280);
-        imageView.setFitHeight(350);
-        imageView.setPreserveRatio(true); // KHÔNG CHO PHÉP MÉO ẢNH
+        imageView.setFitWidth(274);
+        imageView.setFitHeight(180);
+        imageView.setPreserveRatio(false);
         imageView.setSmooth(true);
 
         if (imagePath != null && !imagePath.isEmpty()) {
@@ -436,58 +485,44 @@ public class DashboardController {
                 imageContainer.getChildren().add(imageView);
             } else {
                 Label noImg = new Label("Lỗi hiển thị ảnh");
-                noImg.setStyle("-fx-text-fill: #9CA3AF; -fx-font-style: italic;");
+                noImg.getStyleClass().add("dashboard-card-image-placeholder");
                 imageContainer.getChildren().add(noImg);
             }
         } else {
             Label noImg = new Label("Không có ảnh");
-            noImg.setStyle("-fx-text-fill: #9CA3AF; -fx-font-style: italic; -fx-font-size: 14px;");
+            noImg.getStyleClass().add("dashboard-card-image-placeholder");
             imageContainer.getChildren().add(noImg);
         }
 
-        // Bỏ luôn cái Clip bo góc tròn đi, Sotheby's dùng góc vuông hoặc vuông nhẹ cho tranh
+        VBox body = new VBox(14);
+        body.getStyleClass().add("dashboard-card-body");
+        VBox.setVgrow(body, javafx.scene.layout.Priority.ALWAYS);
 
-        // 3. THÔNG TIN SẢN PHẨM (Xóa sạch Emoji)
         Label nameLabel = new Label(itemName);
         nameLabel.setWrapText(true);
-        // Ép font có chân cực kỳ quý tộc
-        nameLabel.setStyle("-fx-font-family: 'Georgia', 'Times New Roman', serif; -fx-font-size: 20px; -fx-text-fill: #111111;");
-        nameLabel.setAlignment(javafx.geometry.Pos.TOP_LEFT);
+        nameLabel.getStyleClass().add("card-name");
+        nameLabel.setMinHeight(26);
+        nameLabel.setMaxHeight(52);
+        nameLabel.setMaxWidth(260);
+        nameLabel.setAlignment(javafx.geometry.Pos.CENTER);
+        nameLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
 
-        // Giá - Font hiện đại nét căng
-        java.text.NumberFormat fmt = java.text.NumberFormat.getNumberInstance(new java.util.Locale("vi", "VN"));
-        Label priceLabel = new Label(fmt.format(currentPrice) + " ₫");
-        priceLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #111111;");
+        Label idLabel = new Label(auctionId);
+        idLabel.getStyleClass().add("dashboard-card-id");
+        idLabel.setWrapText(true);
+        idLabel.setMaxWidth(260);
+        idLabel.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
 
-        // Lược bớt chữ T trong ngày tháng
-        String displayTime = targetTimeStr.replace("T", " ");
-        int dotIdx = displayTime.indexOf(".");
-        if(dotIdx > 0) displayTime = displayTime.substring(0, dotIdx);
-
-        // Thời gian - Chữ xám thanh lịch
-        Label timeLabel = new Label(timeLabelText + displayTime);
-        timeLabel.setStyle("-fx-text-fill: #6B7280; -fx-font-size: 12px;");
-
-        // 4. LÒ XO MA THUẬT (Giữ nguyên)
         javafx.scene.layout.Region spacer = new javafx.scene.layout.Region();
         VBox.setVgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
 
-        // 5. NÚT VÀO XEM (Lõi trắng viền đen)
-        Button viewBtn = new Button("VÀO XEM CHI TIẾT");
-        viewBtn.setMaxWidth(Double.MAX_VALUE);
-        viewBtn.setStyle("-fx-background-color: #FFFFFF; -fx-text-fill: #111111; -fx-border-color: #D1D5DB; -fx-border-width: 1; -fx-font-size: 12px; -fx-padding: 10; -fx-cursor: hand; -fx-border-radius: 0; -fx-background-radius: 0;");
+        Button viewBtn = new Button("Xem chi tiết");
+        viewBtn.getStyleClass().add("card-view-btn");
+        viewBtn.setMaxWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
         viewBtn.setOnAction(e -> handleViewAuction(auctionId));
 
-        // Hover chuột vào nút: Viền đen đậm lên
-        viewBtn.setOnMouseEntered(e -> viewBtn.setStyle("-fx-background-color: #FFFFFF; -fx-text-fill: #111111; -fx-border-color: #111111; -fx-border-width: 1; -fx-font-size: 12px; -fx-padding: 10; -fx-cursor: hand; -fx-border-radius: 0; -fx-background-radius: 0;"));
-        viewBtn.setOnMouseExited(e -> viewBtn.setStyle("-fx-background-color: #FFFFFF; -fx-text-fill: #111111; -fx-border-color: #D1D5DB; -fx-border-width: 1; -fx-font-size: 12px; -fx-padding: 10; -fx-cursor: hand; -fx-border-radius: 0; -fx-background-radius: 0;"));
-
-        // 6. GẮN TẤT CẢ VÀO THẺ
-        card.getChildren().addAll(imageContainer, nameLabel, priceLabel, timeLabel, spacer, viewBtn);
-
-        // Hover chuột vào cả thẻ: Bo viền đen nhám
-        card.setOnMouseEntered(e -> card.setStyle("-fx-background-color: #FFFFFF; -fx-border-color: #111111; -fx-border-width: 1; -fx-padding: 14; -fx-cursor: hand;"));
-        card.setOnMouseExited(e -> card.setStyle("-fx-background-color: #FFFFFF; -fx-border-width: 0; -fx-padding: 15;"));
+        body.getChildren().addAll(nameLabel, idLabel, spacer, viewBtn);
+        card.getChildren().addAll(imageContainer, body);
 
         return card;
     }
@@ -533,9 +568,8 @@ public class DashboardController {
             // Tìm đúng cái Label hiện giá tiền và cập nhật số mới
             for (Node child : card.getChildren()) {
                 if (child instanceof Label lbl && lbl.getStyleClass().contains("card-price")) {
-                    lbl.setText("💰 " + currencyFmt.format(newPrice) + " ₫");
-                    // Hiệu ứng nháy màu cam nhẹ để User biết giá vừa thay đổi
-                    lbl.setStyle("-fx-text-fill: #e67e22; -fx-scale-x: 1.1; -fx-scale-y: 1.1;");
+                    lbl.setText(currencyFmt.format(newPrice) + " ₫");
+                    lbl.setStyle("-fx-text-fill: #e67e22; -fx-scale-x: 1.05; -fx-scale-y: 1.05;");
 
                     // 0.5s sau trả về màu xanh như cũ
                     new Thread(() -> {
