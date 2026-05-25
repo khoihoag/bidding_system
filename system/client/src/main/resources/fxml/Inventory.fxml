@@ -12,24 +12,29 @@
 
     <Tab text="Kho Đồ Của Tôi">
         <HBox spacing="16" style="-fx-padding: 20 20 24 20;">
-            <VBox spacing="14" minWidth="480" prefWidth="500" maxWidth="500" styleClass="surface-card">
+            <VBox spacing="14" minWidth="600" prefWidth="660" HBox.hgrow="ALWAYS" styleClass="surface-card inventory-panel">
                 <VBox spacing="4">
                     <Label text="🎁 Kho Đồ Của Tôi" styleClass="section-title"/>
                     <Label text="Chọn một món đồ để thao tác" styleClass="hint-label"/>
+                </VBox>
+
+                <VBox spacing="8">
+                    <TextField fx:id="txtInventorySearch" promptText="Tìm kiếm theo tên, ID, mô tả..." styleClass="input-field"/>
                 </VBox>
 
                 <ScrollPane fitToWidth="true" fitToHeight="true" VBox.vgrow="ALWAYS">
                     <FlowPane fx:id="inventoryGrid" hgap="18" vgap="18" style="-fx-padding: 2;"/>
                 </ScrollPane>
 
-                <Button fx:id="btnViewSelectedItem" text="🔍 Xem Chi Tiết Vật Phẩm" onAction="#handleViewSelectedItem" maxWidth="Infinity" styleClass="primary-button"/>
+                <Button fx:id="btnViewSelectedItem" text="🔍 Xem chi tiết vật phẩm" onAction="#handleViewSelectedItem" maxWidth="Infinity" styleClass="primary-button"/>
+                <Button fx:id="btnEditSelectedItem" text="Sửa Sản Phẩm" onAction="#handleEditSelectedItem" maxWidth="Infinity" styleClass="primary-button"/>
                 <Button text="↻ Làm mới kho đồ" onAction="#handleRefreshInventory" maxWidth="Infinity" styleClass="primary-button"/>
             </VBox>
 
-            <VBox spacing="16" minWidth="560" prefWidth="580" HBox.hgrow="ALWAYS" styleClass="surface-card">
+            <VBox spacing="16" minWidth="480" prefWidth="500" maxWidth="540" styleClass="surface-card inventory-action-panel">
                 <Label text="⚙ Bảng Thao Tác" styleClass="section-title"/>
 
-                <TabPane tabClosingPolicy="UNAVAILABLE" styleClass="sub-tab-pane" VBox.vgrow="ALWAYS">
+                <TabPane fx:id="actionTabPane" tabClosingPolicy="UNAVAILABLE" styleClass="sub-tab-pane" VBox.vgrow="ALWAYS">
                     <Tab text="Mở Phiên Đấu Giá">
                         <VBox spacing="15" style="-fx-padding: 18 8 8 8;">
                             <VBox spacing="6">
@@ -66,7 +71,7 @@
                         </VBox>
                     </Tab>
 
-                    <Tab text="Nhập Đồ Mới">
+                    <Tab fx:id="itemFormTab" text="Nhập Đồ Mới">
                         <ScrollPane fitToWidth="true" hbarPolicy="NEVER">
                             <VBox spacing="13" style="-fx-padding: 18 8 8 8;">
                                 <VBox spacing="6">
@@ -143,8 +148,10 @@
                                 </VBox>
 
                                 <ListView fx:id="listSelectedImages" prefHeight="72"/>
+                                <Button fx:id="btnRemoveSelectedImage" text="Xóa ảnh đã chọn" onAction="#handleRemoveSelectedImage" maxWidth="Infinity" styleClass="primary-button"/>
 
-                                <Button text="⇧ Nhập Đồ Mới" onAction="#handleAddNewItem" maxWidth="Infinity" styleClass="primary-button"/>
+                                <Button fx:id="btnSubmitItem" text="⇧ Nhập Đồ Mới" onAction="#handleAddNewItem" maxWidth="Infinity" styleClass="primary-button"/>
+                                <Button fx:id="btnCancelEdit" text="Hủy chỉnh sửa" onAction="#handleCancelEdit" maxWidth="Infinity" visible="false" managed="false" styleClass="primary-button"/>
                             </VBox>
                         </ScrollPane>
                     </Tab>

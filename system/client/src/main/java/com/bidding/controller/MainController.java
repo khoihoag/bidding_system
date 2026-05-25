@@ -22,14 +22,21 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import java.io.IOException;
 import java.text.NumberFormat;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.function.Consumer;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
+import javafx.util.Duration;
 public class MainController {
     private static MainController instance;
 
@@ -49,12 +56,19 @@ public class MainController {
     @FXML private Button btnLogout;
     @FXML
     private Label balanceLabel;
+    @FXML private Label sidebarClockTimeLabel;
+    @FXML private Label sidebarClockDateLabel;
     @FXML
     private ListView<NotificationEntry> notificationListView;
     // Cái khung trống bên phải để nhúng các màn hình con vào
     @FXML private StackPane contentArea;
     private static final int MAX_NOTIFICATIONS = 20;
     private static final DateTimeFormatter NOTIFICATION_TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
+    private static final DateTimeFormatter SIDEBAR_CLOCK_TIME = DateTimeFormatter.ofPattern("HH:mm:ss");
+    private static final DateTimeFormatter SIDEBAR_CLOCK_DAY =
+            DateTimeFormatter.ofPattern("EEEE", Locale.forLanguageTag("vi-VN"));
+    private static final DateTimeFormatter SIDEBAR_CLOCK_DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private Timeline sidebarClockTimeline;
     private final Consumer<JsonObject> notificationListener = this::handleGlobalNotification;
 
     @FXML
@@ -67,7 +81,36 @@ public class MainController {
         handleDashboard();
         updateBalanceDisplay();
         setupNotificationList();
+        startSidebarClock();
         NetworkClient.getInstance().addGlobalMessageListener(notificationListener);
+        requestInitialNotifications();
+    }
+
+    private void startSidebarClock() {
+        if (sidebarClockTimeline != null) {
+            sidebarClockTimeline.stop();
+        }
+        tickSidebarClock();
+        sidebarClockTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> tickSidebarClock()));
+        sidebarClockTimeline.setCycleCount(Timeline.INDEFINITE);
+        sidebarClockTimeline.play();
+    }
+
+    private void tickSidebarClock() {
+        if (sidebarClockTimeLabel == null && sidebarClockDateLabel == null) {
+            return;
+        }
+        LocalDateTime now = LocalDateTime.now();
+        if (sidebarClockTimeLabel != null) {
+            sidebarClockTimeLabel.setText(now.format(SIDEBAR_CLOCK_TIME));
+        }
+        if (sidebarClockDateLabel != null) {
+            String day = now.format(SIDEBAR_CLOCK_DAY);
+            if (!day.isEmpty()) {
+                day = Character.toUpperCase(day.charAt(0)) + day.substring(1);
+            }
+            sidebarClockDateLabel.setText(day + " · " + now.format(SIDEBAR_CLOCK_DATE));
+        }
     }
 
     @FXML
@@ -134,20 +177,7 @@ public class MainController {
     @FXML
     private void handleViewNotificationDetail() {
         setActiveMenu(btnNotifications);
-        try {
-            // Tải cái giao diện hòm thư Sotheby's mà anh em mình vừa tạo
-            // (Sếp kiểm tra xem file Notifications.fxml của sếp nằm ở đâu thì sửa lại đường dẫn cho đúng nhé, ví dụ: "/fxml/Notifications.fxml")
-            javafx.scene.Parent view = javafx.fxml.FXMLLoader.load(getClass().getResource("/fxml/Notifications.fxml"));
-            // Dọn dẹp sạch sẽ cái ruột ở giữa màn hình
-            contentArea.getChildren().clear();
-
-            // Nhét nguyên trang Thông Báo hoành tráng vào
-            contentArea.getChildren().add(view);
-
-        } catch (Exception e) {
-            System.err.println("Toang! Lỗi chuyển trang Thông Báo: " + e.getMessage());
-            e.printStackTrace();
-        }
+        loadSubView("/fxml/Notifications.fxml");
     }
 
     @FXML
@@ -159,28 +189,80 @@ public class MainController {
         ScrollPane scrollPane = new ScrollPane(settingsView);
         scrollPane.setFitToWidth(true);
         scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        scrollPane.getStyleClass().add("content-surface");
+        scrollPane.getStyleClass().addAll("content-surface", "settings-scroll-pane");
 
         contentArea.getChildren().clear();
         contentArea.getChildren().add(scrollPane);
         StackPane.setAlignment(scrollPane, javafx.geometry.Pos.TOP_LEFT);
     }
 
+    private void requestInitialNotifications() {
+        JsonObject request = new JsonObject();
+        request.addProperty("action", "GET_NOTIFICATIONS");
+        NetworkClient.getInstance().sendJson(request);
+    }
+
     private void handleGlobalNotification(JsonObject json) {
-        if (json == null || !json.has("action")) return;
+        if (json == null || !json.has("action")) {
+            return;
+        }
 
         String action = json.get("action").getAsString();
         if ("ACCOUNT_BANNED".equals(action)) {
             handleAccountBanned();
             return;
         }
-        if (!"GLOBAL_NOTIFY".equals(action)) return;
+        switch (action) {
+            case "GLOBAL_NOTIFY" -> addNotification(extractNotificationMessage(json), json);
+            case "NEW_NOTIFICATION" -> addNotification(extractNotificationMessage(json), json);
+            case "NOTIFICATIONS_LIST" -> populateSidebarFromServer(json);
+            default -> { }
+        }
+    }
 
-        String message = json.has("message") && !json.get("message").isJsonNull()
-                ? json.get("message").getAsString()
-                : "Có thông báo mới từ hệ thống.";
+    private void populateSidebarFromServer(JsonObject response) {
+        Platform.runLater(() -> {
+            if (notificationListView == null) {
+                return;
+            }
+            notificationListView.getItems().clear();
+            if (!response.has("data") || !response.get("data").isJsonArray()) {
+                return;
+            }
+            JsonArray array = response.getAsJsonArray("data");
+            int count = 0;
+            for (JsonElement element : array) {
+                if (!element.isJsonObject() || count >= MAX_NOTIFICATIONS) {
+                    continue;
+                }
+                JsonObject item = element.getAsJsonObject();
+                String message = extractNotificationMessage(item);
+                String time = item.has("time") && !item.get("time").isJsonNull()
+                        ? item.get("time").getAsString()
+                        : LocalTime.now().format(NOTIFICATION_TIME_FMT);
+                if (time.length() > 5) {
+                    time = time.substring(0, 5);
+                }
+                notificationListView.getItems().add(new NotificationEntry(time, message));
+                count++;
+            }
+        });
+    }
 
-        addNotification(message, json);
+    private String extractNotificationMessage(JsonObject json) {
+        if (json == null) {
+            return "Thông báo mới";
+        }
+        if (json.has("message") && !json.get("message").isJsonNull()) {
+            return json.get("message").getAsString();
+        }
+        if (json.has("data") && json.get("data").isJsonObject()) {
+            JsonObject data = json.getAsJsonObject("data");
+            if (data.has("message") && !data.get("message").isJsonNull()) {
+                return data.get("message").getAsString();
+            }
+        }
+        return "Thông báo mới";
     }
 
     private void handleAccountBanned() {
@@ -240,8 +322,11 @@ public class MainController {
                 row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
                 setText(null);
                 setGraphic(row);
+                setMinHeight(44);
+                setPrefHeight(44);
             }
         });
+        notificationListView.setFixedCellSize(44);
     }
 
     private String shortMessage(String message) {
@@ -312,16 +397,18 @@ public class MainController {
     }
 
     private VBox buildSettingsView() {
-        VBox page = new VBox(22);
+        VBox page = new VBox(28);
         page.getStyleClass().add("settings-page");
 
+        Label kicker = new Label("TÀI KHOẢN");
+        kicker.getStyleClass().add("settings-kicker");
         Label title = new Label("Cài đặt tài khoản");
         title.getStyleClass().add("settings-title");
         Label subtitle = new Label("Quản lý thông tin cá nhân và bảo mật tài khoản của bạn.");
         subtitle.getStyleClass().add("settings-subtitle");
-        VBox heading = new VBox(6, title, subtitle);
+        VBox heading = new VBox(8, kicker, title, subtitle);
 
-        VBox card = new VBox(20);
+        VBox card = new VBox(26);
         card.getStyleClass().add("settings-card");
 
         HBox personalTitle = settingsSectionTitle("/images/icons/user.png", "Thông tin cá nhân");
@@ -375,16 +462,21 @@ public class MainController {
         HBox.setHgrow(footerSpacer, javafx.scene.layout.Priority.ALWAYS);
         HBox actions = new HBox(12, footerSpacer, cancelBtn, saveBtn);
 
+        Separator divider1 = new Separator();
+        divider1.getStyleClass().add("settings-divider");
+        Separator divider2 = new Separator();
+        divider2.getStyleClass().add("settings-divider");
+
         card.getChildren().addAll(
                 personalTitle,
                 fieldBox("Họ và tên", nameField),
                 infoRow,
-                new Separator(),
+                divider1,
                 securityTitle,
                 fieldBox("Mật khẩu hiện tại", currentPassword),
                 fieldBox("Mật khẩu mới", newPassword),
                 fieldBox("Xác nhận mật khẩu mới", confirmPassword),
-                new Separator(),
+                divider2,
                 actions
         );
 
@@ -404,7 +496,10 @@ public class MainController {
     private HBox settingsSectionTitle(String iconPath, String text) {
         Label label = new Label(text);
         label.getStyleClass().add("settings-section-title");
-        HBox title = new HBox(9, iconView(iconPath, 16), label);
+        StackPane iconWrap = new StackPane(iconView(iconPath, 15));
+        iconWrap.getStyleClass().add("settings-section-icon");
+        HBox title = new HBox(12, iconWrap, label);
+        title.getStyleClass().add("settings-section-header");
         title.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
         return title;
     }
@@ -444,7 +539,7 @@ public class MainController {
                 request.addProperty("amount", amount);
                 com.bidding.network.NetworkClient.getInstance().sendJson(request);
             } catch (Exception e) {
-                System.err.println("Nhập số thôi sếp ơi!");
+                System.err.println("Vui lòng nhập số tiền hợp lệ!");
             }
         });
     }

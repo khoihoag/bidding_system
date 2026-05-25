@@ -11,29 +11,34 @@
             styleClass="content-surface">
 
     <top>
-        <HBox alignment="CENTER_LEFT" prefHeight="64" minHeight="64" maxHeight="64" styleClass="dashboard-header">
+        <HBox alignment="CENTER_LEFT" prefHeight="76" minHeight="76" maxHeight="76" styleClass="dashboard-header">
             <padding>
-                <Insets top="0" right="24" bottom="0" left="24"/>
+                <Insets top="0" right="28" bottom="0" left="28"/>
             </padding>
 
-            <Label text="Sảnh Đấu Giá" styleClass="page-title"/>
+            <VBox spacing="2" alignment="CENTER_LEFT">
+                <Label text="SẢNH ĐẤU GIÁ" styleClass="dashboard-header-kicker"/>
+                <Label text="BidVault Auction Hall" styleClass="dashboard-header-title"/>
+            </VBox>
             <Region HBox.hgrow="ALWAYS"/>
 
-            <HBox alignment="CENTER" spacing="0" styleClass="dashboard-header-actions">
-                <VBox alignment="CENTER_LEFT" spacing="2" prefWidth="170" minWidth="170" styleClass="dashboard-balance-box">
-                    <Label text="Số dư hiện tại" styleClass="dashboard-balance-caption"/>
-                    <Label fx:id="dashboardBalanceLabel" text="0 đ" styleClass="dashboard-balance-value"/>
+            <HBox alignment="CENTER_RIGHT" spacing="14" styleClass="dashboard-header-actions">
+                <VBox alignment="CENTER_LEFT" spacing="3" styleClass="dashboard-balance-chip">
+                    <Label text="Số dư ví" styleClass="dashboard-balance-caption"/>
+                    <Label fx:id="dashboardBalanceLabel" text="0 ₫" styleClass="dashboard-balance-value" maxWidth="220"/>
                 </VBox>
 
-                <HBox alignment="CENTER_LEFT" fillHeight="false" spacing="12" prefWidth="220" minWidth="220" styleClass="dashboard-user-panel">
-                    <StackPane styleClass="avatar-circle dashboard-avatar">
-                        <ImageView fitWidth="20" fitHeight="20" preserveRatio="true">
-                            <image><Image url="@../images/icons/user.png"/></image>
-                        </ImageView>
+                <HBox alignment="CENTER_LEFT" spacing="12" styleClass="dashboard-user-chip">
+                    <StackPane styleClass="dashboard-avatar-ring">
+                        <StackPane styleClass="dashboard-avatar-inner">
+                            <ImageView fitWidth="18" fitHeight="18" preserveRatio="true">
+                                <image><Image url="@../images/icons/user.png"/></image>
+                            </ImageView>
+                        </StackPane>
                     </StackPane>
-                    <VBox spacing="1" HBox.hgrow="ALWAYS">
-                        <Label fx:id="dashboardUsernameLabel" text="Người info" styleClass="dashboard-user-name"/>
-                        <Label fx:id="dashboardHandleLabel" text="owaycwhmanh" styleClass="dashboard-user-handle"/>
+                    <VBox spacing="2" alignment="CENTER_LEFT">
+                        <Label fx:id="dashboardUsernameLabel" text="Người dùng" styleClass="dashboard-user-name"/>
+                        <Label fx:id="dashboardHandleLabel" text="@nguoidung" styleClass="dashboard-user-handle"/>
                     </VBox>
                 </HBox>
             </HBox>
@@ -44,14 +49,15 @@
         <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="content-surface">
             <VBox spacing="24" styleClass="dashboard-body">
                 <HBox alignment="CENTER_LEFT" spacing="12" styleClass="dashboard-search-row">
-                    <StackPane HBox.hgrow="ALWAYS">
+                    <HBox alignment="CENTER_LEFT" spacing="0" HBox.hgrow="ALWAYS" styleClass="dashboard-search-shell">
+                        <Label text="⌕" styleClass="dashboard-search-icon" mouseTransparent="true"/>
                         <TextField fx:id="auctionSearchField"
                                    promptText="Tìm theo tên sản phẩm, mã phiên, loại, người bán..."
                                    onAction="#handleAuctionSearch"
+                                   HBox.hgrow="ALWAYS"
                                    styleClass="dashboard-search-field"/>
-                        <Label text="⌕" styleClass="dashboard-search-icon" mouseTransparent="true" StackPane.alignment="CENTER_LEFT"/>
-                    </StackPane>
-                    <Button text="Xóa lọc" onAction="#clearAuctionSearch" styleClass="filter-clear-button"/>
+                    </HBox>
+                    <Button text="Xóa lọc" onAction="#clearAuctionSearch" styleClass="dashboard-search-clear-button"/>
                 </HBox>
 
                 <VBox fx:id="auctionContainer" spacing="22"/>

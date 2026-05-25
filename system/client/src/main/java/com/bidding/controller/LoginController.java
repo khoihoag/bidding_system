@@ -29,7 +29,7 @@ public class LoginController {
         String password = passwordField.getText().trim();
 
         if (username.isEmpty() || password.isEmpty()) {
-            showError("Vui long nhap day du ten dang nhap va mat khau.");
+            showError("Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.");
             return;
         }
 
@@ -60,7 +60,7 @@ public class LoginController {
                     loginButton.setDisable(false);
                     showError(response.has("message")
                             ? response.get("message").getAsString()
-                            : "Dang nhap that bai.");
+                            : "Đăng nhập thất bại.");
                 }
                 default -> {}
             }
@@ -71,7 +71,7 @@ public class LoginController {
         String status = response.has("status") ? response.get("status").getAsString() : "";
         if (!"SUCCESS".equals(status)) {
             loginButton.setDisable(false);
-            showError("Dang nhap that bai.");
+            showError("Đăng nhập thất bại.");
             return;
         }
 

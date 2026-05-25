@@ -2,6 +2,9 @@ package com.bidding.server.service;
 
 import com.bidding.server.enums.ItemApprovalStatus;
 import com.bidding.server.model.item.Item;
+import com.bidding.server.model.item.Art;
+import com.bidding.server.model.item.Electronics;
+import com.bidding.server.model.item.Vehicle;
 import com.bidding.server.model.user.User;
 import com.bidding.server.repository.ItemRepository;
 
@@ -39,6 +42,32 @@ public class ItemService {
 
         existingItem.setName(updateData.getName());
         existingItem.setDescription(updateData.getDescription());
+        existingItem.setStartingPrice(updateData.getStartingPrice());
+        existingItem.setCondition(updateData.getCondition());
+        existingItem.setImages(updateData.getImages());
+
+        if (!existingItem.getClass().equals(updateData.getClass())) {
+            throw new IllegalArgumentException("Không được đổi loại sản phẩm khi chỉnh sửa.");
+        }
+
+        if (existingItem instanceof Art existingArt && updateData instanceof Art updateArt) {
+            existingArt.setArtist(updateArt.getArtist());
+            existingArt.setMedium(updateArt.getMedium());
+            existingArt.setYearCreated(updateArt.getYearCreated());
+            existingArt.setDimensions(updateArt.getDimensions());
+        } else if (existingItem instanceof Vehicle existingVehicle && updateData instanceof Vehicle updateVehicle) {
+            existingVehicle.setMake(updateVehicle.getMake());
+            existingVehicle.setModel(updateVehicle.getModel());
+            existingVehicle.setYear(updateVehicle.getYear());
+            existingVehicle.setMileage(updateVehicle.getMileage());
+            existingVehicle.setFuelType(updateVehicle.getFuelType());
+        } else if (existingItem instanceof Electronics existingElectronics && updateData instanceof Electronics updateElectronics) {
+            existingElectronics.setBrand(updateElectronics.getBrand());
+            existingElectronics.setModel(updateElectronics.getModel());
+            existingElectronics.setWarrantyMonths(updateElectronics.getWarrantyMonths());
+            existingElectronics.setPowerWatts(updateElectronics.getPowerWatts());
+        }
+
         existingItem.setApprovalStatus(ItemApprovalStatus.PENDING);
         existingItem.setReviewedByAdminId(null);
         existingItem.setReviewedAt(null);

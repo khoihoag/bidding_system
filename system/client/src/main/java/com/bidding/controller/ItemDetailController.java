@@ -12,6 +12,7 @@ import javafx.scene.layout.VBox;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class ItemDetailController {
 
@@ -22,16 +23,28 @@ public class ItemDetailController {
     @FXML private Label itemNameLabel;
     @FXML private Label descriptionLabel;
     @FXML private VBox specsContainer;
+    @FXML private Button deleteItemButton;
 
     private final List<String> imagePaths = new ArrayList<>();
     private int currentImageIndex = 0;
+    private String itemId;
     private Runnable goBackCallback;
+    private Consumer<String> deleteCallback;
 
     public void setGoBackCallback(Runnable goBackCallback) {
         this.goBackCallback = goBackCallback;
     }
 
+    public void setDeleteCallback(Consumer<String> deleteCallback) {
+        this.deleteCallback = deleteCallback;
+        if (deleteItemButton != null) {
+            deleteItemButton.setVisible(deleteCallback != null);
+            deleteItemButton.setManaged(deleteCallback != null);
+        }
+    }
+
     public void setItemData(JsonObject itemJson) {
+        itemId = itemJson.has("id") ? itemJson.get("id").getAsString() : null;
         itemNameLabel.setText(itemJson.has("name") ? itemJson.get("name").getAsString() : "Chưa có tên");
         descriptionLabel.setText(itemJson.has("description") ? itemJson.get("description").getAsString() : "Chưa có mô tả");
 
@@ -118,6 +131,13 @@ public class ItemDetailController {
     private void onBackButtonClicked() {
         if (goBackCallback != null) {
             goBackCallback.run();
+        }
+    }
+
+    @FXML
+    private void onDeleteButtonClicked() {
+        if (deleteCallback != null && itemId != null && !itemId.isBlank()) {
+            deleteCallback.accept(itemId);
         }
     }
 }

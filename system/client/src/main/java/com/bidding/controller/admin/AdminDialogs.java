@@ -31,7 +31,7 @@ public final class AdminDialogs {
         }
 
         Dialog<Void> dialog = new Dialog<>();
-        dialog.setTitle("Chi Tiết Vật Phẩm");
+        dialog.setTitle("Chi tiết vật phẩm");
         dialog.setHeaderText(JsonUtil.getString(item, "name"));
         try {
             dialog.getDialogPane().getStylesheets()

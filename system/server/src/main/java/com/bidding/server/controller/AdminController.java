@@ -228,7 +228,7 @@ public class AdminController {
         } catch (SecurityException se) {
             client.sendError(se.getMessage());
         } catch (Exception e) {
-            client.sendError("Loi khi tai lich su dau gia: " + e.getMessage());
+            client.sendError("Lỗi khi tải lịch sử đấu giá: " + e.getMessage());
         }
     }
 

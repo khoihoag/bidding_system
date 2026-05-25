@@ -405,6 +405,22 @@ public class AuctionService {
         return false;
     }
 
+    public Auction findActiveAuctionByItemId(String itemId) {
+        for (Auction auction : activeAuctions.values()) {
+            if (auction.getItem() != null && auction.getItem().getId().equals(itemId)) {
+                return auction;
+            }
+        }
+        return null;
+    }
+
+    public boolean isItemInAnyAuction(String itemId) {
+        if (isItemInActiveAuction(itemId)) {
+            return true;
+        }
+        return repository.existsByItemId(itemId);
+    }
+
     public List<Auction> getActiveAuctions() {
         return new ArrayList<>(activeAuctions.values());
     }

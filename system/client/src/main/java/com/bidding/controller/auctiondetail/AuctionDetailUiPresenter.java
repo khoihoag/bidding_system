@@ -372,38 +372,22 @@ public class AuctionDetailUiPresenter {
         return autoBidButton;
     }
     public void setFollowButtonState(boolean followed) {
-        // ================= VŨ KHÍ CHỐNG CHỚP GIẬT =================
-        // Nếu nút ĐÃ Ở ĐÚNG TRẠNG THÁI rồi thì KHÔNG VẼ LẠI NỮA!
-        if (followed && "♥ ĐÃ THEO DÕI".equals(btnFollow.getText())) {
+        if (btnFollow == null) {
             return;
         }
-        if (!followed && "♡ THEO DÕI PHIÊN NÀY".equals(btnFollow.getText())) {
-            return;
-        }
-        // ==========================================================
+
+        btnFollow.getStyleClass().removeAll("auction-detail-follow-button", "auction-detail-followed-button");
+        btnFollow.setStyle("");
+        btnFollow.setDisable(false);
+        btnFollow.setMouseTransparent(false);
+        btnFollow.setFocusTraversable(true);
 
         if (followed) {
-            btnFollow.setText("♥ ĐÃ THEO DÕI");
-
-            // Ép style "xám xịt nhưng sang trọng" cho nút Đã Theo Dõi
-            btnFollow.setStyle("-fx-background-color: #F3F4F6; -fx-text-fill: #9CA3AF; "
-                    + "-fx-border-color: #E5E7EB; -fx-border-radius: 4; "
-                    + "-fx-background-radius: 4; -fx-font-weight: bold; -fx-padding: 10 20;");
-
-            // Tàng hình với chuột (Không dùng setDisable để JavaFX không xen vào phá màu)
-            btnFollow.setMouseTransparent(true);
-            btnFollow.setFocusTraversable(false);
-
+            btnFollow.setText("★ ĐÃ THEO DÕI");
+            btnFollow.getStyleClass().add("auction-detail-followed-button");
         } else {
-            btnFollow.setText("♡ THEO DÕI PHIÊN NÀY");
-
-            // TRẢ LẠI SỰ XỊN XÒ: Xóa sạch style nội tuyến để JavaFX tự động
-            // lấy lại CSS mặc định sếp đã thiết kế trong file .fxml / SceneBuilder!
-            btnFollow.setStyle("");
-
-            // Mở khóa chuột
-            btnFollow.setMouseTransparent(false);
-            btnFollow.setFocusTraversable(true);
+            btnFollow.setText("☆ THEO DÕI PHIÊN NÀY");
+            btnFollow.getStyleClass().add("auction-detail-follow-button");
         }
     }
 }

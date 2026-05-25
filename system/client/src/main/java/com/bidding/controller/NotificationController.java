@@ -28,11 +28,11 @@ public class NotificationController implements Initializable {
     private Button markAllReadButton;
 
     private final NetworkClient networkClient = NetworkClient.getInstance();
+    private final java.util.function.Consumer<JsonObject> notificationListener = this::handleServerMessage;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        // Cài đặt handler nhận thông báo từ Server
-        networkClient.setMessageHandler(this::handleServerMessage);
+        networkClient.addGlobalMessageListener(notificationListener);
 
         if (markAllReadButton != null) {
             markAllReadButton.setOnAction(event -> markAllAsRead());
@@ -51,9 +51,12 @@ public class NotificationController implements Initializable {
                     setText(null);
                     setGraphic(buildNotificationCell(item));
                     setStyle("-fx-background-color: transparent;");
+                    setMinHeight(88);
+                    setPrefHeight(88);
                 }
             }
         });
+        mainNotificationList.setFixedCellSize(88);
 
         // Tự động gọi server lấy danh sách thông báo mới khi vừa vào trang
         requestNotifications();
@@ -186,29 +189,61 @@ public class NotificationController implements Initializable {
     }
 
     private void handleServerMessage(JsonObject response) {
-        String action = response.has("action") ? response.get("action").getAsString() : "";
+        if (response == null || !response.has("action")) {
+            return;
+        }
+        String action = response.get("action").getAsString();
 
-        // 1. Khi vừa vào trang, server trả về 1 cục danh sách cũ
         if ("NOTIFICATIONS_LIST".equals(action)) {
             Platform.runLater(() -> {
+                if (mainNotificationList == null) {
+                    return;
+                }
                 mainNotificationList.getItems().clear();
-                if (response.has("data")) {
+                if (response.has("data") && response.get("data").isJsonArray()) {
                     JsonArray array = response.getAsJsonArray("data");
                     for (JsonElement elem : array) {
-                        mainNotificationList.getItems().add(elem.getAsJsonObject());
+                        if (elem.isJsonObject()) {
+                            mainNotificationList.getItems().add(elem.getAsJsonObject());
+                        }
                     }
                 }
             });
-        }
-        // 2. BẮT SÓNG REALTIME: Khi có 1 thông báo mới tinh vừa rơi xuống (Ví dụ: "Giá áo Jalen Brunson vừa tăng lên 50.000đ!")
-        else if ("NEW_NOTIFICATION".equals(action)) {
+        } else if ("NEW_NOTIFICATION".equals(action)) {
             Platform.runLater(() -> {
-                if (response.has("data")) {
-                    JsonObject newNotif = response.getAsJsonObject("data");
-                    // Nhét thông báo mới lên trên CÙNG của danh sách
+                if (mainNotificationList == null) {
+                    return;
+                }
+                JsonObject newNotif = resolveNotificationPayload(response);
+                if (newNotif != null) {
                     mainNotificationList.getItems().add(0, newNotif);
                 }
             });
+        } else if ("ERROR".equals(action)) {
+            Platform.runLater(() -> {
+                if (mainNotificationList == null || !mainNotificationList.getItems().isEmpty()) {
+                    return;
+                }
+                JsonObject errorItem = new JsonObject();
+                errorItem.addProperty("message", response.has("message")
+                        ? response.get("message").getAsString()
+                        : "Không tải được thông báo.");
+                errorItem.addProperty("time", java.time.LocalTime.now().toString());
+                mainNotificationList.getItems().add(errorItem);
+            });
         }
+    }
+
+    private JsonObject resolveNotificationPayload(JsonObject response) {
+        if (response.has("data") && response.get("data").isJsonObject()) {
+            return response.getAsJsonObject("data");
+        }
+        if (response.has("message")) {
+            JsonObject item = new JsonObject();
+            item.addProperty("message", response.get("message").getAsString());
+            item.addProperty("time", java.time.LocalTime.now().toString());
+            return item;
+        }
+        return null;
     }
 }

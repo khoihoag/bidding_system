@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 public class AuctionDetailState {
 
     public String currentAuctionId;
+    public boolean isFollowing;
     public int totalBidCount;
     public JsonObject currentSelectedAuction;
     public XYChart.Series<String, Number> priceSeries;

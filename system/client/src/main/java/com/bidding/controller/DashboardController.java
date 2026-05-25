@@ -1,10 +1,16 @@
 package com.bidding.controller;
 
 import com.bidding.network.NetworkClient;
+import com.bidding.util.FollowHeartButtonFactory;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.util.Duration;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -16,6 +22,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.Node;
 import javafx.scene.layout.*;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 import com.bidding.model.UserSession;
 import com.bidding.controller.MainController;
@@ -23,7 +30,11 @@ import java.io.File;
 import java.io.IOException;
 import java.text.NumberFormat;
 import java.text.Normalizer;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
+import javafx.scene.control.Tooltip;
 
 public class DashboardController {
     @FXML private StackPane heroStackPane; // <--- Sếp thêm đúng dòng này vào
@@ -108,6 +119,22 @@ public class DashboardController {
     private final NetworkClient networkClient = NetworkClient.getInstance();
     private final NumberFormat currencyFmt = NumberFormat.getNumberInstance(Locale.forLanguageTag("vi-VN"));
     private JsonArray allAuctions = new JsonArray();
+    private final List<CardCountdownEntry> cardCountdownEntries = new ArrayList<>();
+    private Timeline dashboardCountdownTimeline;
+
+    private static final class CardCountdownEntry {
+        private final Label label;
+        private final LocalDateTime target;
+        private final boolean ended;
+        private final boolean upcoming;
+
+        private CardCountdownEntry(Label label, LocalDateTime target, boolean ended, boolean upcoming) {
+            this.label = label;
+            this.target = target;
+            this.ended = ended;
+            this.upcoming = upcoming;
+        }
+    }
 
     @FXML
     public void initialize() {
@@ -121,22 +148,39 @@ public class DashboardController {
         UserSession session = UserSession.getInstance();
         String username = session.getUsername();
         if (dashboardUsernameLabel != null) {
-            dashboardUsernameLabel.setText(username != null && !username.isBlank() ? username : "Người info");
+            dashboardUsernameLabel.setText(username != null && !username.isBlank() ? username : "Người dùng");
         }
         if (dashboardHandleLabel != null) {
-            dashboardHandleLabel.setText(username != null && !username.isBlank() ? username : "owaycwhmanh");
+            dashboardHandleLabel.setText(username != null && !username.isBlank() ? "@" + username : "@nguoidung");
+        }
+        if (dashboardBalanceLabel != null) {
+            dashboardBalanceLabel.setStyle("-fx-text-overrun: ellipsis;");
         }
         updateDashboardBalance();
     }
 
     private void updateDashboardBalance() {
         if (dashboardBalanceLabel == null) return;
-        dashboardBalanceLabel.setText(currencyFmt.format(UserSession.getInstance().getBalance()) + " đ");
+        double balance = UserSession.getInstance().getBalance();
+        String formatted = currencyFmt.format(balance) + " ₫";
+        dashboardBalanceLabel.setText(formatted);
+        Tooltip.install(dashboardBalanceLabel, new Tooltip(formatted));
     }
 
     private void setupSearch() {
         if (auctionSearchField == null) return;
         auctionSearchField.textProperty().addListener((obs, oldText, newText) -> renderAuctions(getFilteredAuctions()));
+        if (auctionSearchField.getParent() instanceof HBox searchShell) {
+            auctionSearchField.focusedProperty().addListener((obs, wasFocused, focused) -> {
+                if (focused) {
+                    if (!searchShell.getStyleClass().contains("dashboard-search-shell-focused")) {
+                        searchShell.getStyleClass().add("dashboard-search-shell-focused");
+                    }
+                } else {
+                    searchShell.getStyleClass().remove("dashboard-search-shell-focused");
+                }
+            });
+        }
     }
 
     @FXML
@@ -245,6 +289,7 @@ public class DashboardController {
 
     private void renderAuctions(JsonArray data) {
         auctionContainer.getChildren().clear();
+        stopDashboardCountdowns();
 
         if (data.isEmpty()) {
             showEmptyAuctionsMessage();
@@ -264,36 +309,39 @@ public class DashboardController {
                 String status = getStringSafe(auction, "status");
                 String startTimeStr = getStringSafe(auction, "startTime");
                 String endTimeStr = getStringSafe(auction, "endTime");
+                boolean isFollowing = auction.has("isFollowing") && auction.get("isFollowing").getAsBoolean();
 
                 boolean isEnded = isEndedAuction(status, endTimeStr);
                 boolean isUpcoming = !isEnded && isUpcomingAuction(status, startTimeStr);
 
-                String timeLabelText;
                 String targetTimeStr;
                 if (isEnded) {
-                    timeLabelText = "Đã kết thúc: ";
                     targetTimeStr = endTimeStr;
                 } else if (isUpcoming) {
-                    timeLabelText = "Sắp mở: ";
                     targetTimeStr = startTimeStr;
                 } else {
-                    timeLabelText = "Kết thúc: ";
                     targetTimeStr = endTimeStr;
                 }
 
                 String itemName = "Món hàng không xác định";
                 String imagePath = "";
+                String description = "";
+                JsonObject itemJson = null;
 
                 if (auction.has("item") && auction.get("item").isJsonObject()) {
                     JsonObject item = auction.getAsJsonObject("item");
+                    itemJson = item;
                     itemName = getStringSafe(item, "name");
+                    description = getStringSafe(item, "description");
                     if (item.has("images") && item.get("images").isJsonArray()) {
                         JsonArray imgs = item.getAsJsonArray("images");
                         if (!imgs.isEmpty()) imagePath = imgs.get(0).getAsString();
                     }
                 }
 
-                javafx.scene.layout.VBox card = buildAuctionCard(auctionId, itemName, currentPrice, status, imagePath, timeLabelText, targetTimeStr);
+                javafx.scene.layout.StackPane card = buildAuctionCard(
+                        auctionId, itemName, description, currentPrice, imagePath, isFollowing,
+                        targetTimeStr, isEnded, isUpcoming);
                 if (isEnded) {
                     endedRow.getChildren().add(card);
                 } else if (isUpcoming) {
@@ -312,7 +360,69 @@ public class DashboardController {
             addAuctionSection("Đang đấu giá", runningRow);
             addAuctionSection("Chuẩn bị đấu giá", upcomingRow);
             addAuctionSection("Đã kết thúc", endedRow);
+            startDashboardCountdowns();
         }
+    }
+
+    private void stopDashboardCountdowns() {
+        if (dashboardCountdownTimeline != null) {
+            dashboardCountdownTimeline.stop();
+            dashboardCountdownTimeline = null;
+        }
+        cardCountdownEntries.clear();
+    }
+
+    private void startDashboardCountdowns() {
+        if (cardCountdownEntries.isEmpty()) {
+            return;
+        }
+        tickDashboardCountdowns();
+        dashboardCountdownTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> tickDashboardCountdowns()));
+        dashboardCountdownTimeline.setCycleCount(Timeline.INDEFINITE);
+        dashboardCountdownTimeline.play();
+    }
+
+    private void tickDashboardCountdowns() {
+        LocalDateTime now = LocalDateTime.now();
+        for (CardCountdownEntry entry : cardCountdownEntries) {
+            if (entry.ended) {
+                entry.label.setText("Đã kết thúc");
+                continue;
+            }
+            if (entry.target == null) {
+                entry.label.setText("--:--:--");
+                continue;
+            }
+            java.time.Duration remaining = java.time.Duration.between(now, entry.target);
+            if (remaining.isNegative() || remaining.isZero()) {
+                entry.label.setText(entry.upcoming ? "Sắp mở" : "Đã kết thúc");
+            } else {
+                entry.label.setText(String.format(
+                        "%02d:%02d:%02d",
+                        remaining.toHours(),
+                        remaining.toMinutesPart(),
+                        remaining.toSecondsPart()));
+            }
+        }
+    }
+
+    private LocalDateTime parseDateTime(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDateTime.parse(value);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private String truncateDescription(String description) {
+        if (description == null || description.isBlank()) {
+            return "Chưa có mô tả sản phẩm.";
+        }
+        String normalized = description.trim().replaceAll("\\s+", " ");
+        return normalized.length() <= 110 ? normalized : normalized.substring(0, 107) + "...";
     }
 
     private void addAuctionSection(String title, javafx.scene.layout.HBox row) {
@@ -335,7 +445,7 @@ public class DashboardController {
     private javafx.scene.layout.HBox buildAuctionRow() {
         javafx.scene.layout.HBox row = new javafx.scene.layout.HBox(24);
         row.setFillHeight(false);
-        row.setMinHeight(370);
+        row.setMinHeight(468);
         return row;
     }
 
@@ -347,8 +457,8 @@ public class DashboardController {
         scrollPane.setVbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.NEVER);
         scrollPane.setPannable(true);
         scrollPane.getStyleClass().add("dashboard-auction-strip");
-        scrollPane.setMinHeight(390);
-        scrollPane.setPrefHeight(400);
+        scrollPane.setMinHeight(488);
+        scrollPane.setPrefHeight(498);
         return scrollPane;
     }
 
@@ -457,31 +567,49 @@ public class DashboardController {
 
     // ... (Giữ nguyên hàm handleRealtimeBidUpdate và mapStatus như cũ) ...
 
-    private VBox buildAuctionCard(String auctionId, String itemName, double currentPrice, String status, String imagePath, String timeLabelText, String targetTimeStr){
-        VBox card = new VBox(14);
+    private javafx.scene.layout.StackPane buildAuctionCard(String auctionId,
+                                                         String itemName,
+                                                         String description,
+                                                         double currentPrice,
+                                                         String imagePath,
+                                                         boolean isFollowing,
+                                                         String targetTimeStr,
+                                                         boolean isEnded,
+                                                         boolean isUpcoming) {
+        final double cardWidth = 276;
+        final double imageWidth = 248;
+        final double imageHeight = 236;
+        final double cardHeight = 448;
+
+        VBox card = new VBox(12);
         card.getStyleClass().addAll("auction-card", "dashboard-auction-card");
-        card.setPrefWidth(312);
-        card.setMinWidth(312);
-        card.setMaxWidth(312);
-        card.setMinHeight(374);
+        card.setPrefWidth(cardWidth);
+        card.setMinWidth(cardWidth);
+        card.setMaxWidth(cardWidth);
+        card.setPrefHeight(cardHeight);
+        card.setMinHeight(cardHeight);
+        card.setMaxHeight(cardHeight);
         card.setUserData(auctionId);
 
-        javafx.scene.layout.StackPane imageContainer = new javafx.scene.layout.StackPane();
+        StackPane imageContainer = new StackPane();
         imageContainer.getStyleClass().add("dashboard-card-image-box");
-        imageContainer.setPrefSize(274, 180);
-        imageContainer.setMinSize(274, 180);
-        imageContainer.setMaxSize(274, 180);
-
-        javafx.scene.image.ImageView imageView = new javafx.scene.image.ImageView();
-        imageView.setFitWidth(274);
-        imageView.setFitHeight(180);
-        imageView.setPreserveRatio(false);
-        imageView.setSmooth(true);
+        imageContainer.setPrefSize(imageWidth, imageHeight);
+        imageContainer.setMinSize(imageWidth, imageHeight);
+        imageContainer.setMaxSize(imageWidth, imageHeight);
+        Rectangle imageClip = new Rectangle(imageWidth, imageHeight);
+        imageClip.setArcWidth(20);
+        imageClip.setArcHeight(20);
+        imageContainer.setClip(imageClip);
+        imageContainer.setAlignment(Pos.CENTER);
 
         if (imagePath != null && !imagePath.isEmpty()) {
-            java.io.File file = new java.io.File(imagePath);
+            File file = new File(imagePath);
             if (file.exists()) {
-                imageView.setImage(new javafx.scene.image.Image(file.toURI().toString()));
+                Image image = new Image(file.toURI().toString());
+                ImageView imageView = new ImageView(image);
+                imageView.setSmooth(true);
+                fitImageCover(imageView, image, imageWidth, imageHeight);
+                StackPane.setAlignment(imageView, Pos.CENTER);
                 imageContainer.getChildren().add(imageView);
             } else {
                 Label noImg = new Label("Lỗi hiển thị ảnh");
@@ -494,37 +622,114 @@ public class DashboardController {
             imageContainer.getChildren().add(noImg);
         }
 
-        VBox body = new VBox(14);
+        if (!isEnded) {
+            Label timerValueLabel = new Label("--:--:--");
+            timerValueLabel.getStyleClass().add("dashboard-card-timer-value");
+            Label timerIconLabel = new Label("◷");
+            timerIconLabel.getStyleClass().add("dashboard-card-timer-icon");
+            HBox timerBadge = new HBox(3, timerIconLabel, timerValueLabel);
+            timerBadge.getStyleClass().add("dashboard-card-timer-badge");
+            timerBadge.setAlignment(Pos.CENTER);
+            timerBadge.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
+            StackPane.setAlignment(timerBadge, Pos.TOP_LEFT);
+            StackPane.setMargin(timerBadge, new Insets(6, 0, 0, 6));
+            imageContainer.getChildren().add(timerBadge);
+
+            LocalDateTime targetTime = parseDateTime(targetTimeStr);
+            cardCountdownEntries.add(new CardCountdownEntry(timerValueLabel, targetTime, false, isUpcoming));
+        }
+
+        VBox body = new VBox(10);
         body.getStyleClass().add("dashboard-card-body");
-        VBox.setVgrow(body, javafx.scene.layout.Priority.ALWAYS);
+        body.setAlignment(Pos.TOP_LEFT);
+        body.setMaxWidth(imageWidth);
+        VBox.setVgrow(body, Priority.ALWAYS);
 
         Label nameLabel = new Label(itemName);
         nameLabel.setWrapText(true);
-        nameLabel.getStyleClass().add("card-name");
-        nameLabel.setMinHeight(26);
-        nameLabel.setMaxHeight(52);
-        nameLabel.setMaxWidth(260);
-        nameLabel.setAlignment(javafx.geometry.Pos.CENTER);
-        nameLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+        nameLabel.getStyleClass().add("dashboard-card-title");
+        nameLabel.setMaxWidth(imageWidth - 42);
+        HBox.setHgrow(nameLabel, Priority.ALWAYS);
 
-        Label idLabel = new Label(auctionId);
-        idLabel.getStyleClass().add("dashboard-card-id");
-        idLabel.setWrapText(true);
-        idLabel.setMaxWidth(260);
-        idLabel.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        Button favoriteButton = FollowHeartButtonFactory.create(isFollowing);
+        favoriteButton.getStyleClass().add("dashboard-card-heart-btn");
+        favoriteButton.setOnAction(e -> handleFavoriteAuction(auctionId, favoriteButton));
 
-        javafx.scene.layout.Region spacer = new javafx.scene.layout.Region();
-        VBox.setVgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
+        HBox titleRow = new HBox(8, nameLabel, favoriteButton);
+        titleRow.getStyleClass().add("dashboard-card-title-row");
+        titleRow.setAlignment(Pos.CENTER_LEFT);
+        titleRow.setMaxWidth(imageWidth);
 
-        Button viewBtn = new Button("Xem chi tiết");
-        viewBtn.getStyleClass().add("card-view-btn");
-        viewBtn.setMaxWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
+        Label descLabel = new Label(truncateDescription(description));
+        descLabel.getStyleClass().add("dashboard-card-description");
+        descLabel.setWrapText(true);
+        descLabel.setMaxWidth(imageWidth);
+        descLabel.setAlignment(Pos.TOP_LEFT);
+        descLabel.setTextAlignment(javafx.scene.text.TextAlignment.LEFT);
+
+        Label priceCaption = new Label("Giá hiện tại");
+        priceCaption.getStyleClass().add("dashboard-card-price-caption");
+
+        Label priceLabel = new Label(currencyFmt.format(currentPrice) + " đ");
+        priceLabel.getStyleClass().add("dashboard-card-price-value");
+
+        Button viewBtn = new Button("Vào xem chi tiết");
+        viewBtn.getStyleClass().add("dashboard-card-detail-btn");
+        viewBtn.setMaxWidth(Double.MAX_VALUE);
         viewBtn.setOnAction(e -> handleViewAuction(auctionId));
 
-        body.getChildren().addAll(nameLabel, idLabel, spacer, viewBtn);
+        body.getChildren().addAll(titleRow, descLabel, priceCaption, priceLabel, viewBtn);
         card.getChildren().addAll(imageContainer, body);
 
-        return card;
+        StackPane cardShell = new StackPane(card);
+        cardShell.setUserData(auctionId);
+        return cardShell;
+    }
+
+    private void fitImageCover(ImageView imageView, Image image, double targetWidth, double targetHeight) {
+        if (image == null || image.getWidth() <= 0 || image.getHeight() <= 0) {
+            return;
+        }
+        imageView.setPreserveRatio(true);
+        double scale = Math.max(targetWidth / image.getWidth(), targetHeight / image.getHeight());
+        imageView.setFitWidth(image.getWidth() * scale);
+        imageView.setFitHeight(image.getHeight() * scale);
+    }
+
+    private String formatCondition(String condition) {
+        return switch (condition) {
+            case "NEW" -> "Mới";
+            case "LIKE_NEW" -> "Như mới";
+            case "USED" -> "Đã sử dụng";
+            case "DAMAGED" -> "Có hỏng hóc";
+            default -> condition;
+        };
+    }
+
+    private void handleFavoriteAuction(String auctionId, Button favoriteButton) {
+        if (auctionId == null || auctionId.isBlank()) {
+            return;
+        }
+
+        boolean following = FollowHeartButtonFactory.isFollowing(favoriteButton);
+        JsonObject request = new JsonObject();
+        request.addProperty("action", following ? "UNFOLLOW_AUCTION" : "FOLLOW_AUCTION");
+        request.addProperty("auctionId", auctionId);
+        networkClient.sendJson(request);
+
+        setAuctionFollowing(auctionId, !following);
+        FollowHeartButtonFactory.setFollowing(favoriteButton, !following);
+    }
+
+    private void setAuctionFollowing(String auctionId, boolean following) {
+        for (JsonElement element : allAuctions) {
+            if (!element.isJsonObject()) continue;
+            JsonObject auction = element.getAsJsonObject();
+            if (auctionId.equals(getStringSafe(auction, "id"))) {
+                auction.addProperty("isFollowing", following);
+                return;
+            }
+        }
     }
 
     private void handleViewAuction(String auctionId) {
@@ -594,13 +799,16 @@ public class DashboardController {
 
     // Hàm tiện ích lấy String an toàn, chống chết NullPointerException
     private String getStringSafe(JsonObject obj, String key) {
-        return (obj.has(key) && !obj.get(key).isJsonNull()) ? obj.get(key).getAsString() : "";
+        return (obj != null && obj.has(key) && !obj.get(key).isJsonNull()) ? obj.get(key).getAsString() : "";
     }
 
     // Hàm dịch trạng thái sang Tiếng Việt (nếu sếp cần hiển thị lên thẻ)
     private String mapStatus(String status) {
         if (status == null) return "Không rõ";
         return switch (status) {
+            case "RUNNING" -> "Đang đấu giá";
+            case "OPEN" -> "Sắp mở";
+            case "FINISHED", "CLOSED" -> "Đã kết thúc";
             case "ACTIVE" -> "Đang diễn ra";
             case "COMPLETED" -> "Đã kết thúc";
             case "CANCELLED" -> "Đã hủy";

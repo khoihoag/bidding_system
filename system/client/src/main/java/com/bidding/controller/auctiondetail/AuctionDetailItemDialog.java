@@ -24,7 +24,7 @@ public final class AuctionDetailItemDialog {
 
     public static void show(JsonObject item, Class<?> resourceClass) {
         Dialog<Void> dialog = new Dialog<>();
-        dialog.setTitle("Chi Tiết Vật Phẩm Đấu Giá");
+        dialog.setTitle("Chi tiết vật phẩm đấu giá");
         dialog.setHeaderText(item.has("name") ? item.get("name").getAsString() : "Không tên");
 
         try {

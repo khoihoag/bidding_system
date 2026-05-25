@@ -54,7 +54,7 @@ public class AuctionController {
 
             // ================= BỌC THÉP LỖI DỮ LIỆU RÁC =================
             if (item.getSellerId() == null || item.getSellerId().isEmpty()) {
-                client.sendError("Món đồ này bị lỗi dữ liệu cũ (Không có chủ). Sếp hãy xóa đi và Add 1 món đồ mới tinh vào kho nhé!");
+                client.sendError("Món đồ này bị lỗi dữ liệu cũ (không có chủ). Hãy xóa và thêm món đồ mới vào kho.");
                 return;
             }
             if (!item.getSellerId().equals(client.getLoggedInUser().getId())) {
@@ -97,7 +97,7 @@ public class AuctionController {
 
             // ================= BỌC THÉP LỖI DỮ LIỆU RÁC =================
             if (item.getSellerId() == null || item.getSellerId().isEmpty()) {
-                client.sendError("Món đồ này bị lỗi dữ liệu cũ (Không có chủ). Sếp hãy xóa đi và Add 1 món đồ mới tinh vào kho nhé!");
+                client.sendError("Món đồ này bị lỗi dữ liệu cũ (không có chủ). Hãy xóa và thêm món đồ mới vào kho.");
                 return;
             }
             if (!item.getSellerId().equals(client.getLoggedInUser().getId())) {
@@ -339,6 +339,30 @@ public class AuctionController {
             client.sendError("Lỗi hệ thống khi theo dõi: " + e.getMessage());
         }
     }
+
+    public void handleUnfollowAuction(JsonObject request) {
+        if (client.getLoggedInUser() == null) {
+            client.sendError("Vui lòng đăng nhập để hủy theo dõi phiên đấu giá!");
+            return;
+        }
+        try {
+            String auctionId = request.get("auctionId").getAsString();
+            String userId = client.getLoggedInUser().getId();
+
+            Auction auction = tongQuan.findAuctionById(auctionId);
+            if (auction == null) {
+                client.sendError("Không tìm thấy phiên đấu giá này!");
+                return;
+            }
+
+            auction.removeFollower(userId);
+            client.sendMessage("{\"action\": \"UNFOLLOW_AUCTION_REPLY\", \"status\": \"SUCCESS\"}");
+            System.out.println("[Theo dõi] User " + client.getLoggedInUser().getUsername() + " đã hủy theo dõi phiên: " + auctionId);
+        } catch (Exception e) {
+            client.sendError("Lỗi hệ thống khi hủy theo dõi: " + e.getMessage());
+        }
+    }
+
     // Sếp dán hàm này vào AuctionController.java
     public void handleGetNotifications(JsonObject request) {
         if (client.getLoggedInUser() == null) {

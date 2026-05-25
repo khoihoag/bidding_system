@@ -52,11 +52,11 @@ public final class AdminTableCellFactory {
                 UserRow row = getTableView().getItems().get(getIndex());
                 banBtn.getStyleClass().removeAll("btn-danger", "btn-outline");
                 if (row.isActive()) {
-                    banBtn.setText("Ban");
+                    banBtn.setText("Khóa");
                     banBtn.getStyleClass().add("btn-danger");
                     banBtn.setOnAction(e -> handler.onBan(row));
                 } else {
-                    banBtn.setText("Unban");
+                    banBtn.setText("Mở khóa");
                     banBtn.getStyleClass().add("btn-outline");
                     banBtn.setOnAction(e -> handler.onUnban(row));
                 }

@@ -82,6 +82,7 @@ public class ClientHandler implements Runnable {
                         // Nằm trong hàm xử lý JSON nhận được từ Client
                         // Nằm trong hàm xử lý JSON nhận được từ Client
                         case "FOLLOW_AUCTION": auctionController.handleFollowAuction(request); break;
+                        case "UNFOLLOW_AUCTION": auctionController.handleUnfollowAuction(request); break;
                         // Trong hàm xử lý Action chính của Server
                         // Trong vòng switch-case xử lý lệnh từ Client của sếp
                         case "GET_NOTIFICATIONS":

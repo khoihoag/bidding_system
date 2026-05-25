@@ -56,7 +56,7 @@ public class AuctionDetailResponseHandler {
             Platform.runLater(() -> AuctionDetailAlerts.show(
                     Alert.AlertType.INFORMATION,
                     "Thành công",
-                    "Ting ting! Sếp đã nạp tiền thành công.\nSố dư hiện tại: "
+                    "Ting ting! Bạn đã nạp tiền thành công.\nSố dư hiện tại: "
                             + String.format("%,.0f", newBalance) + " VNĐ",
                     resourceClass));
         }
@@ -182,6 +182,7 @@ public class AuctionDetailResponseHandler {
             final boolean finalIsReverse = isReverse;
 
             // 3. Khai báo biến finalIsFollowing chuẩn xác
+            state.isFollowing = isFollowing;
             final boolean finalIsFollowing = isFollowing;
 
             Platform.runLater(() -> applyAuctionInfo(
