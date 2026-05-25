@@ -17,6 +17,10 @@ public class AutoBidConfig implements Comparable<AutoBidConfig> {
     // ==========================================
     // CONSTRUCTOR
     // ==========================================
+    public AutoBidConfig(double maxBid, double increment) {
+        this(null, maxBid, increment);
+    }
+
     public AutoBidConfig(User bidder,double maxBid, double increment) {
         if (maxBid <= 0 || increment <= 0) {
             throw new IllegalArgumentException("Giá tối đa và bước giá phải lớn hơn 0.");

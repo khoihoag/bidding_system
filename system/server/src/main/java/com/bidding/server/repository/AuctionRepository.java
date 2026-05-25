@@ -51,7 +51,8 @@ public class AuctionRepository {
         Session session = factory.openSession();
         try {
             String hql = "SELECT DISTINCT a FROM AuctionEntity a " +
-                    "LEFT JOIN FETCH a.transactions " +    // Lôi theo lịch sử đặt giá
+                    "LEFT JOIN FETCH a.transactions t " +  // Lôi theo lịch sử đặt giá
+                    "LEFT JOIN FETCH t.bidder " +          // Lôi theo người đặt giá
                     "LEFT JOIN FETCH a.currentWinner " +   // Lôi theo User (người thắng)
                     "LEFT JOIN FETCH a.item";
             return session.createQuery(hql, AuctionEntity.class).getResultList();
