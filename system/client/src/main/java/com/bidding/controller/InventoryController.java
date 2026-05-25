@@ -8,10 +8,15 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import javafx.application.Platform;
+import javafx.geometry.Pos;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.effect.GaussianBlur;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 import java.net.URL;
@@ -22,10 +27,19 @@ public class InventoryController implements Initializable {
     @FXML private javafx.scene.control.TextField txtDropStepNow, txtDropStepSchedule;
     @FXML private FlowPane wonItemsGrid;
     @FXML private Button btnViewSelectedItem;
+    @FXML private Button btnEditSelectedItem;
+    @FXML private Button btnSubmitItem;
+    @FXML private Button btnCancelEdit;
+    @FXML private Button btnRemoveSelectedImage;
+    @FXML private TabPane actionTabPane;
+    @FXML private Tab itemFormTab;
     // Kho RAM lưu trọn bộ JSON của từng món đồ (để làm Popup)
     private final java.util.Map<String, JsonObject> itemDatabase = new java.util.HashMap<>();
+    private final List<JsonObject> inventoryItems = new ArrayList<>();
     private String selectedItemId;
+    private String editingItemId;
     @FXML private FlowPane inventoryGrid;
+    @FXML private TextField txtInventorySearch;
     @FXML private TextField txtItemIdSchedule, txtStartTime, txtEndTime;
     // --- Tab Bán Ngay ---
     @FXML private TextField txtItemIdNow;
@@ -128,6 +142,8 @@ public class InventoryController implements Initializable {
         comboType.setValue("Art");
         comboCondition.setValue("NEW");
 
+        txtInventorySearch.textProperty().addListener((obs, oldVal, newVal) -> renderInventoryGrid());
+
         handleRefreshInventory();
 
         // Bắt sự kiện click vào list đồ để điền nhanh ID
@@ -212,7 +228,7 @@ public class InventoryController implements Initializable {
             long startingPrice = parseRequiredLong(priceStr, "Giá khởi điểm");
 
             if (startingPrice < 0) {
-                showAlert(AlertType.WARNING, "Lỗi logic", "Sếp định tặng kèm tiền cho người mua à? Giá không được âm!");
+                showAlert(AlertType.WARNING, "Lỗi logic", "Bạn định tặng kèm tiền cho người mua à? Giá không được âm!");
                 return;
             }
             // ============================================================
@@ -220,7 +236,10 @@ public class InventoryController implements Initializable {
             JsonObject request = new JsonObject();
 
             // 1. Gói các thuộc tính chung
-            request.addProperty("action", "ADD_ITEM");
+            request.addProperty("action", editingItemId == null ? "ADD_ITEM" : "UPDATE_ITEM");
+            if (editingItemId != null) {
+                request.addProperty("itemId", editingItemId);
+            }
             request.addProperty("name", name);
             request.addProperty("description", txtNewDesc.getText().trim());
             request.addProperty("startingPrice", startingPrice);
@@ -298,20 +317,20 @@ public class InventoryController implements Initializable {
                 if ("ITEMS_LIST".equals(action)) {
                     inventoryGrid.getChildren().clear(); // Xóa sạch lưới cũ
                     itemDatabase.clear();
+                    inventoryItems.clear();
                     selectedItemId = null;
                     if (txtItemIdNow != null) txtItemIdNow.clear();
                     if (txtItemIdSchedule != null) txtItemIdSchedule.clear();
+                    exitEditMode();
 
                     if (response.has("items")) {
                         for (JsonElement elem : response.getAsJsonArray("items")) {
                             JsonObject item = elem.getAsJsonObject();
                             String id = item.has("id") ? item.get("id").getAsString() : "UNKNOWN";
                             itemDatabase.put(id, item);
-
-                            // Gọi tà thuật tự vẽ thẻ Hình Ảnh
-                            VBox card = createItemCard(item);
-                            inventoryGrid.getChildren().add(card);
+                            inventoryItems.add(item);
                         }
+                        renderInventoryGrid();
                     } else {
                         inventoryGrid.getChildren().add(new Label("Kho đồ trống. Hãy nhập thêm vật phẩm!"));
                     }
@@ -324,8 +343,7 @@ public class InventoryController implements Initializable {
                         showAlert(AlertType.INFORMATION, "Thành công", "Đã nhập đồ vào kho!");
                         handleRefreshInventory();
                         // Clear form nhập đồ mới
-                        txtNewName.clear(); txtNewPrice.clear(); txtNewDesc.clear();
-                        selectedImagePaths.clear(); listSelectedImages.getItems().clear();
+                        clearItemForm();
                     } else {
                         String msg = response.has("message") ? response.get("message").getAsString() : "Lỗi thêm đồ";
                         showAlert(AlertType.ERROR, "Thất bại", msg);
@@ -333,14 +351,40 @@ public class InventoryController implements Initializable {
                 }
 
                 // 3. Phản hồi Mở phiên đấu giá NGAY
+                else if ("UPDATE_ITEM_REPLY".equals(action)) {
+                    String status = response.has("status") ? response.get("status").getAsString() : "ERROR";
+                    if ("SUCCESS".equals(status)) {
+                        showAlert(AlertType.INFORMATION, "Thành công", "Đã cập nhật sản phẩm.");
+                        clearItemForm();
+                        exitEditMode();
+                        handleRefreshInventory();
+                    } else {
+                        String msg = response.has("message") ? response.get("message").getAsString() : "Lỗi cập nhật sản phẩm";
+                        showAlert(AlertType.ERROR, "Thất bại", msg);
+                    }
+                }
+
+                else if ("DELETE_ITEM_REPLY".equals(action)) {
+                    String status = response.has("status") ? response.get("status").getAsString() : "ERROR";
+                    if ("SUCCESS".equals(status)) {
+                        showAlert(AlertType.INFORMATION, "Thành công", "Đã xóa sản phẩm khỏi kho đồ.");
+                        clearItemForm();
+                        exitEditMode();
+                        handleRefreshInventory();
+                    } else {
+                        String msg = response.has("message") ? response.get("message").getAsString() : "Lỗi xóa sản phẩm";
+                        showAlert(AlertType.ERROR, "Thất bại", msg);
+                    }
+                }
+
                 else if ("START_AUCTION_REPLY".equals(action)) {
                     String status = response.has("status") ? response.get("status").getAsString() : "ERROR";
                     if ("SUCCESS".equals(status)) {
-                        showAlert(AlertType.INFORMATION, "Thành Công", "Đã đưa lên sàn đấu giá ngay lập tức!");
+                        showAlert(AlertType.INFORMATION, "Thành công", "Đã đưa lên sàn đấu giá ngay lập tức!");
                         txtItemIdNow.clear(); txtDuration.clear();
                     } else {
                         String msg = response.has("message") ? response.get("message").getAsString() : "Lỗi khởi tạo";
-                        showAlert(AlertType.ERROR, "Thất Bại", msg);
+                        showAlert(AlertType.ERROR, "Thất bại", msg);
                     }
                 }
 
@@ -348,7 +392,7 @@ public class InventoryController implements Initializable {
                 else if ("SCHEDULE_AUCTION_REPLY".equals(action)) {
                     String status = response.has("status") ? response.get("status").getAsString() : "ERROR";
                     if ("SUCCESS".equals(status)) {
-                        showAlert(AlertType.INFORMATION, "Thành Công", "Đã đặt lịch hẹn giờ đấu giá thành công!");
+                        showAlert(AlertType.INFORMATION, "Thành công", "Đã đặt lịch hẹn giờ đấu giá thành công!");
                         // Xóa trắng các ô nhập liệu của Tab Hẹn giờ
                         txtItemIdSchedule.clear();
                         txtStartTime.clear();
@@ -356,7 +400,7 @@ public class InventoryController implements Initializable {
                     } else {
                         // Nếu lỗi định dạng yyyy-MM-ddTHH:mm:ss, Server sẽ báo ở đây
                         String msg = response.has("message") ? response.get("message").getAsString() : "Lỗi định dạng thời gian!";
-                        showAlert(AlertType.ERROR, "Thất Bại", msg);
+                        showAlert(AlertType.ERROR, "Thất bại", msg);
                     }
                 }
                 // --- NHẬN DANH SÁCH CHIẾN LỢI PHẨM ---
@@ -376,7 +420,7 @@ public class InventoryController implements Initializable {
                             wonItemsGrid.getChildren().add(card);
                         }
                     } else {
-                        wonItemsGrid.getChildren().add(new Label("Chưa có chiến lợi phẩm nào. Hãy ra sảnh khô máu đi sếp!"));
+                        wonItemsGrid.getChildren().add(new Label("Chưa có chiến lợi phẩm nào. Hãy ra sảnh đấu giá thử vận may nhé!"));
                     }
                 }
                 else if ("ERROR".equals(action)) {
@@ -434,6 +478,38 @@ public class InventoryController implements Initializable {
     }
 
     @FXML
+    private void handleEditSelectedItem() {
+        if (selectedItemId == null || selectedItemId.isBlank()) {
+            showAlert(AlertType.INFORMATION, "Chưa chọn vật phẩm", "Vui lòng chọn một vật phẩm trong kho trước.");
+            return;
+        }
+
+        JsonObject item = itemDatabase.get(selectedItemId);
+        if (item == null) {
+            showAlert(AlertType.ERROR, "Lỗi dữ liệu", "Không tìm thấy dữ liệu vật phẩm đang chọn.");
+            return;
+        }
+
+        editingItemId = selectedItemId;
+        fillItemForm(item);
+        if (btnSubmitItem != null) btnSubmitItem.setText("Lưu thay đổi sản phẩm");
+        if (btnCancelEdit != null) {
+            btnCancelEdit.setVisible(true);
+            btnCancelEdit.setManaged(true);
+        }
+        if (actionTabPane != null && itemFormTab != null) {
+            actionTabPane.getSelectionModel().select(itemFormTab);
+        }
+        comboType.setDisable(true);
+    }
+
+    @FXML
+    private void handleCancelEdit() {
+        clearItemForm();
+        exitEditMode();
+    }
+
+    @FXML
     private void handleViewDetailsById(String id) {
         JsonObject item = itemDatabase.get(id);
         if (item == null) return;
@@ -455,14 +531,26 @@ public class InventoryController implements Initializable {
             controller.setItemData(selectedItemJson);
 
             javafx.stage.Stage stage = new javafx.stage.Stage();
+            controller.setDeleteCallback(itemId -> handleDeleteItemFromDetail(itemId, stage));
+            javafx.stage.Window ownerWindow = inventoryGrid.getScene().getWindow();
+            javafx.scene.Parent ownerRoot = ownerWindow.getScene().getRoot();
+            javafx.scene.effect.Effect previousEffect = ownerRoot.getEffect();
+            double previousOpacity = ownerRoot.getOpacity();
+            ownerRoot.setEffect(new GaussianBlur(5));
+            ownerRoot.setOpacity(0.86);
 
             // ================= VŨ KHÍ XÓA VIỀN WINDOWS =================
             stage.initStyle(javafx.stage.StageStyle.UNDECORATED); // <--- THÊM ĐÚNG DÒNG NÀY
             // ===========================================================
 
-            stage.setTitle("Chi Tiết Vật Phẩm");
+            stage.setTitle("Chi tiết vật phẩm");
             stage.setScene(new javafx.scene.Scene(detailRoot));
+            stage.initOwner(ownerWindow);
             stage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+            stage.setOnHidden(e -> {
+                ownerRoot.setEffect(previousEffect);
+                ownerRoot.setOpacity(previousOpacity);
+            });
             stage.centerOnScreen();
             stage.show();
 
@@ -478,62 +566,126 @@ public class InventoryController implements Initializable {
     // =========================================================================
     // =====================================================
     // ================= VŨ KHÍ TẠO LƯỚI ẢNH CHUẨN SOTHEBY'S =================
+    private void renderInventoryGrid() {
+        if (inventoryGrid == null) return;
+        inventoryGrid.getChildren().clear();
+
+        for (JsonObject item : inventoryItems) {
+            if (matchesInventorySearch(item)) {
+                inventoryGrid.getChildren().add(createItemCard(item));
+            }
+        }
+
+        if (inventoryGrid.getChildren().isEmpty()) {
+            inventoryGrid.getChildren().add(new Label("Không có sản phẩm phù hợp."));
+        }
+    }
+
+    private boolean matchesInventorySearch(JsonObject item) {
+        String query = txtInventorySearch != null && txtInventorySearch.getText() != null
+                ? normalizeSearchText(txtInventorySearch.getText())
+                : "";
+        if (query.isEmpty()) {
+            return true;
+        }
+
+        String searchable = getString(item, "name") + " " +
+                getString(item, "id") + " " +
+                getString(item, "description") + " " +
+                getString(item, "type") + " " +
+                (item.has("startingPrice") ? item.get("startingPrice").getAsString() : "");
+        return normalizeSearchText(searchable).contains(query);
+    }
+
+    private String normalizeSearchText(String text) {
+        if (text == null) return "";
+        String normalized = java.text.Normalizer.normalize(text, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase();
+        return normalized
+                .replace('đ', 'd')
+                .replace('Đ', 'd')
+                .replaceAll("\\s+", " ")
+                .trim();
+    }
+
     private VBox createItemCard(JsonObject item) {
         String id = item.has("id") ? item.get("id").getAsString() : "";
+        String price = item.has("startingPrice") ? formatPrice(item.get("startingPrice").getAsDouble()) : "";
+        String type = item.has("type") ? item.get("type").getAsString() : "";
         String name = item.has("name") ? item.get("name").getAsString() : "Không tên";
 
+        final double cardWidth = 208;
+        final double contentWidth = 184;
+
         VBox card = new VBox(10);
-        card.getStyleClass().add("auction-card");
-        card.setPrefWidth(190);
-        card.setMinWidth(190);
-        card.setMaxWidth(190);
-        card.setAlignment(javafx.geometry.Pos.CENTER);
-        card.setStyle("-fx-cursor: hand;");
+        card.getStyleClass().addAll("auction-card", "inventory-item-card");
+        card.setPrefWidth(cardWidth);
+        card.setMinWidth(cardWidth);
+        card.setMaxWidth(cardWidth);
+        card.setMinHeight(300);
+        card.setPrefHeight(300);
+        card.setAlignment(Pos.TOP_CENTER);
 
-        javafx.scene.layout.StackPane imageBox = new javafx.scene.layout.StackPane();
-        imageBox.setPrefSize(162, 110);
-        imageBox.setMinSize(162, 110);
-        imageBox.setMaxSize(162, 110);
-        imageBox.setStyle("-fx-background-color: #d1d5db; -fx-background-radius: 6;");
+        StackPane imageBox = new StackPane();
+        imageBox.getStyleClass().add("inventory-card-image-box");
+        imageBox.setPrefSize(contentWidth, 148);
+        imageBox.setMinSize(contentWidth, 148);
+        imageBox.setMaxSize(contentWidth, 148);
 
-        javafx.scene.image.ImageView imgView = new javafx.scene.image.ImageView();
-        imgView.setFitWidth(162);
-        imgView.setFitHeight(110);
-        imgView.setPreserveRatio(false);
+        ImageView imgView = new ImageView();
+        imgView.setFitWidth(contentWidth);
+        imgView.setFitHeight(148);
+        imgView.setPreserveRatio(true);
         imgView.setSmooth(true);
         if (item.has("images") && item.getAsJsonArray("images").size() > 0) {
             String imgPath = item.getAsJsonArray("images").get(0).getAsString();
             try {
                 File file = new File(imgPath);
-                if (file.exists()) imgView.setImage(new javafx.scene.image.Image(file.toURI().toString()));
+                if (file.exists()) imgView.setImage(new Image(file.toURI().toString()));
             } catch (Exception e) {}
         }
         imageBox.getChildren().add(imgView);
 
+        Label lblType = new Label(type);
+        lblType.getStyleClass().add("inventory-card-badge");
+        StackPane.setAlignment(lblType, Pos.TOP_LEFT);
+        StackPane.setMargin(lblType, new javafx.geometry.Insets(0));
+        imageBox.getChildren().add(lblType);
+
         Label lblName = new Label(name);
         lblName.getStyleClass().add("card-name");
         lblName.setWrapText(true);
-        lblName.setAlignment(javafx.geometry.Pos.CENTER);
-        lblName.setMaxWidth(165);
+        lblName.setAlignment(Pos.CENTER_LEFT);
+        lblName.setMaxWidth(contentWidth);
 
-        Label lblId = new Label(id);
-        lblId.getStyleClass().add("card-id");
-        lblId.setWrapText(true);
-        lblId.setAlignment(javafx.geometry.Pos.CENTER);
-        lblId.setMaxWidth(165);
+        Label priceCaption = new Label("Giá khởi điểm");
+        priceCaption.getStyleClass().add("inventory-card-price-caption");
+
+        Label lblPrice = new Label(price.isBlank() ? "—" : price);
+        lblPrice.getStyleClass().add("inventory-card-price-value");
+        lblPrice.setMaxWidth(contentWidth);
+
+        VBox priceBlock = new VBox(2, priceCaption, lblPrice);
+        priceBlock.setAlignment(Pos.TOP_LEFT);
+        priceBlock.setMaxWidth(contentWidth);
 
         Button btnDetails = new Button("Xem chi tiết");
-        btnDetails.getStyleClass().add("secondary-button");
-        btnDetails.setStyle("-fx-font-size: 11px; -fx-padding: 5 10;");
+        btnDetails.getStyleClass().add("card-view-btn");
+        btnDetails.setMaxWidth(Double.MAX_VALUE);
         btnDetails.setOnAction(e -> handleViewDetailsById(id));
 
-        card.getChildren().addAll(imageBox, lblName, lblId, btnDetails);
+        VBox body = new VBox(6, lblName, priceBlock);
+        body.getStyleClass().add("dashboard-card-body");
+        body.setAlignment(Pos.TOP_LEFT);
+        body.setMaxWidth(contentWidth);
+
+        card.getChildren().addAll(imageBox, body, btnDetails);
 
         card.setOnMouseClicked(e -> {
-            for (javafx.scene.Node node : inventoryGrid.getChildren()) {
-                node.setStyle("-fx-cursor: hand;");
-            }
-            card.setStyle("-fx-cursor: hand; -fx-border-color: #d2aa2a; -fx-border-width: 2; -fx-border-radius: 8;");
+            clearCardSelection(inventoryGrid);
+            clearCardSelection(wonItemsGrid);
+            card.getStyleClass().add("inventory-item-card-selected");
 
             selectedItemId = id;
             if (txtItemIdNow != null) txtItemIdNow.setText(id);
@@ -541,5 +693,117 @@ public class InventoryController implements Initializable {
         });
 
         return card;
+    }
+
+    private void clearCardSelection(FlowPane grid) {
+        if (grid == null) return;
+        for (javafx.scene.Node node : grid.getChildren()) {
+            node.getStyleClass().remove("inventory-item-card-selected");
+        }
+    }
+
+    @FXML
+    private void handleRemoveSelectedImage() {
+        int selectedIndex = listSelectedImages.getSelectionModel().getSelectedIndex();
+        if (selectedIndex < 0 || selectedIndex >= selectedImagePaths.size()) {
+            showAlert(AlertType.INFORMATION, "Chưa chọn ảnh", "Vui lòng chọn một ảnh trong danh sách để xóa.");
+            return;
+        }
+
+        selectedImagePaths.remove(selectedIndex);
+        listSelectedImages.getItems().remove(selectedIndex);
+    }
+
+    private void handleDeleteItemFromDetail(String itemId, javafx.stage.Stage detailStage) {
+        Alert confirm = new Alert(AlertType.CONFIRMATION);
+        confirm.setTitle("Xóa sản phẩm");
+        confirm.setHeaderText(null);
+        confirm.setContentText("Bạn chắc chắn muốn xóa sản phẩm này? Sản phẩm đang hoặc đã đấu giá sẽ bị server từ chối.");
+        try {
+            confirm.getDialogPane().getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
+        } catch (Exception ignored) {}
+
+        java.util.Optional<ButtonType> result = confirm.showAndWait();
+        if (result.isEmpty() || result.get() != ButtonType.OK) {
+            return;
+        }
+
+        JsonObject request = new JsonObject();
+        request.addProperty("action", "DELETE_ITEM");
+        request.addProperty("itemId", itemId);
+        networkClient.sendJson(request);
+        detailStage.close();
+    }
+
+    private void fillItemForm(JsonObject item) {
+        txtNewName.setText(getString(item, "name"));
+        txtNewDesc.setText(getString(item, "description"));
+        txtNewPrice.setText(item.has("startingPrice") ? String.valueOf(Math.round(item.get("startingPrice").getAsDouble())) : "");
+        comboType.setValue(getString(item, "type").isBlank() ? "Art" : getString(item, "type"));
+        comboCondition.setValue(getString(item, "condition").isBlank() ? "NEW" : getString(item, "condition"));
+
+        selectedImagePaths.clear();
+        listSelectedImages.getItems().clear();
+        if (item.has("images") && item.get("images").isJsonArray()) {
+            for (JsonElement elem : item.getAsJsonArray("images")) {
+                String path = elem.getAsString();
+                selectedImagePaths.add(path);
+                listSelectedImages.getItems().add(new File(path).getName());
+            }
+        }
+
+        clearSpecificFields();
+        JsonObject specs = item.has("specifications") ? item.getAsJsonObject("specifications") : new JsonObject();
+        String type = comboType.getValue();
+        if ("Art".equals(type)) {
+            txtArtArtist.setText(getString(specs, "Artist"));
+            txtArtMedium.setText(getString(specs, "Medium"));
+            txtArtYear.setText(getString(specs, "Year Created"));
+            txtArtDimensions.setText(getString(specs, "Dimensions"));
+        } else if ("Vehicle".equals(type)) {
+            txtVehMake.setText(getString(specs, "Make"));
+            txtVehModel.setText(getString(specs, "Model"));
+            txtVehYear.setText(getString(specs, "Year"));
+            txtVehMileage.setText(getString(specs, "Mileage"));
+            txtVehFuel.setText(getString(specs, "Fuel Type"));
+        } else if ("Electronics".equals(type)) {
+            txtElecBrand.setText(getString(specs, "Brand"));
+            txtElecModel.setText(getString(specs, "Model"));
+            txtElecWarranty.setText(getString(specs, "Warranty Months"));
+            txtElecPower.setText(getString(specs, "Power Watts"));
+        }
+    }
+
+    private void clearItemForm() {
+        txtNewName.clear();
+        txtNewPrice.clear();
+        txtNewDesc.clear();
+        selectedImagePaths.clear();
+        listSelectedImages.getItems().clear();
+        clearSpecificFields();
+    }
+
+    private void clearSpecificFields() {
+        txtArtArtist.clear(); txtArtMedium.clear(); txtArtYear.clear(); txtArtDimensions.clear();
+        txtVehMake.clear(); txtVehModel.clear(); txtVehYear.clear(); txtVehMileage.clear(); txtVehFuel.clear();
+        txtElecBrand.clear(); txtElecModel.clear(); txtElecWarranty.clear(); txtElecPower.clear();
+    }
+
+    private void exitEditMode() {
+        editingItemId = null;
+        if (btnSubmitItem != null) btnSubmitItem.setText("Nhập đồ mới");
+        if (btnCancelEdit != null) {
+            btnCancelEdit.setVisible(false);
+            btnCancelEdit.setManaged(false);
+        }
+        if (comboType != null) comboType.setDisable(false);
+    }
+
+    private String getString(JsonObject object, String key) {
+        return object != null && object.has(key) && !object.get(key).isJsonNull() ? object.get(key).getAsString() : "";
+    }
+
+    private String formatPrice(double value) {
+        return String.format("%,.0f ₫", value);
     }
 }

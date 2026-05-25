@@ -15,10 +15,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import com.bidding.server.model.user.User;
-import lombok.Setter;
-import lombok.Getter;
-@Getter
-@Setter
 public class Auction extends Entity {
     private final CopyOnWriteArrayList<AuctionObserver> observers = new CopyOnWriteArrayList<>();
     private CopyOnWriteArrayList<String> followerIds;
@@ -69,6 +65,34 @@ public class Auction extends Entity {
         this.extensionSeconds = extensionSeconds;
         this.autoBidQueue = new PriorityBlockingQueue<>();
     }
+
+    public boolean isReverse() { return isReverse; }
+    public void setReverse(boolean reverse) { isReverse = reverse; }
+    public double getDropStep() { return dropStep; }
+    public void setDropStep(double dropStep) { this.dropStep = dropStep; }
+    public Item getItem() { return item; }
+    public void setItem(Item item) { this.item = item; }
+    public AuctionStatus getStatus() { return status; }
+    public void setStatus(AuctionStatus status) { this.status = status; }
+    public LocalDateTime getStartTime() { return startTime; }
+    public void setStartTime(LocalDateTime startTime) { this.startTime = startTime; }
+    public LocalDateTime getEndTime() { return endTime; }
+    public void setEndTime(LocalDateTime endTime) { this.endTime = endTime; }
+    public AtomicReference<Double> getCurrentPrice() { return currentPrice; }
+    public void setCurrentPrice(AtomicReference<Double> currentPrice) { this.currentPrice = currentPrice; }
+    public User getCurrentWinner() { return currentWinner; }
+    public void setCurrentWinner(User currentWinner) { this.currentWinner = currentWinner; }
+    public CopyOnWriteArrayList<BiddingTransaction> getBidHistory() { return bidHistory; }
+    public void setBidHistory(CopyOnWriteArrayList<BiddingTransaction> bidHistory) { this.bidHistory = bidHistory; }
+    public CopyOnWriteArrayList<String> getFollowerIds() { return followerIds; }
+    public void setFollowerIds(CopyOnWriteArrayList<String> followerIds) { this.followerIds = followerIds; }
+    public void setAutoBidQueue(PriorityBlockingQueue<AutoBidConfig> autoBidQueue) { this.autoBidQueue = autoBidQueue; }
+    public int getAntiSnipingSeconds() { return antiSnipingSeconds; }
+    public void setAntiSnipingSeconds(int antiSnipingSeconds) { this.antiSnipingSeconds = antiSnipingSeconds; }
+    public int getExtensionSeconds() { return extensionSeconds; }
+    public void setExtensionSeconds(int extensionSeconds) { this.extensionSeconds = extensionSeconds; }
+    public ReentrantLock getLock() { return lock; }
+    public void setLock(ReentrantLock lock) { this.lock = lock; }
 
     // Đặt giá
     // ĐÃ XÓA CHỮ 'synchronized' Ở ĐÂY
@@ -235,6 +259,12 @@ public class Auction extends Entity {
         if (userId != null && !this.followerIds.contains(userId)) {
             this.followerIds.add(userId);
             System.out.println("[Theo Dõi] Đã thêm User " + userId + " vào danh sách hóng phiên " + this.getId());
+        }
+    }
+
+    public void removeFollower(String userId) {
+        if (userId != null && this.followerIds.remove(userId)) {
+            System.out.println("[Theo Dõi] Đã gỡ User " + userId + " khỏi phiên " + this.getId());
         }
     }
 

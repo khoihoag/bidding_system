@@ -329,19 +329,13 @@ public class AuctionDetailController {
     private void handleFollowAuction() {
         if (state.currentAuctionId == null) return;
 
-        // Bắn gói tin Yêu cầu Theo Dõi lên Server
+        boolean following = state.isFollowing;
         JsonObject request = new JsonObject();
-        request.addProperty("action", "FOLLOW_AUCTION"); // Sếp nhớ code BE đón lệnh này nhé
+        request.addProperty("action", following ? "UNFOLLOW_AUCTION" : "FOLLOW_AUCTION");
         request.addProperty("auctionId", state.currentAuctionId);
-
-        // Gửi đi (Dùng ké NetworkClient)
         com.bidding.network.NetworkClient.getInstance().sendJson(request);
 
-        // Đổi giao diện nút thành "Đã Theo Dõi" và khóa lại cho ngầu
-        btnFollow.setText("♥ Đã theo dõi");
-        btnFollow.setStyle("");
-        btnFollow.getStyleClass().remove("auction-detail-follow-button");
-        btnFollow.getStyleClass().add("auction-detail-followed-button");
-        btnFollow.setDisable(true);
+        state.isFollowing = !following;
+        ui.setFollowButtonState(state.isFollowing);
     }
 }

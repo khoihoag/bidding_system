@@ -114,7 +114,7 @@ public class AdminController {
 
     public void handleGetAuctionBidHistory(JsonObject request) {
         if (client.getLoggedInUser() == null) {
-            client.sendError("Admin chua dang nhap!");
+            client.sendError("Admin chưa đăng nhập!");
             return;
         }
         try {
@@ -146,9 +146,9 @@ public class AdminController {
             reply.add("data", data);
             client.sendMessage(reply.toString());
         } catch (SecurityException se) {
-            client.sendError("Ban khong co quyen xem lich su dau gia.");
+            client.sendError("Bạn không có quyền xem lịch sử đấu giá.");
         } catch (Exception e) {
-            client.sendError("Loi khi tai lich su dau gia: " + e.getMessage());
+            client.sendError("Lỗi khi tải lịch sử đấu giá: " + e.getMessage());
         }
     }
 }

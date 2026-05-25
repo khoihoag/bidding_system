@@ -26,13 +26,23 @@
                 <Label text="BidVault" styleClass="sidebar-brand"/>
             </HBox>
 
+            <VBox spacing="3" styleClass="sidebar-clock-card">
+                <HBox alignment="CENTER_LEFT" spacing="10">
+                    <Label text="◷" styleClass="sidebar-clock-icon"/>
+                    <VBox spacing="1" alignment="CENTER_LEFT">
+                        <Label fx:id="sidebarClockTimeLabel" text="00:00:00" styleClass="sidebar-clock-time"/>
+                        <Label fx:id="sidebarClockDateLabel" text="—" wrapText="true" styleClass="sidebar-clock-date"/>
+                    </VBox>
+                </HBox>
+            </VBox>
+
             <VBox alignment="CENTER" spacing="4" visible="false" managed="false">
                 <Label text="Xin chào," style="-fx-font-size: 13px; -fx-text-fill: #111827;"/>
                 <Label fx:id="lblUsername" text="User" style="-fx-font-size: 14px; -fx-text-fill: #111827; -fx-font-weight: 800;"/>
                 <Label fx:id="balanceLabel" text="Số dư: 0 ₫" style="-fx-font-size: 15px; -fx-text-fill: #111827; -fx-font-weight: 800;"/>
             </VBox>
 
-            <Region minHeight="10"/>
+            <Region minHeight="6"/>
 
             <VBox spacing="10" styleClass="sidebar-menu">
                 <Button fx:id="btnDashboard" text="Sảnh Đấu Giá" onAction="#handleDashboard" maxWidth="Infinity" styleClass="menu-button">

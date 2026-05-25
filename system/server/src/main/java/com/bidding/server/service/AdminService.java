@@ -73,7 +73,7 @@ public class AdminService {
     public List<BiddingTransactionEntity> getAuctionBidHistory(User actor, String auctionId) {
         requireAdmin(actor);
         if (auctionId == null || auctionId.isBlank()) {
-            throw new IllegalArgumentException("Thieu ID phien dau gia.");
+            throw new IllegalArgumentException("Thiếu ID phiên đấu giá.");
         }
         return auctionRepository.findBidHistoryByAuctionId(auctionId);
     }

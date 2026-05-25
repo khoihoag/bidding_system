@@ -54,8 +54,12 @@ public class ItemRepository {
         Transaction transaction = null;
         try (Session session = factory.openSession()) {
             transaction = session.beginTransaction();
-            // Xóa món đồ khỏi Database
-            session.remove(session.contains(item) ? item : session.merge(item));
+            Item managedItem = session.contains(item) ? item : session.merge(item);
+            if (managedItem.getImages() != null) {
+                managedItem.getImages().clear();
+            }
+            session.flush();
+            session.remove(managedItem);
             transaction.commit();
         } catch (Exception e) {
             if (transaction != null) transaction.rollback();

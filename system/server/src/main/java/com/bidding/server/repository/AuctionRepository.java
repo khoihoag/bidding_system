@@ -121,4 +121,29 @@ public class AuctionRepository {
             return query.list();
         }
     }
+
+    public boolean existsByItemId(String itemId) {
+        try (Session session = factory.openSession()) {
+            Long count = session.createQuery(
+                            "SELECT COUNT(a) FROM AuctionEntity a WHERE a.item.id = :itemId",
+                            Long.class)
+                    .setParameter("itemId", itemId)
+                    .uniqueResult();
+            return count != null && count > 0;
+        }
+    }
+
+    public AuctionEntity findByItemId(String itemId) {
+        try (Session session = factory.openSession()) {
+            return session.createQuery(
+                            "SELECT a FROM AuctionEntity a " +
+                                    "LEFT JOIN FETCH a.currentWinner " +
+                                    "WHERE a.item.id = :itemId " +
+                                    "ORDER BY a.startTime DESC",
+                            AuctionEntity.class)
+                    .setParameter("itemId", itemId)
+                    .setMaxResults(1)
+                    .uniqueResult();
+        }
+    }
 }
