@@ -1,6 +1,7 @@
 package com.bidding.controller;
 
 import com.bidding.controller.auctiondetail.*;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import javafx.fxml.FXML;
 import javafx.scene.chart.CategoryAxis;
@@ -11,15 +12,26 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ScrollPane; // ĐÃ THÊM IMPORT
 import javafx.scene.control.SplitPane;  // ĐÃ THÊM IMPORT
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AuctionDetailController {
     @FXML private Button btnFollow;
+    @FXML private Button btnEnterTradingRoom;
     // ================= BIẾN CỦA MÀN 1 (SOTHEBY'S SHOWCASE) =================
     @FXML private ScrollPane showcaseView;
     @FXML private SplitPane tradingRoomView;
     @FXML private javafx.scene.image.ImageView showcaseImageView;
+    @FXML private Button showcasePrevImageButton;
+    @FXML private Button showcaseNextImageButton;
+    @FXML private Label showcaseImageCounterLabel;
+    @FXML private HBox showcaseThumbnailsBox;
     @FXML private Label showcaseDescLabel;
     @FXML private VBox showcaseSpecsBox;
     @FXML private Label showcaseNameLabel;
@@ -28,6 +40,7 @@ public class AuctionDetailController {
     @FXML private Label showcaseWinnerLabel;
 
     // ================= BIẾN CỦA MÀN 2 (TRADING ROOM - PHÒNG GIAO DỊCH) =================
+    @FXML private VBox manualBidContainer;
     @FXML private VBox autoBidContainer;
     @FXML private Label headerAuctionId;
     @FXML private Label statusBadgeHeader;
@@ -56,14 +69,16 @@ public class AuctionDetailController {
     private AuctionDetailCountdown countdown;
     private AuctionDetailBidHandler bidHandler;
     private AuctionDetailResponseHandler responseHandler;
+    private final List<String> showcaseImagePaths = new ArrayList<>();
+    private int currentShowcaseImageIndex = 0;
 
     @FXML
     public void initialize() {
-        ui = new AuctionDetailUiPresenter(btnFollow,
+        ui = new AuctionDetailUiPresenter(btnFollow, btnEnterTradingRoom,
                 state, itemNameLabel, currentPriceLabel, statusBadgeHeader,
                 currentWinnerLabel, totalBidsLabel, timeRemainingLabel, resultLabel, lastUpdateLabel,
                 bidErrorLabel, autoBidErrorLabel, bidAmountField, maxBidField, incrementField,
-                bidButton, autoBidButton, autoBidContainer);
+                bidButton, autoBidButton, manualBidContainer, autoBidContainer);
 
         // Binding dữ liệu từ Màn 2 ra Màn 1 để giá nhảy Realtime
         showcaseNameLabel.textProperty().bind(itemNameLabel.textProperty());
@@ -107,6 +122,15 @@ public class AuctionDetailController {
         tradingRoomView.setManaged(true);
     }
 
+    @FXML
+    private void handleBackToShowcase() {
+        tradingRoomView.setVisible(false);
+        tradingRoomView.setManaged(false);
+
+        showcaseView.setVisible(true);
+        showcaseView.setManaged(true);
+    }
+
     // ================= TỰ ĐỘNG ĐỔ ẢNH VÀ MÔ TẢ RA MÀN HÌNH CHÍNH =================
     // ================= TỰ ĐỘNG ĐỔ ẢNH VÀ MÔ TẢ RA MÀN HÌNH CHÍNH =================
     public void renderSothebysItemDetails(JsonObject item) {
@@ -117,28 +141,34 @@ public class AuctionDetailController {
                 ? item.get("description").getAsString() : "Chưa có mô tả chi tiết.");
 
         // 2. Load Ảnh & Xử lý khi "Không có ảnh"
-        boolean hasImage = false;
+        showcaseImagePaths.clear();
+        currentShowcaseImageIndex = 0;
         showcaseImageView.setImage(null); // Reset ảnh cũ
 
         // Dùng tà thuật lấy cái khung StackPane bọc bên ngoài bức ảnh
         javafx.scene.layout.StackPane container = (javafx.scene.layout.StackPane) showcaseImageView.getParent();
         // Dọn dẹp mấy cái chữ "Không có ảnh" (nếu bị dính từ phiên xem trước đó)
-        container.getChildren().removeIf(node -> node instanceof Label);
+        container.getChildren().removeIf(node -> "showcase-no-image".equals(node.getUserData()));
 
-        if (item.has("images") && item.get("images").isJsonArray() && item.getAsJsonArray("images").size() > 0) {
-            String imgPath = item.getAsJsonArray("images").get(0).getAsString();
-            try {
-                java.io.File file = new java.io.File(imgPath);
-                if (file.exists()) {
-                    showcaseImageView.setImage(new javafx.scene.image.Image(file.toURI().toString()));
-                    hasImage = true;
+        if (item.has("images") && item.get("images").isJsonArray()) {
+            for (JsonElement imageElement : item.getAsJsonArray("images")) {
+                if (!imageElement.isJsonNull()) {
+                    String imagePath = imageElement.getAsString();
+                    if (imagePath != null && !imagePath.isBlank()) {
+                        showcaseImagePaths.add(imagePath);
+                    }
                 }
-            } catch (Exception e) { System.err.println("Lỗi load ảnh: " + e.getMessage()); }
+            }
         }
+
+        boolean hasImage = loadShowcaseImageAt(currentShowcaseImageIndex);
+        updateShowcaseImageNavigation();
+        renderShowcaseThumbnails();
 
         // Đóng dấu chữ "Không có ảnh" nếu load thất bại
         if (!hasImage) {
             Label noImgLabel = new Label("Không có hình ảnh");
+            noImgLabel.setUserData("showcase-no-image");
             noImgLabel.setStyle("-fx-text-fill: #9CA3AF; -fx-font-style: italic; -fx-font-size: 16px;");
             container.getChildren().add(noImgLabel);
         }
@@ -164,6 +194,99 @@ public class AuctionDetailController {
             for (String key : specs.keySet()) {
                 addSpecRow(key, specs.get(key).getAsString());
             }
+        }
+    }
+
+    @FXML
+    private void showPreviousShowcaseImage() {
+        if (showcaseImagePaths.size() <= 1) {
+            return;
+        }
+
+        currentShowcaseImageIndex = (currentShowcaseImageIndex - 1 + showcaseImagePaths.size()) % showcaseImagePaths.size();
+        loadShowcaseImageAt(currentShowcaseImageIndex);
+        updateShowcaseImageNavigation();
+        renderShowcaseThumbnails();
+    }
+
+    @FXML
+    private void showNextShowcaseImage() {
+        if (showcaseImagePaths.size() <= 1) {
+            return;
+        }
+
+        currentShowcaseImageIndex = (currentShowcaseImageIndex + 1) % showcaseImagePaths.size();
+        loadShowcaseImageAt(currentShowcaseImageIndex);
+        updateShowcaseImageNavigation();
+        renderShowcaseThumbnails();
+    }
+
+    private boolean loadShowcaseImageAt(int index) {
+        javafx.scene.layout.StackPane container = (javafx.scene.layout.StackPane) showcaseImageView.getParent();
+        container.getChildren().removeIf(node -> "showcase-no-image".equals(node.getUserData()));
+
+        if (showcaseImagePaths.isEmpty() || index < 0 || index >= showcaseImagePaths.size()) {
+            showcaseImageView.setImage(null);
+            return false;
+        }
+
+        try {
+            File file = new File(showcaseImagePaths.get(index));
+            if (file.exists()) {
+                showcaseImageView.setImage(new javafx.scene.image.Image(file.toURI().toString()));
+                return true;
+            }
+        } catch (Exception e) {
+            System.err.println("Lỗi load ảnh: " + e.getMessage());
+        }
+
+        showcaseImageView.setImage(null);
+        return false;
+    }
+
+    private void updateShowcaseImageNavigation() {
+        boolean hasMultipleImages = showcaseImagePaths.size() > 1;
+
+        showcasePrevImageButton.setVisible(hasMultipleImages);
+        showcasePrevImageButton.setManaged(hasMultipleImages);
+        showcaseNextImageButton.setVisible(hasMultipleImages);
+        showcaseNextImageButton.setManaged(hasMultipleImages);
+        showcaseImageCounterLabel.setVisible(false);
+        showcaseImageCounterLabel.setManaged(false);
+        showcaseImageCounterLabel.setText("");
+    }
+
+    private void renderShowcaseThumbnails() {
+        showcaseThumbnailsBox.getChildren().clear();
+
+        for (int i = 0; i < showcaseImagePaths.size(); i++) {
+            int imageIndex = i;
+            StackPane thumbnail = new StackPane();
+            thumbnail.getStyleClass().add(imageIndex == currentShowcaseImageIndex
+                    ? "auction-detail-thumb-active"
+                    : "auction-detail-thumb-muted");
+            thumbnail.setOnMouseClicked(event -> {
+                currentShowcaseImageIndex = imageIndex;
+                loadShowcaseImageAt(currentShowcaseImageIndex);
+                updateShowcaseImageNavigation();
+                renderShowcaseThumbnails();
+            });
+
+            File file = new File(showcaseImagePaths.get(imageIndex));
+            if (file.exists()) {
+                ImageView thumbnailImage = new ImageView(new Image(file.toURI().toString()));
+                thumbnailImage.setFitWidth(88);
+                thumbnailImage.setFitHeight(76);
+                thumbnailImage.setPreserveRatio(true);
+                thumbnailImage.setSmooth(true);
+                thumbnail.getChildren().add(thumbnailImage);
+            } else {
+                Label fallbackLabel = new Label(String.valueOf(imageIndex + 1));
+                fallbackLabel.getStyleClass().add("auction-detail-thumb-label");
+                thumbnail.getChildren().add(fallbackLabel);
+            }
+
+            showcaseThumbnailsBox.getChildren().add(thumbnail);
         }
     }
 

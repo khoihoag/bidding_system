@@ -2,9 +2,12 @@ package com.bidding.controller;
 
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Button;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Label;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -21,6 +24,8 @@ public class NotificationController implements Initializable {
 
     @FXML
     private ListView<JsonObject> mainNotificationList; // Lưu danh sách dưới dạng JsonObject để dễ bóc tách
+    @FXML
+    private Button markAllReadButton;
 
     private final NetworkClient networkClient = NetworkClient.getInstance();
 
@@ -29,7 +34,10 @@ public class NotificationController implements Initializable {
         // Cài đặt handler nhận thông báo từ Server
         networkClient.setMessageHandler(this::handleServerMessage);
 
-        // ĐỔI LỚP ÁO CHO TỪNG DÒNG THÔNG BÁO (CUSTOM CELL FACTORY CHUẨN SOTHEBY'S)
+        if (markAllReadButton != null) {
+            markAllReadButton.setOnAction(event -> markAllAsRead());
+        }
+
         mainNotificationList.setCellFactory(param -> new ListCell<>() {
             @Override
             protected void updateItem(JsonObject item, boolean empty) {
@@ -38,30 +46,10 @@ public class NotificationController implements Initializable {
                 if (empty || item == null) {
                     setText(null);
                     setGraphic(null);
-                    setStyle("-fx-background-color: transparent;"); // Xóa nền xám mặc định
+                    setStyle("-fx-background-color: transparent;");
                 } else {
-                    // Lấy dữ liệu từ Json (Sếp kiểm tra xem key server trả về là gì nhé, ví dụ: message, time/timestamp)
-                    String message = item.has("message") ? item.get("message").getAsString() : "Thông báo không có nội dung.";
-                    String time = item.has("time") ? item.get("time").getAsString() : "--:--";
-
-                    // Tạo layout phẳng tối giản cho từng dòng
-                    VBox cellBox = new VBox(8);
-                    // Tạo một đường kẻ mỏng màu xám nhạt ngăn cách dưới mỗi thông báo
-                    cellBox.setStyle("-fx-padding: 15 10; -fx-border-color: #E5E7EB; -fx-border-width: 0 0 1 0; -fx-background-color: #FFFFFF;");
-
-                    // Dòng 1: Thời gian (Chữ xám nhỏ nhắn)
-                    Label lblTime = new Label("[" + time + "]");
-                    lblTime.setStyle("-fx-text-fill: #9CA3AF; -fx-font-size: 12px;");
-
-                    // Dòng 2: Nội dung thông báo (Chữ đen đậm nét sang chảnh)
-                    Label lblMessage = new Label(message);
-                    lblMessage.setWrapText(true);
-                    lblMessage.setStyle("-fx-text-fill: #111111; -fx-font-size: 14px; -fx-line-spacing: 3px;");
-
-                    cellBox.getChildren().addAll(lblTime, lblMessage);
-
                     setText(null);
-                    setGraphic(cellBox);
+                    setGraphic(buildNotificationCell(item));
                     setStyle("-fx-background-color: transparent;");
                 }
             }
@@ -75,6 +63,126 @@ public class NotificationController implements Initializable {
         JsonObject request = new JsonObject();
         request.addProperty("action", "GET_NOTIFICATIONS"); // Sếp kiểm tra action này bên Server nhé
         networkClient.sendJson(request);
+    }
+
+    private HBox buildNotificationCell(JsonObject item) {
+        boolean unread = !getBooleanSafe(item, "read", false);
+        String message = getStringSafe(item, "message", "Thông báo không có nội dung.");
+        String title = getStringSafe(item, "title", inferTitle(message));
+        String time = getStringSafe(item, "time", getStringSafe(item, "timestamp", "--:--"));
+
+        Region unreadBar = new Region();
+        unreadBar.getStyleClass().add(unread ? "notification-unread-bar" : "notification-read-bar");
+
+        Label icon = new Label(inferIcon(message));
+        icon.getStyleClass().add("notification-item-icon");
+        StackPane iconWrap = new StackPane(icon);
+        iconWrap.getStyleClass().addAll("notification-icon-wrap", inferIconStyle(message));
+
+        Label titleLabel = new Label(title);
+        titleLabel.setWrapText(true);
+        titleLabel.getStyleClass().add(unread ? "notification-item-title" : "notification-item-title-read");
+
+        Label timeLabel = new Label(time);
+        timeLabel.getStyleClass().add("notification-item-time");
+
+        HBox titleRow = new HBox(14, titleLabel, timeLabel);
+        titleRow.setAlignment(javafx.geometry.Pos.TOP_LEFT);
+        HBox.setHgrow(titleLabel, Priority.ALWAYS);
+
+        Label messageLabel = new Label(message);
+        messageLabel.setWrapText(true);
+        messageLabel.getStyleClass().add("notification-item-message");
+
+        VBox textBox = new VBox(7, titleRow, messageLabel);
+        if (isBidAction(message)) {
+            Button actionButton = new Button("Đặt giá ngay");
+            actionButton.getStyleClass().add("notification-action-button");
+            textBox.getChildren().add(actionButton);
+        }
+        HBox.setHgrow(textBox, Priority.ALWAYS);
+
+        HBox content = new HBox(16, iconWrap, textBox);
+        content.setAlignment(javafx.geometry.Pos.TOP_LEFT);
+        content.getStyleClass().add(unread ? "notification-item-content-unread" : "notification-item-content-read");
+        HBox.setHgrow(content, Priority.ALWAYS);
+
+        HBox row = new HBox(unreadBar, content);
+        row.getStyleClass().add("notification-item-row");
+        row.setOnMouseClicked(event -> {
+            item.addProperty("read", true);
+            mainNotificationList.refresh();
+        });
+        return row;
+    }
+
+    private void markAllAsRead() {
+        for (JsonObject item : mainNotificationList.getItems()) {
+            item.addProperty("read", true);
+        }
+        mainNotificationList.refresh();
+    }
+
+    private String getStringSafe(JsonObject object, String key, String fallback) {
+        return object.has(key) && !object.get(key).isJsonNull()
+                ? object.get(key).getAsString()
+                : fallback;
+    }
+
+    private boolean getBooleanSafe(JsonObject object, String key, boolean fallback) {
+        return object.has(key) && !object.get(key).isJsonNull()
+                ? object.get(key).getAsBoolean()
+                : fallback;
+    }
+
+    private String inferTitle(String message) {
+        String lower = message.toLowerCase();
+        if (lower.contains("trả giá") || lower.contains("đặt giá") || lower.contains("bid")) {
+            return "Cập nhật đấu giá";
+        }
+        if (lower.contains("theo dõi") || lower.contains("sắp bắt đầu")) {
+            return "Phiên đấu giá yêu thích sắp bắt đầu";
+        }
+        if (lower.contains("nạp")) {
+            return "Nạp tiền thành công";
+        }
+        if (lower.contains("kết thúc") || lower.contains("thắng") || lower.contains("không thắng")) {
+            return "Kết thúc phiên đấu giá";
+        }
+        return "Thông báo mới";
+    }
+
+    private String inferIcon(String message) {
+        String lower = message.toLowerCase();
+        if (lower.contains("nạp")) {
+            return "💳";
+        }
+        if (lower.contains("theo dõi") || lower.contains("sắp bắt đầu")) {
+            return "★";
+        }
+        if (lower.contains("kết thúc") || lower.contains("thắng")) {
+            return "🏆";
+        }
+        return "⚖";
+    }
+
+    private String inferIconStyle(String message) {
+        String lower = message.toLowerCase();
+        if (lower.contains("nạp")) {
+            return "notification-icon-wallet";
+        }
+        if (lower.contains("theo dõi") || lower.contains("sắp bắt đầu")) {
+            return "notification-icon-watch";
+        }
+        if (lower.contains("kết thúc") || lower.contains("thắng")) {
+            return "notification-icon-result";
+        }
+        return "notification-icon-bid";
+    }
+
+    private boolean isBidAction(String message) {
+        String lower = message.toLowerCase();
+        return lower.contains("trả giá cao hơn") || lower.contains("đặt giá mới");
     }
 
     private void handleServerMessage(JsonObject response) {

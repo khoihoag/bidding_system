@@ -498,16 +498,29 @@
 }
 
 .auction-detail-page {
-    -fx-padding: 32;
-    -fx-background-color: #f3f4f6;
+    -fx-font-family: "Manrope", "Segoe UI", Arial, sans-serif;
+    -fx-padding: 32 40 42 40;
+    -fx-background-color: #f9f9f9;
 }
 
 .auction-detail-action-header {
     -fx-padding: 0 0 4 0;
 }
 
+.auction-detail-bento {
+    -fx-max-width: 1440;
+}
+
 .auction-detail-media-column {
     -fx-min-width: 560;
+}
+
+.auction-detail-gallery-card {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 12;
+    -fx-border-color: #eeeeee;
+    -fx-border-radius: 12;
+    -fx-effect: dropshadow(gaussian, rgba(16, 24, 40, 0.08), 20, 0.12, 0, 4);
 }
 
 .auction-detail-image-card {
@@ -520,33 +533,94 @@
 }
 
 .auction-detail-image-frame {
-    -fx-background-color: #fbf2e9;
-    -fx-background-radius: 8;
-    -fx-border-color: #d1c5b4;
-    -fx-border-radius: 8;
-    -fx-padding: 14;
+    -fx-background-color: transparent;
+    -fx-background-radius: 0;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+    -fx-min-height: 520;
+}
+
+.auction-detail-zoom-hint {
+    -fx-background-color: rgba(255, 255, 255, 0.82);
+    -fx-background-radius: 999;
+    -fx-border-color: #d3c4af;
+    -fx-border-radius: 999;
+    -fx-padding: 7 12;
+    -fx-translate-x: 16;
+    -fx-translate-y: 16;
+    -fx-min-width: 0;
+    -fx-min-height: 0;
+    -fx-pref-width: -1;
+    -fx-pref-height: -1;
+    -fx-max-width: -1;
+    -fx-max-height: -1;
+}
+
+.auction-detail-zoom-icon {
+    -fx-text-fill: #785600;
+    -fx-font-size: 14px;
+    -fx-font-weight: 900;
+}
+
+.auction-detail-zoom-text {
+    -fx-text-fill: #1a1c1c;
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+}
+
+.auction-detail-thumb-strip,
+.auction-detail-thumb-strip .viewport {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+
+.auction-detail-thumb-zone {
+    -fx-padding: 0 16 20 16;
+    -fx-alignment: center-left;
+    -fx-min-height: 180;
+}
+
+.auction-detail-thumb-strip {
+    -fx-padding: 0;
+    -fx-pref-height: 104;
+}
+
+.auction-detail-thumbnails-row {
+    -fx-padding: 0;
+    -fx-alignment: center-left;
 }
 
 .auction-detail-thumb-active,
 .auction-detail-thumb-muted {
-    -fx-min-width: 76;
-    -fx-min-height: 64;
-    -fx-pref-width: 76;
-    -fx-pref-height: 64;
-    -fx-background-radius: 8;
-    -fx-border-radius: 8;
+    -fx-min-width: 96;
+    -fx-min-height: 84;
+    -fx-pref-width: 96;
+    -fx-pref-height: 84;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-padding: 6;
+    -fx-cursor: hand;
+    -fx-alignment: center;
 }
 
 .auction-detail-thumb-active {
-    -fx-background-color: #fbf2e9;
-    -fx-border-color: #785919;
-    -fx-border-width: 2;
+    -fx-background-color: #ffffff;
+    -fx-border-color: #785600;
+    -fx-border-width: 3;
+    -fx-opacity: 1;
+    -fx-effect: dropshadow(gaussian, rgba(120, 86, 0, 0.24), 10, 0.2, 0, 2);
 }
 
 .auction-detail-thumb-muted {
-    -fx-background-color: #f5ece4;
-    -fx-border-color: #d1c5b4;
+    -fx-background-color: #ffffff;
+    -fx-border-color: #e2e2e2;
     -fx-border-width: 1;
+    -fx-opacity: 0.52;
+}
+
+.auction-detail-thumb-muted:hover {
+    -fx-opacity: 0.78;
+    -fx-border-color: #d3c4af;
 }
 
 .auction-detail-thumb-label {
@@ -556,11 +630,11 @@
 
 .auction-detail-info-card {
     -fx-background-color: #ffffff;
-    -fx-background-radius: 14;
-    -fx-border-color: #edf0f4;
-    -fx-border-radius: 14;
-    -fx-padding: 26;
-    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.08), 14, 0.12, 0, 3);
+    -fx-background-radius: 12;
+    -fx-border-color: #eeeeee;
+    -fx-border-radius: 12;
+    -fx-padding: 24;
+    -fx-effect: dropshadow(gaussian, rgba(16, 24, 40, 0.08), 20, 0.12, 0, 4);
 }
 
 .auction-detail-back-button {
@@ -585,33 +659,63 @@
 }
 
 .auction-detail-title {
-    -fx-text-fill: #111827;
-    -fx-font-size: 30px;
+    -fx-text-fill: #1a1c1c;
+    -fx-font-size: 31px;
     -fx-font-weight: 800;
+    -fx-line-spacing: 2px;
 }
 
 .auction-detail-caption {
-    -fx-text-fill: #64748b;
-    -fx-font-size: 12px;
+    -fx-text-fill: #4f4535;
+    -fx-font-size: 13px;
     -fx-font-weight: 700;
 }
 
+.auction-detail-summary,
+.auction-detail-price-note {
+    -fx-text-fill: #4f4535;
+    -fx-font-size: 15px;
+    -fx-line-spacing: 4px;
+}
+
+.auction-detail-price-note {
+    -fx-font-size: 13px;
+}
+
+.auction-detail-price-block {
+    -fx-border-color: #d3c4af transparent #d3c4af transparent;
+    -fx-border-width: 1 0 1 0;
+    -fx-padding: 22 0 22 0;
+}
+
 .auction-detail-price {
-    -fx-text-fill: #b08a1e;
-    -fx-font-size: 38px;
+    -fx-text-fill: #785600;
+    -fx-font-size: 46px;
     -fx-font-weight: 800;
 }
 
 .auction-detail-time {
-    -fx-text-fill: #b91c1c;
-    -fx-font-size: 16px;
+    -fx-text-fill: #ba1a1a;
+    -fx-font-size: 20px;
     -fx-font-weight: 800;
 }
 
+.auction-detail-time-card {
+    -fx-background-color: #f3f3f4;
+    -fx-background-radius: 8;
+    -fx-padding: 15;
+}
+
+.auction-detail-time-icon {
+    -fx-text-fill: #ba1a1a;
+    -fx-font-size: 18px;
+    -fx-font-weight: 900;
+}
+
 .auction-detail-winner {
-    -fx-text-fill: #111827;
+    -fx-text-fill: #1a1c1c;
     -fx-font-size: 15px;
-    -fx-font-weight: 700;
+    -fx-font-weight: 800;
 }
 
 .auction-detail-section-title {
@@ -627,9 +731,9 @@
 }
 
 .auction-detail-description {
-    -fx-text-fill: #374151;
-    -fx-font-size: 14px;
-    -fx-line-spacing: 5px;
+    -fx-text-fill: #4f4535;
+    -fx-font-size: 16px;
+    -fx-line-spacing: 6px;
 }
 
 .auction-detail-specs {
@@ -638,17 +742,37 @@
 
 .auction-detail-status-badge {
     -fx-background-color: #ffdad6;
-    -fx-background-radius: 8;
-    -fx-padding: 8 14;
+    -fx-background-radius: 999;
+    -fx-padding: 7 12;
     -fx-text-fill: #ba1a1a;
     -fx-font-size: 12px;
     -fx-font-weight: 800;
 }
 
+.auction-detail-status-badge.badge-running {
+    -fx-background-color: #dcfce7;
+    -fx-text-fill: #166534;
+}
+
+.auction-detail-status-badge.badge-scheduled {
+    -fx-background-color: #eef2ff;
+    -fx-text-fill: #3730a3;
+}
+
+.auction-detail-status-badge.badge-closed {
+    -fx-background-color: #fee2e2;
+    -fx-text-fill: #991b1b;
+}
+
+.auction-detail-status-badge.badge-default {
+    -fx-background-color: #f3f4f6;
+    -fx-text-fill: #374151;
+}
+
 .auction-detail-id-label {
-    -fx-text-fill: #4e4639;
+    -fx-text-fill: #4f4535;
     -fx-font-size: 12px;
-    -fx-border-color: transparent transparent transparent #d1c5b4;
+    -fx-border-color: transparent transparent transparent #d3c4af;
     -fx-border-width: 0 0 0 1;
     -fx-padding: 0 0 0 12;
 }
@@ -663,44 +787,44 @@
 }
 
 .auction-detail-price-row {
-    -fx-border-color: transparent transparent #d1c5b4 transparent;
+    -fx-border-color: transparent transparent #d3c4af transparent;
     -fx-border-width: 0 0 1 0;
     -fx-padding: 0 0 18 0;
 }
 
 .auction-detail-bid-button {
-    -fx-background-color: #BC9C4F;
+    -fx-background-color: #785600;
     -fx-background-radius: 8;
     -fx-border-radius: 8;
     -fx-border-width: 0;
     -fx-text-fill: #ffffff;
-    -fx-font-size: 15px;
+    -fx-font-size: 13px;
     -fx-font-weight: 800;
-    -fx-padding: 13 20;
+    -fx-padding: 15 18;
     -fx-cursor: hand;
 }
 
 .auction-detail-bid-button:hover {
-    -fx-background-color: #a68a45;
+    -fx-background-color: #5d4200;
 }
 
 .auction-detail-follow-button {
     -fx-background-color: #ffffff;
     -fx-background-radius: 8;
-    -fx-border-color: #d8dde6;
+    -fx-border-color: #817563;
     -fx-border-radius: 8;
     -fx-border-width: 1;
-    -fx-text-fill: #111827;
-    -fx-font-size: 15px;
+    -fx-text-fill: #1a1c1c;
+    -fx-font-size: 13px;
     -fx-font-weight: 800;
-    -fx-padding: 13 20;
+    -fx-padding: 15 18;
     -fx-cursor: hand;
 }
 
 .auction-detail-follow-button:hover {
     -fx-background-color: #f8fafc;
-    -fx-border-color: #BC9C4F;
-    -fx-text-fill: #BC9C4F;
+    -fx-border-color: #785600;
+    -fx-text-fill: #785600;
 }
 
 .auction-detail-followed-button {
@@ -713,6 +837,319 @@
     -fx-font-size: 15px;
     -fx-font-weight: 800;
     -fx-padding: 13 20;
+}
+
+.auction-detail-share-button {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: #4f4535;
+    -fx-font-size: 18px;
+    -fx-font-weight: 900;
+    -fx-cursor: hand;
+    -fx-padding: 4 8;
+}
+
+.auction-detail-share-button:hover {
+    -fx-text-fill: #785600;
+}
+
+.auction-detail-seller-card,
+.auction-detail-about-card {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 12;
+    -fx-border-color: #eeeeee;
+    -fx-border-radius: 12;
+    -fx-padding: 24;
+    -fx-effect: dropshadow(gaussian, rgba(16, 24, 40, 0.08), 20, 0.12, 0, 4);
+}
+
+.auction-detail-seller-avatar {
+    -fx-background-color: #dbe2f9;
+    -fx-background-radius: 999;
+    -fx-min-width: 48;
+    -fx-min-height: 48;
+    -fx-pref-width: 48;
+    -fx-pref-height: 48;
+}
+
+.auction-detail-seller-avatar-text {
+    -fx-text-fill: #3f4759;
+    -fx-font-size: 14px;
+    -fx-font-weight: 900;
+}
+
+.auction-detail-seller-name {
+    -fx-text-fill: #1a1c1c;
+    -fx-font-size: 14px;
+    -fx-font-weight: 800;
+}
+
+.auction-detail-seller-meta {
+    -fx-text-fill: #4f4535;
+    -fx-font-size: 13px;
+}
+
+.auction-detail-seller-link {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: #785600;
+    -fx-font-size: 12px;
+    -fx-font-weight: 800;
+    -fx-padding: 8 10;
+    -fx-cursor: hand;
+}
+
+.auction-detail-seller-link:hover {
+    -fx-underline: true;
+}
+
+.auction-detail-about-title {
+    -fx-text-fill: #1a1c1c;
+    -fx-font-size: 24px;
+    -fx-font-weight: 800;
+    -fx-border-color: transparent transparent #d3c4af transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 0 0 14 0;
+}
+
+.trading-room-page {
+    -fx-background-color: #f1f3f5;
+    -fx-background: #f1f3f5;
+    -fx-padding: 24;
+}
+
+.trading-room-page > .split-pane-divider {
+    -fx-background-color: #e5e7eb;
+    -fx-padding: 0 0.5 0 0.5;
+}
+
+.trading-sidebar-scroll,
+.trading-sidebar-scroll .viewport {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+
+.trading-sidebar {
+    -fx-background-color: transparent;
+    -fx-padding: 0 28 0 0;
+}
+
+.trading-session-card,
+.trading-card,
+.trading-chart-card {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 22;
+    -fx-border-color: #eef0f4;
+    -fx-border-radius: 22;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.08), 22, 0.14, 0, 6);
+}
+
+.trading-session-card {
+    -fx-padding: 28;
+}
+
+.trading-card {
+    -fx-padding: 24;
+}
+
+.trading-chart-card {
+    -fx-padding: 28;
+    -fx-background-radius: 24;
+    -fx-border-radius: 24;
+}
+
+.trading-kicker,
+.trading-card-heading {
+    -fx-text-fill: #111827;
+    -fx-font-size: 13px;
+    -fx-font-weight: 800;
+}
+
+.trading-kicker {
+    -fx-text-fill: #6b7280;
+}
+
+.trading-title {
+    -fx-text-fill: #111827;
+    -fx-font-size: 24px;
+    -fx-font-weight: 800;
+    -fx-line-spacing: 3px;
+}
+
+.trading-caption,
+.trading-stat-caption {
+    -fx-text-fill: #6b7280;
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+}
+
+.trading-current-price {
+    -fx-text-fill: #d4ac50;
+    -fx-font-size: 38px;
+    -fx-font-weight: 900;
+}
+
+.trading-time-left {
+    -fx-text-fill: #dc2626;
+    -fx-font-size: 16px;
+    -fx-font-weight: 900;
+}
+
+.trading-divider {
+    -fx-padding: 4 0 0 0;
+}
+
+.trading-divider .line {
+    -fx-border-color: #eef0f4;
+    -fx-border-width: 1 0 0 0;
+}
+
+.trading-stat-value,
+.trading-stat-value-muted {
+    -fx-text-fill: #111827;
+    -fx-font-size: 14px;
+    -fx-font-weight: 800;
+}
+
+.trading-stat-value-muted {
+    -fx-text-fill: #9ca3af;
+}
+
+.trading-input,
+.text-field.trading-input {
+    -fx-background-color: #f9fafb;
+    -fx-border-color: #e5e7eb;
+    -fx-border-width: 1;
+    -fx-border-radius: 999;
+    -fx-background-radius: 999;
+    -fx-padding: 12 18;
+    -fx-text-fill: #111827;
+    -fx-prompt-text-fill: #9ca3af;
+    -fx-effect: none;
+}
+
+.trading-input:focused,
+.text-field.trading-input:focused {
+    -fx-border-color: #d4ac50;
+    -fx-effect: dropshadow(gaussian, rgba(212, 172, 80, 0.18), 10, 0.18, 0, 0);
+}
+
+.trading-primary-button,
+.trading-outline-button {
+    -fx-background-radius: 999;
+    -fx-border-radius: 999;
+    -fx-font-size: 13px;
+    -fx-font-weight: 900;
+    -fx-padding: 14 20;
+    -fx-cursor: hand;
+    -fx-effect: none;
+}
+
+.trading-primary-button {
+    -fx-background-color: #d4ac50;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: transparent;
+}
+
+.trading-primary-button:hover {
+    -fx-background-color: #bd9845;
+}
+
+.trading-outline-button {
+    -fx-background-color: #ffffff;
+    -fx-text-fill: #111827;
+    -fx-border-color: #d1d5db;
+    -fx-border-width: 1;
+}
+
+.trading-outline-button:hover {
+    -fx-border-color: #d4ac50;
+    -fx-text-fill: #b08a1e;
+    -fx-background-color: #fffdf8;
+}
+
+.trading-error-label {
+    -fx-text-fill: #dc2626;
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+}
+
+.trading-success-label {
+    -fx-text-fill: #16a34a;
+    -fx-font-size: 12px;
+    -fx-font-weight: 800;
+}
+
+.trading-result-label {
+    -fx-text-fill: #111827;
+    -fx-font-size: 13px;
+    -fx-font-weight: 800;
+}
+
+.trading-last-update {
+    -fx-text-fill: #6b7280;
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+}
+
+.trading-back-button {
+    -fx-background-color: #ffffff;
+    -fx-text-fill: #374151;
+    -fx-border-color: #e5e7eb;
+    -fx-border-width: 1;
+    -fx-border-radius: 999;
+    -fx-background-radius: 999;
+    -fx-font-size: 13px;
+    -fx-font-weight: 800;
+    -fx-padding: 9 14;
+    -fx-cursor: hand;
+    -fx-effect: none;
+}
+
+.trading-back-button:hover {
+    -fx-border-color: #d4ac50;
+    -fx-text-fill: #b08a1e;
+}
+
+.trading-chart-frame {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 18;
+    -fx-border-color: transparent;
+    -fx-padding: 12;
+    -fx-min-height: 500;
+}
+
+.trading-price-chart {
+    -fx-background-color: transparent;
+    -fx-padding: 8;
+}
+
+.trading-price-chart .chart-plot-background {
+    -fx-background-color: #ffffff;
+}
+
+.trading-price-chart .chart-vertical-grid-lines,
+.trading-price-chart .chart-horizontal-grid-lines {
+    -fx-stroke: #f1f5f9;
+}
+
+.trading-price-chart .axis {
+    -fx-tick-label-fill: #94a3b8;
+}
+
+.trading-price-chart .axis-label {
+    -fx-text-fill: #94a3b8;
+}
+
+.trading-price-chart .chart-series-line {
+    -fx-stroke: #cbd5e1;
+    -fx-stroke-width: 2px;
+}
+
+.trading-price-chart .chart-line-symbol {
+    -fx-background-color: #cbd5e1, #cbd5e1;
+    -fx-background-radius: 5px;
+    -fx-padding: 5px;
 }
 
 .notification-card,
@@ -1078,4 +1515,173 @@
 #imageDropZone:hover {
     -fx-background-color: #fbf6e6;
     -fx-border-color: #d2aa2a;
+}
+
+.notifications-page {
+    -fx-font-family: "Manrope", "Segoe UI", Arial, sans-serif;
+    -fx-background-color: #f9f9f9;
+    -fx-padding: 40;
+    -fx-max-width: 920;
+}
+
+.notifications-header {
+    -fx-padding: 0 0 4 0;
+}
+
+.notifications-title {
+    -fx-text-fill: #1a1c1c;
+    -fx-font-size: 32px;
+    -fx-font-weight: 800;
+}
+
+.notifications-subtitle {
+    -fx-text-fill: #565e71;
+    -fx-font-size: 16px;
+}
+
+.notifications-mark-read-button {
+    -fx-background-color: #f3f3f4;
+    -fx-text-fill: #785600;
+    -fx-background-radius: 999;
+    -fx-border-color: transparent;
+    -fx-font-size: 13px;
+    -fx-font-weight: 800;
+    -fx-padding: 10 16;
+    -fx-cursor: hand;
+}
+
+.notifications-mark-read-button:hover {
+    -fx-background-color: #e8e8e8;
+}
+
+.notifications-list {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 12;
+    -fx-border-color: rgba(211, 196, 175, 0.45);
+    -fx-border-radius: 12;
+    -fx-padding: 0;
+    -fx-effect: dropshadow(gaussian, rgba(16, 24, 40, 0.08), 20, 0.12, 0, 4);
+}
+
+.notifications-list .list-cell {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+    -fx-border-color: transparent;
+}
+
+.notifications-list .list-cell:selected {
+    -fx-background-color: transparent;
+}
+
+.notifications-list .placeholder .label {
+    -fx-text-fill: #817563;
+    -fx-font-size: 14px;
+}
+
+.notification-item-row {
+    -fx-background-color: transparent;
+    -fx-cursor: hand;
+}
+
+.notification-unread-bar {
+    -fx-background-color: #785600;
+    -fx-min-width: 4;
+    -fx-pref-width: 4;
+    -fx-max-width: 4;
+}
+
+.notification-read-bar {
+    -fx-background-color: transparent;
+    -fx-min-width: 4;
+    -fx-pref-width: 4;
+    -fx-max-width: 4;
+}
+
+.notification-item-content-unread,
+.notification-item-content-read {
+    -fx-padding: 24;
+    -fx-border-color: transparent transparent rgba(211, 196, 175, 0.45) transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.notification-item-content-unread {
+    -fx-background-color: #f6f4ef;
+}
+
+.notification-item-content-read {
+    -fx-background-color: #ffffff;
+    -fx-opacity: 0.78;
+}
+
+.notification-item-content-unread:hover,
+.notification-item-content-read:hover {
+    -fx-background-color: #f3f3f4;
+    -fx-opacity: 1;
+}
+
+.notification-icon-wrap {
+    -fx-background-radius: 999;
+    -fx-min-width: 48;
+    -fx-min-height: 48;
+    -fx-pref-width: 48;
+    -fx-pref-height: 48;
+}
+
+.notification-item-icon {
+    -fx-font-size: 20px;
+    -fx-font-weight: 800;
+}
+
+.notification-icon-bid {
+    -fx-background-color: rgba(152, 109, 0, 0.14);
+}
+
+.notification-icon-wallet {
+    -fx-background-color: #e8f5e9;
+}
+
+.notification-icon-watch {
+    -fx-background-color: #e3f2fd;
+}
+
+.notification-icon-result {
+    -fx-background-color: #e2e2e2;
+}
+
+.notification-item-title,
+.notification-item-title-read {
+    -fx-text-fill: #1a1c1c;
+    -fx-font-size: 19px;
+    -fx-font-weight: 800;
+}
+
+.notification-item-title-read {
+    -fx-font-weight: 700;
+}
+
+.notification-item-time {
+    -fx-text-fill: #565e71;
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+}
+
+.notification-item-message {
+    -fx-text-fill: #4f4535;
+    -fx-font-size: 15px;
+    -fx-line-spacing: 4px;
+}
+
+.notification-action-button {
+    -fx-background-color: #785600;
+    -fx-text-fill: #ffffff;
+    -fx-background-radius: 8;
+    -fx-border-color: transparent;
+    -fx-font-size: 13px;
+    -fx-font-weight: 800;
+    -fx-padding: 9 14;
+    -fx-cursor: hand;
+}
+
+.notification-action-button:hover {
+    -fx-background-color: #5d4200;
 }

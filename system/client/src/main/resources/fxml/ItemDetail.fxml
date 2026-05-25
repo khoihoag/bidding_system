@@ -21,6 +21,15 @@
 
                 <StackPane style="-fx-background-color: #F9FAFB; -fx-padding: 20; -fx-border-color: #E5E7EB; -fx-border-width: 1; -fx-max-width: 650;">
                     <ImageView fx:id="itemImageView" fitWidth="600" fitHeight="450" preserveRatio="true" smooth="true"/>
+                    <Button fx:id="prevImageButton" text="←" onAction="#showPreviousImage" visible="false" managed="false"
+                            StackPane.alignment="CENTER_LEFT"
+                            style="-fx-background-color: rgba(128, 128, 128, 0.58); -fx-text-fill: white; -fx-border-color: transparent; -fx-font-size: 20px; -fx-font-weight: bold; -fx-background-radius: 24; -fx-min-width: 48; -fx-min-height: 48; -fx-max-width: 48; -fx-max-height: 48; -fx-cursor: hand;"/>
+                    <Button fx:id="nextImageButton" text="→" onAction="#showNextImage" visible="false" managed="false"
+                            StackPane.alignment="CENTER_RIGHT"
+                            style="-fx-background-color: rgba(128, 128, 128, 0.58); -fx-text-fill: white; -fx-border-color: transparent; -fx-font-size: 20px; -fx-font-weight: bold; -fx-background-radius: 24; -fx-min-width: 48; -fx-min-height: 48; -fx-max-width: 48; -fx-max-height: 48; -fx-cursor: hand;"/>
+                    <Label fx:id="imageCounterLabel" visible="false" managed="false"
+                           StackPane.alignment="BOTTOM_CENTER"
+                           style="-fx-background-color: rgba(128, 128, 128, 0.58); -fx-text-fill: white; -fx-font-size: 13px; -fx-font-weight: bold; -fx-padding: 5 12; -fx-background-radius: 14;"/>
                 </StackPane>
 
                 <VBox spacing="30" maxWidth="650">

@@ -36,7 +36,7 @@ public class AdminNetworkGateway {
         boolean connected = NetworkClient.getInstance().isConnected();
         if (!connected) {
             connectionLabel.setText("● Mất kết nối");
-            connectionLabel.setStyle("-fx-text-fill: #FF6B6B; -fx-font-size: 11px; -fx-padding: 0 0 8 4;");
+            connectionLabel.setStyle("-fx-text-fill: #b91c1c; -fx-font-size: 12px; -fx-font-weight: 700;");
         }
         return connected;
     }
@@ -45,7 +45,7 @@ public class AdminNetworkGateway {
         connectOnce();
         NetworkClient.getInstance().sendJson(req);
         connectionLabel.setText("● Đã gửi yêu cầu");
-        connectionLabel.setStyle("-fx-text-fill: #40DD80; -fx-font-size: 11px; -fx-padding: 0 0 8 4;");
+        connectionLabel.setStyle("-fx-text-fill: #15803d; -fx-font-size: 12px; -fx-font-weight: 700;");
     }
 
     public void sendAction(String action) {
@@ -99,6 +99,6 @@ public class AdminNetworkGateway {
 
     private void updateConnectingStatus() {
         connectionLabel.setText("● Đang kết nối");
-        connectionLabel.setStyle("-fx-text-fill: #E0B44C; -fx-font-size: 11px; -fx-padding: 0 0 8 4;");
+        connectionLabel.setStyle("-fx-text-fill: #b45309; -fx-font-size: 12px; -fx-font-weight: 700;");
     }
 }

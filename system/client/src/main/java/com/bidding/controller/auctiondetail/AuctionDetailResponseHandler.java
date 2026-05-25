@@ -67,6 +67,7 @@ public class AuctionDetailResponseHandler {
         Platform.runLater(() -> {
             countdown.stop();
             ui.showAuctionFinished(winner);
+            ui.applyAuctionAccess("FINISHED", false);
             AuctionDetailAlerts.show(
                     Alert.AlertType.INFORMATION,
                     "Thông báo kết quả",
@@ -231,6 +232,8 @@ public class AuctionDetailResponseHandler {
         } else {
             ui.applyNormalAuctionUi();
         }
+
+        ui.applyAuctionAccess(status, isReverse);
     }
 
     private void handleError(JsonObject json) {

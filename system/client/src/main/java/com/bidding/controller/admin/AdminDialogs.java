@@ -36,7 +36,6 @@ public final class AdminDialogs {
         try {
             dialog.getDialogPane().getStylesheets()
                     .add(resourceClass.getResource("/css/style.css").toExternalForm());
-            dialog.getDialogPane().setStyle("-fx-background-color: #05070a;");
         } catch (Exception ignored) {
         }
 
@@ -69,12 +68,12 @@ public final class AdminDialogs {
             conditionText = "Đã sử dụng";
         }
         Label condition = new Label("Tình trạng: " + conditionText);
-        condition.setStyle("-fx-font-style: italic; -fx-text-fill: #8aa0bd;");
+        condition.setStyle("-fx-font-style: italic; -fx-text-fill: #64748b;");
 
         double startingPrice = item.has("startingPrice") && !item.get("startingPrice").isJsonNull()
                 ? item.get("startingPrice").getAsDouble() : 0.0;
         Label price = new Label(String.format("Giá khởi điểm: %,.0f đ", startingPrice));
-        price.setStyle("-fx-text-fill: #f0c040; -fx-font-weight: bold; -fx-font-size: 16px;");
+        price.setStyle("-fx-text-fill: #b08a1e; -fx-font-weight: bold; -fx-font-size: 16px;");
 
         Label desc = new Label("Mô tả: " + JsonUtil.getString(item, "description"));
         desc.setWrapText(true);
@@ -82,8 +81,8 @@ public final class AdminDialogs {
 
         if (item.has("specifications") && item.get("specifications").isJsonObject()) {
             VBox specsBox = new VBox(8);
-            specsBox.setStyle("-fx-padding: 16; -fx-background-color: #111820; -fx-background-radius: 12; "
-                    + "-fx-border-color: #3a3522; -fx-border-radius: 12;");
+            specsBox.setStyle("-fx-padding: 16; -fx-background-color: #f8fafc; -fx-background-radius: 12; "
+                    + "-fx-border-color: #e5e7eb; -fx-border-radius: 12;");
             specsBox.getChildren().add(new Label("Thông số chi tiết:"));
             JsonObject specs = item.getAsJsonObject("specifications");
             for (String key : specs.keySet()) {

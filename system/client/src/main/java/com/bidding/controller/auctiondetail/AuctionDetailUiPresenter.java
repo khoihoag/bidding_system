@@ -13,6 +13,7 @@ public class AuctionDetailUiPresenter {
     private final AuctionDetailState state;
 
     private Button btnFollow;
+    private final Button btnEnterTradingRoom;
     private final Label itemNameLabel;
     private final Label currentPriceLabel;
     private final Label statusBadgeHeader;
@@ -28,9 +29,12 @@ public class AuctionDetailUiPresenter {
     private final TextField incrementField;
     private final Button bidButton;
     private final Button autoBidButton;
+    private final VBox manualBidContainer;
     private final VBox autoBidContainer;
 
-    public AuctionDetailUiPresenter(Button btnFollow,AuctionDetailState state,
+    public AuctionDetailUiPresenter(Button btnFollow,
+                                    Button btnEnterTradingRoom,
+                                    AuctionDetailState state,
 
                                     Label itemNameLabel,
                                     Label currentPriceLabel,
@@ -47,9 +51,11 @@ public class AuctionDetailUiPresenter {
                                     TextField incrementField,
                                     Button bidButton,
                                     Button autoBidButton,
+                                    VBox manualBidContainer,
                                     VBox autoBidContainer) {
         this.state = state;
         this.btnFollow = btnFollow;
+        this.btnEnterTradingRoom = btnEnterTradingRoom;
         this.itemNameLabel = itemNameLabel;
         this.currentPriceLabel = currentPriceLabel;
         this.statusBadgeHeader = statusBadgeHeader;
@@ -65,12 +71,12 @@ public class AuctionDetailUiPresenter {
         this.incrementField = incrementField;
         this.bidButton = bidButton;
         this.autoBidButton = autoBidButton;
+        this.manualBidContainer = manualBidContainer;
         this.autoBidContainer = autoBidContainer;
     }
 
     public void applyInitialStyles() {
-
-
+        clearResult();
     }
 
     public void updateItemHeader(String itemName) {
@@ -89,7 +95,11 @@ public class AuctionDetailUiPresenter {
                 statusBadgeHeader.setText("🟢 Đang diễn ra");
                 statusBadgeHeader.getStyleClass().add("badge-running");
             }
-            case "FINISHED", "CLOSED" -> {
+            case "OPEN", "SCHEDULED" -> {
+                statusBadgeHeader.setText("⚪ Chưa bắt đầu");
+                statusBadgeHeader.getStyleClass().add("badge-scheduled");
+            }
+            case "FINISHED", "CLOSED", "PAID", "FAILED", "CANCELED" -> {
                 statusBadgeHeader.setText("🔴 Đã kết thúc");
                 statusBadgeHeader.getStyleClass().add("badge-closed");
             }
@@ -98,6 +108,62 @@ public class AuctionDetailUiPresenter {
                 statusBadgeHeader.getStyleClass().add("badge-default");
             }
         }
+    }
+
+    public void applyAuctionAccess(String status, boolean isReverse) {
+        boolean running = isRunningStatus(status);
+        boolean scheduled = isScheduledStatus(status);
+        boolean ended = isEndedStatus(status);
+
+        if (btnEnterTradingRoom != null) {
+            btnEnterTradingRoom.setVisible(running || ended);
+            btnEnterTradingRoom.setManaged(running || ended);
+            btnEnterTradingRoom.setText(ended ? "XEM LỊCH SỬ" : "THAM GIA ĐẤU THẦU");
+        }
+
+        if (btnFollow != null) {
+            btnFollow.setVisible(!ended);
+            btnFollow.setManaged(!ended);
+        }
+
+        if (manualBidContainer != null) {
+            manualBidContainer.setVisible(running);
+            manualBidContainer.setManaged(running);
+        }
+
+        if (autoBidContainer != null) {
+            autoBidContainer.setVisible(running && !isReverse);
+            autoBidContainer.setManaged(running && !isReverse);
+        }
+
+        if (bidButton != null) {
+            bidButton.setDisable(!running);
+        }
+        if (autoBidButton != null) {
+            autoBidButton.setDisable(!running || isReverse);
+        }
+
+        if (ended) {
+            showResult("Phiên đã kết thúc. Bạn có thể xem lại lịch sử giá.");
+        } else if (scheduled) {
+            clearResult();
+        }
+    }
+
+    private boolean isRunningStatus(String status) {
+        return "RUNNING".equals(status) || "ACTIVE".equals(status);
+    }
+
+    private boolean isScheduledStatus(String status) {
+        return "OPEN".equals(status) || "SCHEDULED".equals(status);
+    }
+
+    private boolean isEndedStatus(String status) {
+        return "FINISHED".equals(status)
+                || "CLOSED".equals(status)
+                || "PAID".equals(status)
+                || "FAILED".equals(status)
+                || "CANCELED".equals(status);
     }
 
     public void updateWinner(String winnerId) {
@@ -113,6 +179,10 @@ public class AuctionDetailUiPresenter {
     }
 
     public void showBidError(String message) {
+        bidErrorLabel.getStyleClass().remove("trading-success-label");
+        if (!bidErrorLabel.getStyleClass().contains("trading-error-label")) {
+            bidErrorLabel.getStyleClass().add("trading-error-label");
+        }
         bidErrorLabel.setText(message);
         bidErrorLabel.setVisible(true);
     }
@@ -135,10 +205,13 @@ public class AuctionDetailUiPresenter {
     public void showResult(String message) {
         resultLabel.setText(message);
         resultLabel.setVisible(true);
+        resultLabel.setManaged(true);
     }
 
     public void clearResult() {
         resultLabel.setText("");
+        resultLabel.setVisible(false);
+        resultLabel.setManaged(false);
     }
 
     public void setBidLoading(boolean loading) {
@@ -146,8 +219,7 @@ public class AuctionDetailUiPresenter {
         // Vứt bỏ cái búa, dùng Text in hoa quyền lực
         bidButton.setText(loading ? "ĐANG XỬ LÝ..." : "XÁC NHẬN ĐẶT GIÁ");
 
-        // Ép cứng lại style Đen Tuyền để đảm bảo không bao giờ bị "về zin" màu xám
-        bidButton.setStyle("-fx-background-color: #111111; -fx-text-fill: #FFFFFF; -fx-font-weight: bold; -fx-padding: 14; -fx-cursor: hand; -fx-font-size: 13px;");
+        bidButton.setStyle("");
 
         if (!loading) {
             clearBidError();
@@ -159,8 +231,7 @@ public class AuctionDetailUiPresenter {
         // Vứt bỏ con Robot, dùng Text in hoa
         autoBidButton.setText(loading ? "ĐANG KÍCH HOẠT..." : "KÍCH HOẠT AUTO-BID");
 
-        // Ép cứng lại style Trắng Viền Đen
-        autoBidButton.setStyle("-fx-background-color: #FFFFFF; -fx-text-fill: #111111; -fx-border-color: #111111; -fx-border-width: 1; -fx-font-weight: bold; -fx-padding: 14; -fx-cursor: hand; -fx-font-size: 13px;");
+        autoBidButton.setStyle("");
 
         if (!loading) {
             clearAutoBidError();
@@ -234,9 +305,8 @@ public class AuctionDetailUiPresenter {
             incrementField.setManaged(true);
         }
         if (bidButton != null) {
-            // Đổi chữ
             bidButton.setText("XÁC NHẬN ĐẶT GIÁ");
-            bidButton.setStyle("-fx-background-color: #111111; -fx-text-fill: #FFFFFF; -fx-font-weight: bold; -fx-padding: 14; -fx-cursor: hand; -fx-font-size: 13px;");
+            bidButton.setStyle("");
         }
     }
 
@@ -265,7 +335,7 @@ public class AuctionDetailUiPresenter {
         resultLabel.setText("🏆 PHIÊN ĐÃ KẾT THÚC! NGƯỜI THẮNG: " + winner);
         resultLabel.setStyle("-fx-text-fill: #f39c12; -fx-font-size: 18px; -fx-font-weight: bold;");
         statusBadgeHeader.setText("🔴 Kết thúc");
-        statusBadgeHeader.getStyleClass().setAll("status-badge", "badge-closed");
+        statusBadgeHeader.getStyleClass().setAll("auction-detail-status-badge", "badge-closed");
         bidButton.setDisable(true);
         autoBidButton.setDisable(true);
     }
@@ -281,8 +351,13 @@ public class AuctionDetailUiPresenter {
 
     public void onBidSuccess() {
         bidAmountField.clear();
-        clearBidError();
-        showResult("✅ Đặt giá thành công! Đang chờ cập nhật...");
+        clearResult();
+        bidErrorLabel.getStyleClass().remove("trading-error-label");
+        if (!bidErrorLabel.getStyleClass().contains("trading-success-label")) {
+            bidErrorLabel.getStyleClass().add("trading-success-label");
+        }
+        bidErrorLabel.setText("Đặt giá thành công! Đang chờ cập nhật...");
+        bidErrorLabel.setVisible(true);
     }
 
     public Label getTimeRemainingLabel() {

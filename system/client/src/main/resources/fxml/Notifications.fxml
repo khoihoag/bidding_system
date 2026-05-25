@@ -1,22 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.geometry.Insets?>
 
-<VBox spacing="30" style="-fx-background-color: #FFFFFF; -fx-padding: 50;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.bidding.controller.NotificationController">
+<VBox spacing="26"
+      xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.bidding.controller.NotificationController"
+      stylesheets="@../css/style.css"
+      styleClass="notifications-page">
 
-    <HBox alignment="CENTER_LEFT">
-        <VBox spacing="10">
-            <Label text="THÔNG BÁO CỦA BẠN" style="-fx-font-family: 'Georgia', 'Times New Roman', serif; -fx-font-size: 28px; -fx-text-fill: #111111;"/>
-            <Label text="Cập nhật mới nhất về các phiên đấu giá và tài khoản" style="-fx-font-size: 14px; -fx-text-fill: #6B7280;"/>
+    <HBox alignment="BOTTOM_LEFT" spacing="18" styleClass="notifications-header">
+        <VBox spacing="7" HBox.hgrow="ALWAYS">
+            <Label text="Thông báo của bạn" styleClass="notifications-title"/>
+            <Label text="Cập nhật mới nhất về các phiên đấu giá và tài khoản." styleClass="notifications-subtitle"/>
         </VBox>
-        <Region HBox.hgrow="ALWAYS"/>
-        <Button text="ĐÁNH DẤU ĐÃ ĐỌC TẤT CẢ" styleClass="secondary-button" style="-fx-padding: 10 20; -fx-font-size: 12px;"/>
+        <Button fx:id="markAllReadButton" text="✓ Đánh dấu tất cả là đã đọc" styleClass="notifications-mark-read-button"/>
     </HBox>
 
-    <Separator style="-fx-background-color: transparent; -fx-border-color: #E5E7EB; -fx-border-width: 1 0 0 0;"/>
-
-    <ListView fx:id="mainNotificationList" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent; -fx-border-color: transparent; -fx-control-inner-background: #FFFFFF;">
-    </ListView>
-
+    <ListView fx:id="mainNotificationList" VBox.vgrow="ALWAYS" styleClass="notifications-list"/>
 </VBox>
