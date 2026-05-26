@@ -1,5 +1,7 @@
 package com.bidding.controller.admin.model;
 
+import com.google.gson.JsonObject;
+
 import java.text.NumberFormat;
 import java.util.Locale;
 
@@ -14,13 +16,15 @@ public class PendingItemRow {
     private final String seller;
     private final String type;
     private final double startingPrice;
+    private final JsonObject itemJson;
 
-    public PendingItemRow(String id, String name, String seller, String type, double startingPrice) {
+    public PendingItemRow(String id, String name, String seller, String type, double startingPrice, JsonObject itemJson) {
         this.id = id;
         this.name = name;
         this.seller = seller;
         this.type = type;
         this.startingPrice = startingPrice;
+        this.itemJson = itemJson;
     }
 
     public String getId() {
@@ -45,5 +49,9 @@ public class PendingItemRow {
 
     public String getStartingPriceFormatted() {
         return MONEY_FMT.format(startingPrice) + " d";
+    }
+
+    public JsonObject getItemJson() {
+        return itemJson;
     }
 }

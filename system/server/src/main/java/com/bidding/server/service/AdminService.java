@@ -58,7 +58,7 @@ public class AdminService {
 
     private void requireAdminLevel2(User actor) {
         if (getAdminLevel(actor) < 2) {
-            throw new SecurityException("Chi Admin level 2 moi duoc thuc hien thao tac nay.");
+            throw new SecurityException("Chỉ Admin level 2 mới được thực hiện thao tác này.");
         }
     }
 
@@ -185,17 +185,17 @@ public class AdminService {
         String normalizedPassword = password.trim();
 
         if (!EMAIL_PATTERN.matcher(normalizedEmail).matches()) {
-            throw new RuntimeException("Email khong dung dinh dang.");
+            throw new RuntimeException("Email không đúng định dạng.");
         }
         if (!PASSWORD_PATTERN.matcher(normalizedPassword).matches()) {
-            throw new RuntimeException("Mat khau phai co it nhat 6 ky tu, gom ca chu va so.");
+            throw new RuntimeException("Mật khẩu phải có ít nhất 6 ký tự, gồm cả chữ và số.");
         }
 
         if (userRepository.findByUsername(normalizedUsername) != null) {
-            throw new RuntimeException("Username da ton tai.");
+            throw new RuntimeException("Username đã tồn tại.");
         }
         if (userRepository.findByEmail(normalizedEmail) != null) {
-            throw new RuntimeException("Email da ton tai.");
+            throw new RuntimeException("Email đã tồn tại.");
         }
 
         Admin newAdmin = new Admin(null, normalizedUsername, normalizedEmail, normalizedPassword, fullName.trim(), 1);
@@ -205,7 +205,17 @@ public class AdminService {
 
     private void validateRequired(String value, String fieldName) {
         if (value == null || value.trim().isEmpty()) {
-            throw new RuntimeException(fieldName + " khong duoc de trong.");
+            throw new RuntimeException(fieldDisplayName(fieldName) + " không được để trống.");
         }
+    }
+
+    private String fieldDisplayName(String fieldName) {
+        return switch (fieldName) {
+            case "username" -> "Username";
+            case "password" -> "Mật khẩu";
+            case "email" -> "Email";
+            case "fullName" -> "Họ và tên";
+            default -> fieldName;
+        };
     }
 }

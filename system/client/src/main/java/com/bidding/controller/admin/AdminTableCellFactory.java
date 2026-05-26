@@ -5,8 +5,10 @@ import com.bidding.controller.admin.model.PendingItemRow;
 import com.bidding.controller.admin.model.UserRow;
 import com.bidding.model.UserSession;
 import javafx.scene.control.Button;
+import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.HBox;
 import javafx.util.Callback;
 
@@ -30,9 +32,7 @@ public final class AdminTableCellFactory {
     }
 
     public interface PendingItemActionHandler {
-        void onApprove(PendingItemRow item);
-
-        void onReject(PendingItemRow item);
+        void onViewItem(PendingItemRow item);
     }
 
     private AdminTableCellFactory() {
@@ -78,6 +78,10 @@ public final class AdminTableCellFactory {
                 viewBtn.getStyleClass().add("btn-outline");
                 historyBtn.getStyleClass().add("btn-outline");
                 closeBtn.getStyleClass().add("btn-warn");
+                configureAuctionActionButton(viewBtn, 104);
+                configureAuctionActionButton(historyBtn, 104);
+                configureAuctionActionButton(closeBtn, 132);
+                actions.setFillHeight(false);
             }
 
             @Override
@@ -103,16 +107,22 @@ public final class AdminTableCellFactory {
         };
     }
 
+    private static void configureAuctionActionButton(Button button, double width) {
+        button.setMinWidth(width);
+        button.setPrefWidth(width);
+        button.setMaxWidth(width);
+        button.setTextOverrun(OverrunStyle.CLIP);
+        HBox.setHgrow(button, Priority.NEVER);
+    }
+
     public static Callback<TableColumn<PendingItemRow, Void>, TableCell<PendingItemRow, Void>> approvalActionColumn(
             PendingItemActionHandler handler) {
         return param -> new TableCell<>() {
-            private final Button approveBtn = new Button("Duyet");
-            private final Button rejectBtn = new Button("Tu choi");
-            private final HBox actions = new HBox(8, approveBtn, rejectBtn);
+            private final Button viewBtn = new Button("Xem sản phẩm");
+            private final HBox actions = new HBox(8, viewBtn);
 
             {
-                approveBtn.getStyleClass().add("btn-gold");
-                rejectBtn.getStyleClass().add("btn-danger");
+                viewBtn.getStyleClass().add("btn-outline");
             }
 
             @Override
@@ -123,8 +133,7 @@ public final class AdminTableCellFactory {
                     return;
                 }
                 PendingItemRow row = getTableView().getItems().get(getIndex());
-                approveBtn.setOnAction(e -> handler.onApprove(row));
-                rejectBtn.setOnAction(e -> handler.onReject(row));
+                viewBtn.setOnAction(e -> handler.onViewItem(row));
                 setGraphic(actions);
             }
         };

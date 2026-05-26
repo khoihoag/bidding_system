@@ -25,6 +25,7 @@ public class AdminResponseHandler {
     private final Runnable requestAllUsers;
     private final Runnable requestAllAuctions;
     private final Runnable requestPendingItems;
+    private final Runnable clearCreateAdminForm;
     private final BidHistoryDialogOpener bidHistoryDialogOpener;
 
     @FunctionalInterface
@@ -40,6 +41,7 @@ public class AdminResponseHandler {
                                 Runnable requestAllUsers,
                                 Runnable requestAllAuctions,
                                 Runnable requestPendingItems,
+                                Runnable clearCreateAdminForm,
                                 BidHistoryDialogOpener bidHistoryDialogOpener) {
         this.state = state;
         this.auditLog = auditLog;
@@ -49,6 +51,7 @@ public class AdminResponseHandler {
         this.requestAllUsers = requestAllUsers;
         this.requestAllAuctions = requestAllAuctions;
         this.requestPendingItems = requestPendingItems;
+        this.clearCreateAdminForm = clearCreateAdminForm;
         this.bidHistoryDialogOpener = bidHistoryDialogOpener;
     }
 
@@ -173,7 +176,8 @@ public class AdminResponseHandler {
                     AdminUiHelper.getString(item, "name"),
                     AdminUiHelper.getString(item, "sellerFullName"),
                     AdminUiHelper.getString(item, "type"),
-                    price
+                    price,
+                    item.deepCopy()
             ));
         }
     }
@@ -290,15 +294,16 @@ public class AdminResponseHandler {
         String status = AdminUiHelper.getString(res, "status");
         String message = AdminUiHelper.getString(res, "message");
         auditLog.updateLastDetail("CREATE_ADMIN_LEVEL1",
-                "SUCCESS".equals(status) ? "OK " + message : "Loi: " + message);
+                "SUCCESS".equals(status) ? "OK " + message : "Lỗi: " + message);
 
         if ("SUCCESS".equals(status)) {
-            AdminUiHelper.showAlert(Alert.AlertType.INFORMATION, "Thanh cong",
-                    message.isEmpty() ? "Da tao admin level 1." : message);
+            AdminUiHelper.showAlert(Alert.AlertType.INFORMATION, "Thành công",
+                    message.isEmpty() ? "Đã tạo admin level 1." : message);
+            clearCreateAdminForm.run();
             requestAllUsers.run();
         } else {
-            AdminUiHelper.showAlert(Alert.AlertType.ERROR, "Loi",
-                    message.isEmpty() ? "Khong the tao admin level 1." : message);
+            AdminUiHelper.showAlert(Alert.AlertType.ERROR, "Lỗi",
+                    message.isEmpty() ? "Không thể tạo admin level 1." : message);
         }
     }
 

@@ -69,7 +69,7 @@
                         style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';">
                     <graphic>
                         <ImageView fitWidth="16" fitHeight="16" preserveRatio="true">
-                            <image><Image url="@../images/icons/inventory.png"/></image>
+                            <image><Image url="@../images/icons/product-testing.png"/></image>
                         </ImageView>
                     </graphic>
                 </Button>
@@ -80,7 +80,7 @@
                         style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';">
                     <graphic>
                         <ImageView fitWidth="16" fitHeight="16" preserveRatio="true">
-                            <image><Image url="@../images/icons/inventory.png"/></image>
+                            <image><Image url="@../images/icons/auction-admin.png"/></image>
                         </ImageView>
                     </graphic>
                 </Button>
@@ -207,7 +207,7 @@
                 </HBox>
 
                 <VBox fx:id="createAdminBox" spacing="10" styleClass="toolbar-row">
-                    <Label text="Tạo admin level 1" styleClass="section-subtitle" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                    <Label text="Tạo admin level 1" styleClass="section-subtitle" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial'; -fx-font-weight: bold;"/>
                     <HBox spacing="10">
                         <TextField fx:id="newAdminUsernameField" promptText="Username" HBox.hgrow="ALWAYS" styleClass="search-field"/>
                         <TextField fx:id="newAdminEmailField" promptText="Email" HBox.hgrow="ALWAYS" styleClass="search-field"/>
@@ -290,13 +290,13 @@
                     <Button text="Xóa lọc" onAction="#clearAucSearch" styleClass="btn-outline" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
                 </HBox>
 
-                <TableView fx:id="adminAucTable" VBox.vgrow="ALWAYS" styleClass="table-view">
+                <TableView fx:id="adminAucTable" VBox.vgrow="ALWAYS" styleClass="table-view admin-auction-table">
                     <columns>
-                        <TableColumn fx:id="colAdminAucId"      text="ID Phiên"      prefWidth="160" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
-                        <TableColumn fx:id="colAdminAucTitle"   text="Sản phẩm"      prefWidth="260" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                        <TableColumn fx:id="colAdminAucId"      text="ID Phiên"      prefWidth="150" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                        <TableColumn fx:id="colAdminAucTitle"   text="Sản phẩm"      prefWidth="220" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
                         <TableColumn fx:id="colAdminAucStatus"  text="Trạng thái"    prefWidth="120" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
                         <TableColumn fx:id="colAdminAucPrice"   text="Giá hiện tại"  prefWidth="140" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
-                        <TableColumn fx:id="colAdminAucAction"  text="Hành động"     prefWidth="300" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                        <TableColumn fx:id="colAdminAucAction"  text="Hành động"     prefWidth="390" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
                     </columns>
                 </TableView>
 

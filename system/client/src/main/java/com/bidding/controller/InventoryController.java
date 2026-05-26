@@ -16,6 +16,7 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.effect.GaussianBlur;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
@@ -143,6 +144,15 @@ public class InventoryController implements Initializable {
         comboCondition.setValue("NEW");
 
         txtInventorySearch.textProperty().addListener((obs, oldVal, newVal) -> renderInventoryGrid());
+        forceNumericOnly(txtDuration);
+        forceNumericOnly(txtDropStepNow);
+        forceNumericOnly(txtDropStepSchedule);
+        forceNumericOnly(txtNewPrice);
+        forceNumericOnly(txtArtYear);
+        forceNumericOnly(txtVehYear);
+        forceNumericOnly(txtVehMileage);
+        forceNumericOnly(txtElecWarranty);
+        forceNumericOnly(txtElecPower);
 
         handleRefreshInventory();
 
@@ -419,7 +429,7 @@ public class InventoryController implements Initializable {
                             itemDatabase.put(id, item);
 
                             // Tái sử dụng hàm vẽ Thẻ Ảnh chuẩn Sotheby's
-                            javafx.scene.layout.VBox card = createItemCard(item);
+                            javafx.scene.layout.VBox card = createItemCard(item, false);
                             wonItemsGrid.getChildren().add(card);
                         }
                     } else {
@@ -587,7 +597,7 @@ public class InventoryController implements Initializable {
 
         for (JsonObject item : inventoryItems) {
             if (matchesInventorySearch(item)) {
-                inventoryGrid.getChildren().add(createItemCard(item));
+                inventoryGrid.getChildren().add(createItemCard(item, true));
             }
         }
 
@@ -624,33 +634,33 @@ public class InventoryController implements Initializable {
                 .trim();
     }
 
-    private VBox createItemCard(JsonObject item) {
+    private VBox createItemCard(JsonObject item, boolean editable) {
         String id = item.has("id") ? item.get("id").getAsString() : "";
         String price = item.has("startingPrice") ? formatPrice(item.get("startingPrice").getAsDouble()) : "";
         String type = item.has("type") ? item.get("type").getAsString() : "";
         String name = item.has("name") ? item.get("name").getAsString() : "Không tên";
 
-        final double cardWidth = 208;
-        final double contentWidth = 184;
+        final double cardWidth = 258;
+        final double contentWidth = 230;
 
-        VBox card = new VBox(10);
-        card.getStyleClass().addAll("auction-card", "inventory-item-card");
+        VBox card = new VBox(12);
+        card.getStyleClass().add("inventory-item-card");
         card.setPrefWidth(cardWidth);
         card.setMinWidth(cardWidth);
         card.setMaxWidth(cardWidth);
-        card.setMinHeight(300);
-        card.setPrefHeight(300);
+        card.setMinHeight(336);
+        card.setPrefHeight(336);
         card.setAlignment(Pos.TOP_CENTER);
 
         StackPane imageBox = new StackPane();
         imageBox.getStyleClass().add("inventory-card-image-box");
-        imageBox.setPrefSize(contentWidth, 148);
-        imageBox.setMinSize(contentWidth, 148);
-        imageBox.setMaxSize(contentWidth, 148);
+        imageBox.setPrefSize(cardWidth, 164);
+        imageBox.setMinSize(cardWidth, 164);
+        imageBox.setMaxSize(cardWidth, 164);
 
         ImageView imgView = new ImageView();
         imgView.setFitWidth(contentWidth);
-        imgView.setFitHeight(148);
+        imgView.setFitHeight(140);
         imgView.setPreserveRatio(true);
         imgView.setSmooth(true);
         if (item.has("images") && item.getAsJsonArray("images").size() > 0) {
@@ -696,28 +706,57 @@ public class InventoryController implements Initializable {
         }
 
         Button btnDetails = new Button("Xem chi tiết");
-        btnDetails.getStyleClass().add("card-view-btn");
+        btnDetails.getStyleClass().add("primary-button");
         btnDetails.setMaxWidth(Double.MAX_VALUE);
-        btnDetails.setOnAction(e -> handleViewDetailsById(id));
+        btnDetails.setOnAction(e -> {
+            if (editable) {
+                selectItemCard(card, id);
+            }
+            handleViewDetailsById(id);
+        });
+
+        Button btnEdit = new Button("Sửa");
+        btnEdit.getStyleClass().add("secondary-button");
+        btnEdit.setMaxWidth(Double.MAX_VALUE);
+        btnEdit.setOnAction(e -> {
+            selectItemCard(card, id);
+            handleEditSelectedItem();
+        });
 
         VBox body = new VBox(6, lblName, priceBlock, lblApproval);
-        body.getStyleClass().add("dashboard-card-body");
+        body.getStyleClass().add("inventory-card-body");
         body.setAlignment(Pos.TOP_LEFT);
         body.setMaxWidth(contentWidth);
 
-        card.getChildren().addAll(imageBox, body, btnDetails);
+        HBox actions = new HBox(8);
+        actions.getStyleClass().add("inventory-card-actions");
+        HBox.setHgrow(btnDetails, javafx.scene.layout.Priority.ALWAYS);
+        HBox.setHgrow(btnEdit, javafx.scene.layout.Priority.ALWAYS);
+        if (editable) {
+            actions.getChildren().addAll(btnDetails, btnEdit);
+        } else {
+            actions.getChildren().add(btnDetails);
+        }
+
+        card.getChildren().addAll(imageBox, body, actions);
 
         card.setOnMouseClicked(e -> {
-            clearCardSelection(inventoryGrid);
-            clearCardSelection(wonItemsGrid);
-            card.getStyleClass().add("inventory-item-card-selected");
-
-            selectedItemId = id;
-            if (txtItemIdNow != null) txtItemIdNow.setText(id);
-            if (txtItemIdSchedule != null) txtItemIdSchedule.setText(id);
+            if (editable) {
+                selectItemCard(card, id);
+            }
         });
 
         return card;
+    }
+
+    private void selectItemCard(VBox card, String id) {
+        clearCardSelection(inventoryGrid);
+        clearCardSelection(wonItemsGrid);
+        card.getStyleClass().add("inventory-item-card-selected");
+
+        selectedItemId = id;
+        if (txtItemIdNow != null) txtItemIdNow.setText(id);
+        if (txtItemIdSchedule != null) txtItemIdSchedule.setText(id);
     }
 
     private void clearCardSelection(FlowPane grid) {

@@ -2255,3 +2255,221 @@
 .notification-action-button:hover {
     -fx-background-color: #5d4200;
 }
+
+.inventory-root {
+    -fx-font-family: "Manrope", "Segoe UI", Arial, sans-serif;
+    -fx-background-color: #ffffff;
+}
+
+.inventory-page {
+    -fx-background-color: #ffffff;
+    -fx-padding: 28 32 32 32;
+}
+
+.inventory-workspace {
+    -fx-max-width: 1440;
+}
+
+.inventory-panel,
+.inventory-action-panel {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 12;
+    -fx-border-color: rgba(211, 196, 175, 0.42);
+    -fx-border-radius: 12;
+    -fx-padding: 24;
+    -fx-effect: dropshadow(gaussian, rgba(16, 24, 40, 0.08), 20, 0.12, 0, 4);
+}
+
+.inventory-title {
+    -fx-text-fill: #1a1c1c;
+    -fx-font-size: 24px;
+    -fx-font-weight: 900;
+}
+
+.inventory-search-field {
+    -fx-background-color: #ffffff;
+    -fx-border-color: rgba(211, 196, 175, 0.62);
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 12 14;
+    -fx-text-fill: #1a1c1c;
+    -fx-prompt-text-fill: #817563;
+    -fx-effect: dropshadow(gaussian, rgba(16, 24, 40, 0.06), 10, 0.1, 0, 2);
+}
+
+.inventory-search-field:focused {
+    -fx-border-color: #b8860b;
+    -fx-effect: dropshadow(gaussian, rgba(184, 134, 11, 0.18), 12, 0.18, 0, 0);
+}
+
+.inventory-scroll,
+.inventory-scroll .viewport,
+.inventory-form-scroll,
+.inventory-form-scroll .viewport {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-border-color: transparent;
+}
+
+.inventory-grid {
+    -fx-padding: 2 2 16 2;
+}
+
+.inventory-action-tabs {
+    -fx-background-color: transparent;
+}
+
+.inventory-action-tabs .tab {
+    -fx-padding: 10 14;
+}
+
+.inventory-action-tabs .tab .tab-label {
+    -fx-font-size: 13px;
+    -fx-font-weight: 900;
+}
+
+.inventory-form-pane {
+    -fx-padding: 18 2 4 2;
+}
+
+.inventory-check {
+    -fx-font-size: 13px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #1a1c1c;
+}
+
+.inventory-upload-zone {
+    -fx-background-color: rgba(184, 134, 11, 0.06);
+    -fx-background-radius: 12;
+    -fx-border-color: rgba(184, 134, 11, 0.34);
+    -fx-border-radius: 12;
+    -fx-border-style: dashed;
+    -fx-border-width: 2;
+    -fx-padding: 18;
+    -fx-cursor: hand;
+}
+
+.inventory-upload-zone:hover {
+    -fx-background-color: rgba(184, 134, 11, 0.10);
+    -fx-border-color: #b8860b;
+}
+
+.inventory-upload-title {
+    -fx-text-fill: #1a1c1c;
+    -fx-font-size: 14px;
+    -fx-font-weight: 900;
+}
+
+.inventory-image-list {
+    -fx-background-color: #ffffff;
+    -fx-border-color: rgba(211, 196, 175, 0.52);
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}
+
+.inventory-root .primary-button {
+    -fx-background-color: #b8860b;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 13px;
+    -fx-font-weight: 900;
+    -fx-padding: 11 18;
+    -fx-effect: dropshadow(gaussian, rgba(184, 134, 11, 0.22), 10, 0.16, 0, 2);
+}
+
+.inventory-root .primary-button:hover {
+    -fx-background-color: #9a7009;
+}
+
+.inventory-root .secondary-button {
+    -fx-background-color: #ffffff;
+    -fx-text-fill: #4f4535;
+    -fx-font-size: 13px;
+    -fx-font-weight: 800;
+    -fx-border-color: rgba(211, 196, 175, 0.7);
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 10 16;
+    -fx-effect: dropshadow(gaussian, rgba(16, 24, 40, 0.04), 6, 0.08, 0, 1);
+}
+
+.inventory-root .secondary-button:hover {
+    -fx-background-color: #faf8f2;
+    -fx-border-color: #b8860b;
+    -fx-text-fill: #785600;
+}
+
+.inventory-root .input-field,
+.inventory-root .text-field,
+.inventory-root .combo-box,
+.inventory-root .combo-box-base {
+    -fx-background-color: #ffffff;
+    -fx-border-color: rgba(211, 196, 175, 0.6);
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 11 14;
+    -fx-text-fill: #1a1c1c;
+    -fx-prompt-text-fill: #817563;
+    -fx-effect: dropshadow(gaussian, rgba(16, 24, 40, 0.04), 7, 0.08, 0, 2);
+}
+
+.inventory-root .input-field:focused,
+.inventory-root .text-field:focused,
+.inventory-root .combo-box:focused,
+.inventory-root .combo-box-base:focused {
+    -fx-border-color: #b8860b;
+    -fx-effect: dropshadow(gaussian, rgba(184, 134, 11, 0.16), 12, 0.18, 0, 0);
+}
+
+.inventory-root .field-label {
+    -fx-font-size: 13px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #1a1c1c;
+}
+
+.inventory-item-card {
+    -fx-padding: 0;
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 12;
+    -fx-border-color: #eeeeee;
+    -fx-border-radius: 12;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(16, 24, 40, 0.08), 20, 0.12, 0, 4);
+}
+
+.inventory-item-card:hover,
+.inventory-item-card-selected {
+    -fx-border-color: #b8860b;
+    -fx-border-width: 2;
+    -fx-effect: dropshadow(gaussian, rgba(184, 134, 11, 0.18), 20, 0.16, 0, 5);
+}
+
+.inventory-card-image-box {
+    -fx-background-color: #eeeeee;
+    -fx-background-radius: 12 12 0 0;
+    -fx-border-color: transparent;
+    -fx-padding: 12;
+}
+
+.inventory-card-badge {
+    -fx-background-color: rgba(255, 255, 255, 0.95);
+    -fx-background-radius: 6;
+    -fx-border-color: rgba(211, 196, 175, 0.55);
+    -fx-border-radius: 6;
+    -fx-padding: 4 9;
+    -fx-text-fill: #1a1c1c;
+    -fx-font-size: 11px;
+    -fx-font-weight: 900;
+}
+
+.inventory-card-body {
+    -fx-padding: 14 14 0 14;
+}
+
+.inventory-card-actions {
+    -fx-padding: 0 14 14 14;
+}

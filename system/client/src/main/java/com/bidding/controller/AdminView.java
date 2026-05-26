@@ -131,6 +131,7 @@ public class AdminView implements Initializable {
                 this::requestAllUsers,
                 this::requestAllAuctions,
                 this::requestPendingItems,
+                this::clearCreateAdminForm,
                 (auctionId, title, rows) -> AdminDialogs.showAuctionBidHistoryDialog(
                         auctionId, title, rows, AdminView.class));
 
@@ -146,6 +147,9 @@ public class AdminView implements Initializable {
     }
 
     private void setupTables() {
+        userTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        adminAucTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+
         colUserId.setCellValueFactory(new PropertyValueFactory<>("id"));
         colUserName.setCellValueFactory(new PropertyValueFactory<>("username"));
         colUserEmail.setCellValueFactory(new PropertyValueFactory<>("email"));
@@ -171,13 +175,12 @@ public class AdminView implements Initializable {
         colPendingItemPrice.setCellValueFactory(new PropertyValueFactory<>("startingPriceFormatted"));
         colPendingItemAction.setCellFactory(AdminTableCellFactory.approvalActionColumn(new AdminTableCellFactory.PendingItemActionHandler() {
             @Override
-            public void onApprove(PendingItemRow item) {
-                confirmApproveItem(item);
-            }
-
-            @Override
-            public void onReject(PendingItemRow item) {
-                confirmRejectItem(item);
+            public void onViewItem(PendingItemRow item) {
+                AdminDialogs.showPendingItemDetails(
+                        item,
+                        AdminView.class,
+                        approvedItem -> sendApproveItem(approvedItem.getId(), approvedItem.getName()),
+                        (rejectedItem, reason) -> sendRejectItem(rejectedItem.getId(), rejectedItem.getName(), reason));
             }
         }));
         pendingItemTable.setItems(state.pendingItems);
@@ -186,6 +189,8 @@ public class AdminView implements Initializable {
         colAdminAucTitle.setCellValueFactory(new PropertyValueFactory<>("title"));
         colAdminAucStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
         colAdminAucPrice.setCellValueFactory(new PropertyValueFactory<>("priceFormatted"));
+        setupWrappingAuctionColumn(colAdminAucId);
+        setupWrappingAuctionColumn(colAdminAucTitle);
         colAdminAucAction.setCellFactory(AdminTableCellFactory.auctionActionColumn(new AdminTableCellFactory.AuctionActionHandler() {
             @Override
             public void onViewItem(AuctionRow auction) {
@@ -210,6 +215,31 @@ public class AdminView implements Initializable {
         colAuditTarget.setCellValueFactory(new PropertyValueFactory<>("target"));
         colAuditDetail.setCellValueFactory(new PropertyValueFactory<>("detail"));
         auditTable.setItems(state.allAuditLogs);
+    }
+
+    private void setupWrappingAuctionColumn(TableColumn<AuctionRow, String> column) {
+        column.setCellFactory(col -> new TableCell<>() {
+            private final Label label = new Label();
+
+            {
+                label.setWrapText(true);
+                label.maxWidthProperty().bind(col.widthProperty().subtract(24));
+                label.setStyle("-fx-text-fill: #111827;");
+            }
+
+            @Override
+            protected void updateItem(String value, boolean empty) {
+                super.updateItem(value, empty);
+                if (empty || value == null || value.isBlank()) {
+                    setGraphic(null);
+                    setText(null);
+                    return;
+                }
+                label.setText(value);
+                setGraphic(label);
+                setText(null);
+            }
+        });
     }
 
     private void hideOutOfScopeAdminFeatures() {
@@ -315,8 +345,8 @@ public class AdminView implements Initializable {
     @FXML
     private void handleCreateAdminLevel1() {
         if (UserSession.getInstance().getAdminLevel() < 2) {
-            AdminUiHelper.showAlert(Alert.AlertType.WARNING, "Khong du quyen",
-                    "Chi admin level 2 moi duoc tao admin level 1.");
+            AdminUiHelper.showAlert(Alert.AlertType.WARNING, "Không đủ quyền",
+                    "Chỉ admin level 2 mới được tạo admin level 1.");
             return;
         }
 
@@ -325,13 +355,16 @@ public class AdminView implements Initializable {
         String fullName = newAdminFullNameField.getText().trim();
         String password = newAdminPasswordField.getText().trim();
         if (username.isEmpty() || email.isEmpty() || fullName.isEmpty() || password.isEmpty()) {
-            AdminUiHelper.showAlert(Alert.AlertType.WARNING, "Thieu thong tin",
-                    "Vui long nhap day du thong tin admin level 1.");
+            AdminUiHelper.showAlert(Alert.AlertType.WARNING, "Thiếu thông tin",
+                    "Vui lòng nhập đầy đủ username, email, họ tên và mật khẩu.");
             return;
         }
 
         network.sendCreateAdminLevel1(username, email, fullName, password);
-        auditLog.append("CREATE_ADMIN_LEVEL1", "admin", username, "Dang cho...");
+        auditLog.append("CREATE_ADMIN_LEVEL1", "admin", username, "Đang chờ...");
+    }
+
+    private void clearCreateAdminForm() {
         newAdminUsernameField.clear();
         newAdminEmailField.clear();
         newAdminFullNameField.clear();
@@ -346,7 +379,9 @@ public class AdminView implements Initializable {
         confirm.showAndWait().ifPresent(btn -> {
             if (btn == ButtonType.OK) {
                 state.adminLoggedIn = false;
-                Platform.exit();
+                UserSession.getInstance().clear();
+                network.setupMessageHandler(null);
+                AppNavigator.navigate("Login.fxml");
             }
         });
     }
@@ -482,11 +517,11 @@ public class AdminView implements Initializable {
             return;
         }
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-        confirm.setTitle("Duyet san pham");
-        confirm.setHeaderText("Duyet: " + item.getName());
+        confirm.setTitle("Duyệt sản phẩm");
+        confirm.setHeaderText("Duyệt: " + item.getName());
         confirm.setContentText("ID: " + item.getId()
-                + "\nNguoi ban: " + item.getSeller()
-                + "\n\nSan pham se duoc phep mo phien dau gia.");
+                + "\nNgười bán: " + item.getSeller()
+                + "\n\nSản phẩm sẽ được phép mở phiên đấu giá.");
         confirm.showAndWait().ifPresent(btn -> {
             if (btn == ButtonType.OK) {
                 sendApproveItem(item.getId(), item.getName());
@@ -498,10 +533,10 @@ public class AdminView implements Initializable {
         if (item == null) {
             return;
         }
-        TextInputDialog dialog = new TextInputDialog("San pham chua dat yeu cau.");
-        dialog.setTitle("Tu choi san pham");
-        dialog.setHeaderText("Tu choi: " + item.getName());
-        dialog.setContentText("Ly do:");
+        TextInputDialog dialog = new TextInputDialog("Sản phẩm chưa đạt yêu cầu.");
+        dialog.setTitle("Từ chối sản phẩm");
+        dialog.setHeaderText("Từ chối: " + item.getName());
+        dialog.setContentText("Lý do:");
         dialog.showAndWait().ifPresent(reason ->
                 sendRejectItem(item.getId(), item.getName(), reason));
     }

@@ -367,8 +367,8 @@
 }
 
 .table-view .column-header {
-    -fx-border-color: transparent transparent #e5e7eb transparent;
-    -fx-border-width: 0 0 1 0;
+    -fx-border-color: transparent #e5e7eb #e5e7eb transparent;
+    -fx-border-width: 0 1 1 0;
     -fx-padding: 10 12;
 }
 
@@ -403,11 +403,16 @@
 .table-view .table-cell {
     -fx-text-fill: #111827;
     -fx-padding: 8 12;
-    -fx-border-color: transparent;
+    -fx-border-color: transparent #e5e7eb transparent transparent;
+    -fx-border-width: 0 1 0 0;
 }
 
 .table-view .placeholder .label {
     -fx-text-fill: #8a94a6;
+}
+
+.admin-auction-table .table-row-cell {
+    -fx-cell-size: 84px;
 }
 
 .chart {

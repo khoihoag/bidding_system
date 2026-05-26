@@ -170,7 +170,7 @@ public class AdminController {
     }
 
     public void handleCreateAdminLevel1(JsonObject request) {
-        if (!requireLogin("Admin chua dang nhap!")) return;
+        if (!requireLogin("Admin chưa đăng nhập!")) return;
         try {
             Admin admin = adminService.createAdminLevel1(
                     client.getLoggedInUser(),
@@ -183,7 +183,7 @@ public class AdminController {
             JsonObject reply = new JsonObject();
             reply.addProperty("action", "CREATE_ADMIN_LEVEL1_REPLY");
             reply.addProperty("status", "SUCCESS");
-            reply.addProperty("message", "Da tao admin level 1.");
+            reply.addProperty("message", "Đã tạo admin level 1.");
             reply.addProperty("id", admin.getId());
             reply.addProperty("username", admin.getUsername());
             reply.addProperty("adminLevel", admin.getAdminLevel());
@@ -191,7 +191,7 @@ public class AdminController {
         } catch (SecurityException se) {
             client.sendError(se.getMessage());
         } catch (Exception e) {
-            client.sendError("Loi khi tao admin level 1: " + e.getMessage());
+            client.sendError("Lỗi khi tạo admin level 1: " + e.getMessage());
         }
     }
 
