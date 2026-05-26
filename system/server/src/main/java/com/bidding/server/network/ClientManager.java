@@ -115,23 +115,40 @@ public class ClientManager implements AuctionObserver {
     // =========================================================
     @Override
     public void onAuctionClosed(AuctionEvent event) {
-        // 1. Vẫn giữ cái thông báo chung cho cả làng cùng biết[cite: 10]
+        var auction = event.getAuction();
+
+        // 1. Vẫn giữ cái thông báo chung cho cả làng cùng biết (null-safe để khỏi văng NPE khi test/mock)
+        String itemName = "Vật phẩm đấu giá";
+        if (auction != null && auction.getItem() != null && auction.getItem().getName() != null) {
+            itemName = auction.getItem().getName();
+        }
+
         JsonObject notifyJson = new JsonObject();
         notifyJson.addProperty("action", "GLOBAL_NOTIFY");
-        notifyJson.addProperty("message", "Phiên đấu giá [" + event.getAuction().getItem().getName() + "] đã kết thúc!");
+        notifyJson.addProperty("message", "Phiên đấu giá [" + itemName + "] đã kết thúc!");
         broadcast(notifyJson.toString());
 
-        // 2. Bắn thêm gói tin CHI TIẾT để UI "khóa sổ" và hiện người thắng
+        // 2. Bắn thêm gói tin CHI TIẾT để UI hiển thị kết quả
         JsonObject endJson = new JsonObject();
         endJson.addProperty("action", "AUCTION_FINISHED");
         endJson.addProperty("auctionId", event.getAuctionId());
 
-        // Lấy tên người thắng cuối cùng từ Auction
-        String winnerName = (event.getAuction().getCurrentWinner() != null)
-                ? event.getAuction().getCurrentWinner().getUsername()
-                : "Không có người đặt giá";
+        // Giá chốt: ưu tiên dùng convenience getter để lấy đúng giá từ RAM model (AtomicReference)
+        double finalPrice = event.getNewPrice() != null ? event.getNewPrice() : 0.0;
+
+        // Người thắng cuối cùng: lấy từ Auction nếu có, fallback để chạy test/mock
+        String winnerName;
+        if (auction == null) {
+            winnerName = "NONE";
+        } else {
+            winnerName = (auction.getCurrentWinner() != null)
+                    ? auction.getCurrentWinner().getUsername()
+                    : "Không có người đặt giá";
+        }
 
         endJson.addProperty("winnerId", winnerName);
+        endJson.addProperty("itemName", itemName);
+        endJson.addProperty("finalPrice", finalPrice);
         broadcast(endJson.toString());
     }
 

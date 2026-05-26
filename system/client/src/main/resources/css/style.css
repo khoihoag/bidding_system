@@ -2395,11 +2395,12 @@
     -fx-min-width: 430;
     -fx-pref-width: 430;
     -fx-max-width: 430;
-    -fx-padding: 14;
+    -fx-padding: 14 0 14 14;
 }
 
 .inventory-root .inventory-action-panel {
-    -fx-padding: 22 8 22 22;
+    -fx-padding: 22 0 22 22;
+    -fx-background-insets: 0;
 }
 
 .inventory-title {
@@ -2425,17 +2426,94 @@
     -fx-effect: dropshadow(gaussian, rgba(184, 134, 11, 0.18), 12, 0.18, 0, 0);
 }
 
+.inventory-root .scroll-bar:vertical {
+    -fx-padding: 0;
+    -fx-pref-width: 8;
+    -fx-min-width: 8;
+    -fx-max-width: 8;
+}
+
+.inventory-root .scroll-bar .track {
+    -fx-padding: 2 0;
+}
+
 .inventory-scroll,
+.inventory-form-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+    -fx-background-insets: 0;
+}
+
 .inventory-scroll .viewport,
-.inventory-form-scroll,
 .inventory-form-scroll .viewport {
     -fx-background-color: transparent;
     -fx-background: transparent;
     -fx-border-color: transparent;
 }
 
+/* Tách nội dung xa thanh cuộn; scrollbar nằm sát biên phải panel */
+.inventory-root .inventory-panel .inventory-scroll .viewport {
+    -fx-padding: 0 36 0 0;
+}
+
+.inventory-root .inventory-action-panel .inventory-form-scroll .viewport {
+    -fx-padding: 0 36 0 0;
+}
+
+.inventory-scroll > .scroll-bar:vertical,
+.inventory-form-scroll > .scroll-bar:vertical {
+    -fx-padding: 0;
+    -fx-pref-width: 8;
+    -fx-min-width: 8;
+    -fx-max-width: 8;
+    -fx-background-insets: 0;
+}
+
+.inventory-root .inventory-panel .inventory-scroll {
+    -fx-background-insets: 0;
+}
+
+.inventory-root .inventory-panel .inventory-scroll > .scroll-bar:vertical {
+    -fx-translate-x: 16;
+    -fx-padding: 0;
+}
+
+.inventory-root .inventory-action-panel .inventory-form-scroll {
+    -fx-background-insets: 0;
+}
+
+.inventory-root .inventory-action-panel .inventory-form-scroll > .scroll-bar:vertical {
+    -fx-translate-x: 20;
+    -fx-padding: 0;
+}
+
+.inventory-scroll > .scroll-bar:vertical .track,
+.inventory-form-scroll > .scroll-bar:vertical .track {
+    -fx-background-insets: 0;
+    -fx-padding: 2 0;
+}
+
+.inventory-scroll > .scroll-bar:vertical .thumb,
+.inventory-form-scroll > .scroll-bar:vertical .thumb {
+    -fx-background-insets: 0;
+}
+
+.inventory-action-tabs > .tab-content-area {
+    -fx-padding: 0;
+}
+
+.inventory-action-tabs:focused > .tab-content-area {
+    -fx-padding: 0;
+}
+
+.inventory-action-tabs .tab-content-area .tab-content {
+    -fx-padding: 0;
+}
+
 .inventory-grid {
-    -fx-padding: 2 2 16 2;
+    -fx-padding: 2 8 16 0;
 }
 
 .inventory-action-tabs {
@@ -2452,7 +2530,7 @@
 }
 
 .inventory-form-pane {
-    -fx-padding: 18 2 4 2;
+    -fx-padding: 18 12 4 0;
 }
 
 .inventory-check {
@@ -2488,6 +2566,12 @@
     -fx-border-color: rgba(211, 196, 175, 0.52);
     -fx-border-radius: 8;
     -fx-background-radius: 8;
+    -fx-padding: 0 28 0 0;
+}
+
+.inventory-image-list .scroll-bar:vertical {
+    -fx-padding: 0;
+    -fx-translate-x: 18;
 }
 
 .inventory-root .primary-button {
@@ -2621,23 +2705,23 @@
 }
 
 .inventory-card-badge {
-    -fx-background-color: rgba(255, 255, 255, 0.95);
-    -fx-background-radius: 6;
+    -fx-background-color: rgba(255, 255, 255, 0.92);
+    -fx-background-radius: 5;
     -fx-border-color: rgba(211, 196, 175, 0.55);
-    -fx-border-radius: 6;
-    -fx-padding: 4 9;
+    -fx-border-radius: 5;
+    -fx-padding: 2 6;
     -fx-text-fill: #1a1c1c;
-    -fx-font-size: 11px;
-    -fx-font-weight: 900;
+    -fx-font-size: 9px;
+    -fx-font-weight: 800;
 }
 
 .inventory-status-badge {
     -fx-background-radius: 999;
     -fx-border-radius: 999;
     -fx-border-width: 1;
-    -fx-padding: 4 10;
-    -fx-font-size: 11px;
-    -fx-font-weight: 900;
+    -fx-padding: 2 7;
+    -fx-font-size: 9px;
+    -fx-font-weight: 800;
 }
 
 .inventory-status-badge.status-approved,
@@ -2662,9 +2746,304 @@
 }
 
 .inventory-card-body {
-    -fx-padding: 12 12 0 12;
+    -fx-padding: 10 12 0 12;
 }
 
 .inventory-card-actions {
     -fx-padding: 0 12 12 12;
+}
+
+.inventory-card-actions .inventory-card-detail-btn {
+    -fx-font-size: 11px;
+    -fx-padding: 7 10;
+}
+
+/* --- Nạp tiền: Private Banking dialog --- */
+.deposit-dialog-pane {
+    -fx-background-color: linear-gradient(to bottom, #1a1712 0%, #12100d 100%);
+    -fx-background-radius: 18;
+    -fx-border-color: linear-gradient(to bottom, #e8c96a, #8f7330);
+    -fx-border-radius: 18;
+    -fx-border-width: 1.5;
+    -fx-min-width: 440;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.45), 28, 0.2, 0, 10);
+}
+
+.deposit-dialog-pane > .content {
+    -fx-padding: 22 24 8 24;
+}
+
+.deposit-dialog-pane > .button-bar {
+    -fx-background-color: rgba(0, 0, 0, 0.22);
+    -fx-padding: 14 22 18 22;
+    -fx-border-color: rgba(232, 201, 106, 0.22) transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+}
+
+.deposit-dialog-pane .header-panel {
+    -fx-padding: 0;
+    -fx-background-color: transparent;
+}
+
+.deposit-dialog-content {
+    -fx-background-color: transparent;
+}
+
+.deposit-dialog-kicker {
+    -fx-text-fill: #d4af37;
+    -fx-font-size: 11px;
+    -fx-font-weight: 900;
+    -fx-letter-spacing: 0.14em;
+}
+
+.deposit-dialog-title {
+    -fx-text-fill: #faf6eb;
+    -fx-font-size: 24px;
+    -fx-font-weight: 900;
+}
+
+.deposit-dialog-subtitle {
+    -fx-text-fill: rgba(250, 246, 235, 0.72);
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+}
+
+.deposit-balance-card {
+    -fx-background-color: linear-gradient(to right, rgba(212, 175, 55, 0.18), rgba(143, 115, 48, 0.08));
+    -fx-background-radius: 14;
+    -fx-border-color: rgba(232, 201, 106, 0.45);
+    -fx-border-radius: 14;
+    -fx-border-width: 1;
+    -fx-padding: 14 16;
+}
+
+.deposit-balance-caption {
+    -fx-text-fill: rgba(250, 246, 235, 0.65);
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+}
+
+.deposit-balance-value {
+    -fx-text-fill: #f5e6b8;
+    -fx-font-size: 22px;
+    -fx-font-weight: 900;
+}
+
+.deposit-field-label {
+    -fx-text-fill: rgba(250, 246, 235, 0.8);
+    -fx-font-size: 12px;
+    -fx-font-weight: 800;
+}
+
+.deposit-amount-field {
+    -fx-background-color: rgba(255, 255, 255, 0.06);
+    -fx-background-radius: 12;
+    -fx-border-color: rgba(232, 201, 106, 0.35);
+    -fx-border-radius: 12;
+    -fx-border-width: 1;
+    -fx-text-fill: #faf6eb;
+    -fx-prompt-text-fill: rgba(250, 246, 235, 0.4);
+    -fx-font-size: 18px;
+    -fx-font-weight: 800;
+    -fx-padding: 12 14;
+}
+
+.deposit-amount-field:focused {
+    -fx-border-color: #e8c96a;
+    -fx-background-color: rgba(255, 255, 255, 0.1);
+    -fx-effect: dropshadow(gaussian, rgba(232, 201, 106, 0.25), 14, 0.2, 0, 0);
+}
+
+.deposit-quick-row {
+    -fx-alignment: center-left;
+}
+
+.deposit-quick-chip {
+    -fx-background-color: rgba(255, 255, 255, 0.05);
+    -fx-background-radius: 999;
+    -fx-border-color: rgba(232, 201, 106, 0.35);
+    -fx-border-radius: 999;
+    -fx-border-width: 1;
+    -fx-text-fill: #f0dfa0;
+    -fx-font-size: 12px;
+    -fx-font-weight: 800;
+    -fx-padding: 7 14;
+    -fx-cursor: hand;
+}
+
+.deposit-quick-chip:hover {
+    -fx-background-color: rgba(232, 201, 106, 0.18);
+    -fx-border-color: #e8c96a;
+    -fx-text-fill: #fff8e7;
+}
+
+.deposit-dialog-note {
+    -fx-text-fill: rgba(250, 246, 235, 0.5);
+    -fx-font-size: 11px;
+    -fx-font-weight: 600;
+}
+
+.deposit-dialog-pane .deposit-dialog-confirm {
+    -fx-background-color: linear-gradient(to right, #f0d78c, #c9a227 45%, #9a7b28);
+    -fx-text-fill: #1a1408;
+    -fx-font-size: 13px;
+    -fx-font-weight: 900;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-padding: 10 22;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(201, 162, 39, 0.45), 12, 0.22, 0, 2);
+}
+
+.deposit-dialog-pane .deposit-dialog-confirm:hover {
+    -fx-background-color: linear-gradient(to right, #ffe9a8, #d4b03a 45%, #b08d32);
+}
+
+.deposit-dialog-pane .deposit-dialog-cancel {
+    -fx-background-color: transparent;
+    -fx-text-fill: rgba(250, 246, 235, 0.75);
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+    -fx-background-radius: 10;
+    -fx-border-color: rgba(250, 246, 235, 0.25);
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 10 18;
+    -fx-cursor: hand;
+}
+
+.deposit-dialog-pane .deposit-dialog-cancel:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.06);
+    -fx-border-color: rgba(232, 201, 106, 0.45);
+    -fx-text-fill: #faf6eb;
+}
+
+/* --- Chiến thắng đấu giá --- */
+.winner-dialog-pane {
+    -fx-background-color: linear-gradient(to bottom, #17130e 0%, #0d0b08 100%);
+    -fx-background-radius: 20;
+    -fx-border-color: linear-gradient(to bottom, #f3df9b, #9a7b28);
+    -fx-border-radius: 20;
+    -fx-border-width: 1.5;
+    -fx-min-width: 460;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 32, 0.22, 0, 12);
+}
+
+.winner-dialog-pane > .content {
+    -fx-padding: 24 26 10 26;
+}
+
+.winner-dialog-pane > .button-bar {
+    -fx-background-color: rgba(0, 0, 0, 0.24);
+    -fx-padding: 14 24 18 24;
+    -fx-border-color: rgba(243, 223, 155, 0.2) transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+}
+
+.winner-dialog-pane .header-panel {
+    -fx-padding: 0;
+    -fx-background-color: transparent;
+}
+
+.winner-dialog-content {
+    -fx-background-color: transparent;
+}
+
+.winner-dialog-emblem-wrap {
+    -fx-background-color: radial-gradient(center 50% 50%, radius 80%, rgba(243, 223, 155, 0.28), rgba(243, 223, 155, 0.04));
+    -fx-background-radius: 999;
+    -fx-min-width: 72;
+    -fx-min-height: 72;
+    -fx-max-width: 72;
+    -fx-max-height: 72;
+    -fx-border-color: rgba(243, 223, 155, 0.45);
+    -fx-border-radius: 999;
+    -fx-border-width: 1;
+}
+
+.winner-dialog-emblem {
+    -fx-font-size: 34px;
+}
+
+.winner-dialog-kicker {
+    -fx-text-fill: #d4af37;
+    -fx-font-size: 11px;
+    -fx-font-weight: 900;
+}
+
+.winner-dialog-title {
+    -fx-text-fill: #fff8e7;
+    -fx-font-size: 26px;
+    -fx-font-weight: 900;
+}
+
+.winner-dialog-subtitle {
+    -fx-text-fill: rgba(255, 248, 231, 0.72);
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-alignment: center;
+    -fx-text-alignment: center;
+}
+
+.winner-dialog-spotlight {
+    -fx-background-color: linear-gradient(to right, rgba(243, 223, 155, 0.14), rgba(154, 123, 40, 0.08));
+    -fx-background-radius: 16;
+    -fx-border-color: rgba(243, 223, 155, 0.35);
+    -fx-border-radius: 16;
+    -fx-border-width: 1;
+    -fx-padding: 16 18;
+}
+
+.winner-dialog-field-caption {
+    -fx-text-fill: rgba(255, 248, 231, 0.58);
+    -fx-font-size: 10px;
+    -fx-font-weight: 800;
+}
+
+.winner-dialog-item-name {
+    -fx-text-fill: #faf6eb;
+    -fx-font-size: 16px;
+    -fx-font-weight: 900;
+}
+
+.winner-dialog-winner-name {
+    -fx-text-fill: #f3df9b;
+    -fx-font-size: 18px;
+    -fx-font-weight: 900;
+}
+
+.winner-dialog-winner-muted {
+    -fx-text-fill: rgba(255, 248, 231, 0.45);
+    -fx-font-size: 16px;
+    -fx-font-weight: 700;
+}
+
+.winner-dialog-price-value {
+    -fx-text-fill: #ffe08a;
+    -fx-font-size: 20px;
+    -fx-font-weight: 900;
+}
+
+.winner-dialog-note {
+    -fx-text-fill: rgba(255, 248, 231, 0.48);
+    -fx-font-size: 11px;
+    -fx-font-weight: 600;
+    -fx-alignment: center;
+    -fx-text-alignment: center;
+}
+
+.winner-dialog-pane .winner-dialog-close {
+    -fx-background-color: linear-gradient(to right, #f3df9b, #c9a227 45%, #9a7b28);
+    -fx-text-fill: #1a1408;
+    -fx-font-size: 13px;
+    -fx-font-weight: 900;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-padding: 10 24;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(201, 162, 39, 0.45), 12, 0.22, 0, 2);
+}
+
+.winner-dialog-pane .winner-dialog-close:hover {
+    -fx-background-color: linear-gradient(to right, #fff0b8, #d4b03a 45%, #b08d32);
 }

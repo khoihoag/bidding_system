@@ -4,7 +4,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import javafx.application.Platform;
-import javafx.scene.control.Alert;
 import com.bidding.controller.AuctionDetailController;
 /**
  * Parses inbound socket messages for the auction detail screen.
@@ -68,11 +67,6 @@ public class AuctionDetailResponseHandler {
             countdown.stop();
             ui.showAuctionFinished(winner);
             ui.applyAuctionAccess("FINISHED", false);
-            AuctionDetailAlerts.show(
-                    Alert.AlertType.INFORMATION,
-                    "Thông báo kết quả",
-                    "Phiên đấu giá đã kết thúc!\nChúc mừng đại gia: " + winner,
-                    resourceClass);
         });
     }
 
