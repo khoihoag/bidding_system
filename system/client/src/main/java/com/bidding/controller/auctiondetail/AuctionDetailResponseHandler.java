@@ -240,16 +240,47 @@ public class AuctionDetailResponseHandler {
     private void handleError(JsonObject json) {
         String message = AuctionDetailFormats.getStringSafe(json, "message");
         Platform.runLater(() -> {
+            boolean pendingManualBid = ui.isBidLoading();
+            boolean pendingAutoBid = ui.isAutoBidLoading();
+
             ui.setBidLoading(false);
             ui.setAutoBidLoading(false);
 
-            if (message.contains("đặt giá") || message.contains("BID") || message.contains("giá")) {
+            if (pendingManualBid || isManualBidError(message)) {
                 ui.showBidError(message);
-            } else if (message.contains("Auto") || message.contains("auto")) {
+            } else if (pendingAutoBid || isAutoBidError(message)) {
                 ui.showAutoBidError(message);
             } else {
                 ui.showResult("❌ " + message);
             }
         });
+    }
+
+    private boolean isManualBidError(String message) {
+        String normalized = normalizeErrorMessage(message);
+        return normalized.contains("dat gia")
+                || normalized.contains("bid")
+                || normalized.contains("gia")
+                || normalized.contains("vi")
+                || normalized.contains("tien")
+                || normalized.contains("so du")
+                || normalized.contains("khong du")
+                || normalized.contains("nap them")
+                || normalized.contains("balance")
+                || normalized.contains("insufficient");
+    }
+
+    private boolean isAutoBidError(String message) {
+        String normalized = normalizeErrorMessage(message);
+        return normalized.contains("auto");
+    }
+
+    private String normalizeErrorMessage(String message) {
+        if (message == null) {
+            return "";
+        }
+        return java.text.Normalizer.normalize(message, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase(java.util.Locale.ROOT);
     }
 }

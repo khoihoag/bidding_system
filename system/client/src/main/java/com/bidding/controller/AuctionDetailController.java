@@ -19,6 +19,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Rectangle;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -64,8 +65,10 @@ public class AuctionDetailController {
     @FXML private CategoryAxis timeAxis;
     @FXML private NumberAxis priceAxis;
     @FXML private HBox tradingThumbnailsBox;
+    @FXML private VBox tradingImagePreview;
     @FXML private ImageView tradingImageMainView;
     @FXML private StackPane tradingImageMainContainer;
+    @FXML private StackPane tradingChartFrame;
 
     private final AuctionDetailState state = new AuctionDetailState();
     private AuctionDetailNetworkGateway network;
@@ -100,6 +103,7 @@ public class AuctionDetailController {
                 AuctionDetailController.class, state, ui, chartBinder, countdown, this);
 
         chartBinder.setupChart();
+        configureTradingChartFrameClip();
         ui.applyInitialStyles();
         network.registerMessageHandler(responseHandler::handle);
 
@@ -109,6 +113,17 @@ public class AuctionDetailController {
         } else {
             System.err.println("Lỗi: Không nhận được ID phiên đấu giá!");
         }
+    }
+
+    private void configureTradingChartFrameClip() {
+        if (tradingChartFrame == null) return;
+
+        Rectangle clip = new Rectangle();
+        clip.widthProperty().bind(tradingChartFrame.widthProperty());
+        clip.heightProperty().bind(tradingChartFrame.heightProperty());
+        clip.setArcWidth(36);
+        clip.setArcHeight(36);
+        tradingChartFrame.setClip(clip);
     }
 
     public void initData(String auctionId) {
@@ -148,6 +163,11 @@ public class AuctionDetailController {
     }
 
     private void updateTradingImageViews() {
+        if (tradingImagePreview != null) {
+            boolean hasImages = !showcaseImagePaths.isEmpty();
+            tradingImagePreview.setVisible(hasImages);
+            tradingImagePreview.setManaged(hasImages);
+        }
         if (tradingImageMainView != null && tradingImageMainContainer != null) {
             loadTradingMainAt(currentShowcaseImageIndex);
         }

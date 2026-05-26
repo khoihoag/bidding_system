@@ -119,7 +119,7 @@
                             <Button text="← Quay lại" onAction="#handleBackToShowcase" styleClass="trading-back-button"/>
                         </HBox>
 
-                        <VBox spacing="8" styleClass="trading-image-preview" alignment="TOP_LEFT">
+                        <VBox fx:id="tradingImagePreview" spacing="8" styleClass="trading-image-preview" alignment="TOP_LEFT">
                             <StackPane fx:id="tradingImageMainContainer" styleClass="trading-item-image-frame">
                                 <ImageView fx:id="tradingImageMainView" fitWidth="260" fitHeight="280"
                                            preserveRatio="true" smooth="true"/>
@@ -187,7 +187,7 @@
                         <Region HBox.hgrow="ALWAYS"/>
                         <Label fx:id="lastUpdateLabel" text="" styleClass="trading-last-update"/>
                     </HBox>
-                    <StackPane VBox.vgrow="ALWAYS" styleClass="trading-chart-frame">
+                    <StackPane fx:id="tradingChartFrame" VBox.vgrow="ALWAYS" styleClass="trading-chart-frame">
                         <AreaChart fx:id="priceChart" animated="false" createSymbols="true" legendVisible="false" styleClass="trading-price-chart">
                             <xAxis>
                                 <CategoryAxis fx:id="timeAxis" side="BOTTOM" tickLabelRotation="-35" />

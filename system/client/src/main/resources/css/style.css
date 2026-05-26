@@ -1165,8 +1165,8 @@
     -fx-padding: 28;
     -fx-background-radius: 24;
     -fx-border-radius: 24;
-    -fx-background-color: linear-gradient(to bottom right, #fffdf8, #faf4e6);
-    -fx-border-color: #ead9b0;
+    -fx-background-color: #ffffff;
+    -fx-border-color: #eef0f4;
 }
 
 .trading-kicker,
@@ -1390,23 +1390,32 @@
 }
 
 .trading-chart-frame {
-    -fx-background-color: linear-gradient(to bottom, #fffef9 0%, #f8f3e8 100%);
+    -fx-background-color: #ffffff;
+    -fx-background-insets: 0;
     -fx-background-radius: 18;
-    -fx-border-color: #e8dcc8;
+    -fx-border-color: #eef0f4;
     -fx-border-radius: 18;
     -fx-border-width: 1;
     -fx-padding: 14 12 10 12;
     -fx-min-height: 500;
-    -fx-effect: innershadow(gaussian, rgba(31, 122, 107, 0.06), 18, 0.12, 0, 1);
+    -fx-effect: none;
 }
 
 .trading-price-chart {
-    -fx-background-color: transparent;
+    -fx-background-color: #ffffff;
+    -fx-background-insets: 0;
     -fx-padding: 4 0 0 0;
 }
 
 .trading-price-chart .chart-plot-background {
-    -fx-background-color: linear-gradient(to bottom, #fffef9 0%, #f5f0e4 100%);
+    -fx-background-color: #ffffff;
+}
+
+.trading-price-chart .chart-content,
+.trading-price-chart .chart-plot-background,
+.trading-price-chart .chart-vertical-zero-line,
+.trading-price-chart .chart-horizontal-zero-line {
+    -fx-background-color: #ffffff;
 }
 
 .trading-price-chart .chart-vertical-grid-lines {

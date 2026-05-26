@@ -31,6 +31,8 @@ public class AuctionDetailUiPresenter {
     private final Button autoBidButton;
     private final VBox manualBidContainer;
     private final VBox autoBidContainer;
+    private boolean bidLoading;
+    private boolean autoBidLoading;
 
     public AuctionDetailUiPresenter(Button btnFollow,
                                     Button btnEnterTradingRoom,
@@ -185,6 +187,10 @@ public class AuctionDetailUiPresenter {
         }
         bidErrorLabel.setText(message);
         bidErrorLabel.setVisible(true);
+        if (bidAmountField != null && bidAmountField.isVisible() && bidAmountField.isManaged()) {
+            bidAmountField.requestFocus();
+            bidAmountField.positionCaret(bidAmountField.getText().length());
+        }
     }
 
     public void clearBidError() {
@@ -215,7 +221,8 @@ public class AuctionDetailUiPresenter {
     }
 
     public void setBidLoading(boolean loading) {
-        bidButton.setDisable(loading);
+        bidLoading = loading;
+        bidButton.setMouseTransparent(loading);
         // Vứt bỏ cái búa, dùng Text in hoa quyền lực
         bidButton.setText(loading ? "ĐANG XỬ LÝ..." : "XÁC NHẬN ĐẶT GIÁ");
 
@@ -227,6 +234,7 @@ public class AuctionDetailUiPresenter {
     }
 
     public void setAutoBidLoading(boolean loading) {
+        autoBidLoading = loading;
         autoBidButton.setDisable(loading);
         // Vứt bỏ con Robot, dùng Text in hoa
         autoBidButton.setText(loading ? "ĐANG KÍCH HOẠT..." : "KÍCH HOẠT AUTO-BID");
@@ -356,7 +364,7 @@ public class AuctionDetailUiPresenter {
         if (!bidErrorLabel.getStyleClass().contains("trading-success-label")) {
             bidErrorLabel.getStyleClass().add("trading-success-label");
         }
-        bidErrorLabel.setText("Đặt giá thành công! Đang chờ cập nhật...");
+        bidErrorLabel.setText("Đặt giá thành công!");
         bidErrorLabel.setVisible(true);
     }
 
@@ -371,6 +379,15 @@ public class AuctionDetailUiPresenter {
     public Button getAutoBidButton() {
         return autoBidButton;
     }
+
+    public boolean isBidLoading() {
+        return bidLoading;
+    }
+
+    public boolean isAutoBidLoading() {
+        return autoBidLoading;
+    }
+
     public void setFollowButtonState(boolean followed) {
         if (btnFollow == null) {
             return;

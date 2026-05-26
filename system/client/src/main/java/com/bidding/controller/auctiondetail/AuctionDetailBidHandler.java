@@ -20,6 +20,10 @@ public class AuctionDetailBidHandler {
     }
 
     public void placeBid(String rawAmountText) {
+        if (ui.isBidLoading()) {
+            return;
+        }
+
         boolean isReverse = false;
         if (state.currentSelectedAuction != null && state.currentSelectedAuction.has("isReverse")) {
             isReverse = state.currentSelectedAuction.get("isReverse").getAsBoolean();
@@ -52,6 +56,10 @@ public class AuctionDetailBidHandler {
     }
 
     public void registerAutoBid(String rawMaxBid, String rawIncrement) {
+        if (ui.isAutoBidLoading()) {
+            return;
+        }
+
         if (rawMaxBid.isEmpty() || rawIncrement.isEmpty()) {
             ui.showAutoBidError("Vui lòng điền đầy đủ Giá tối đa và Bước giá.");
             return;
