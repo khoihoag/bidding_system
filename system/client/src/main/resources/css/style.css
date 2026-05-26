@@ -2690,10 +2690,11 @@
 }
 
 .inventory-item-card {
-    -fx-padding: 0;
+    -fx-padding: 8;
     -fx-background-color: #ffffff;
     -fx-background-radius: 12;
     -fx-border-color: #eeeeee;
+    -fx-border-width: 1;
     -fx-border-radius: 12;
     -fx-cursor: hand;
     -fx-effect: dropshadow(gaussian, rgba(16, 24, 40, 0.08), 20, 0.12, 0, 4);
@@ -2708,8 +2709,9 @@
 
 .inventory-card-image-box {
     -fx-background-color: #eeeeee;
-    -fx-background-radius: 12 12 0 0;
+    -fx-background-radius: 8;
     -fx-border-color: transparent;
+    -fx-border-radius: 8;
     -fx-padding: 0;
 }
 

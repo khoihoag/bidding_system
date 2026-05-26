@@ -5,6 +5,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import javafx.application.Platform;
 import com.bidding.controller.AuctionDetailController;
+import javafx.scene.control.Alert;
+
 /**
  * Parses inbound socket messages for the auction detail screen.
  */

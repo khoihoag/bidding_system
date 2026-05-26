@@ -31,6 +31,7 @@ import javafx.scene.layout.Region;
 public class InventoryController implements Initializable {
     private static final int INVENTORY_GRID_COLUMNS = 2;
     private static final double INVENTORY_GRID_GAP = 12;
+    private static final double INVENTORY_CARD_INSET = 8;
     @FXML private javafx.scene.control.CheckBox chkReverseNow, chkReverseSchedule;
     @FXML private javafx.scene.control.TextField txtDropStepNow, txtDropStepSchedule;
     @FXML private GridPane wonItemsGrid;
@@ -702,9 +703,9 @@ public class InventoryController implements Initializable {
 
         GridPane sizeGrid = editable ? inventoryGrid : wonItemsGrid;
         final double cardWidth = getGridCardWidth(sizeGrid);
-        final double imageWidth = cardWidth - 4;
-        final double imageHeight = 138;
-        final double contentWidth = cardWidth - 28;
+        final double imageWidth = Math.max(120, cardWidth - (INVENTORY_CARD_INSET * 2));
+        final double imageHeight = 132;
+        final double contentWidth = Math.max(120, cardWidth - (INVENTORY_CARD_INSET * 2) - 20);
 
         VBox card = new VBox(8);
         card.getStyleClass().add("inventory-item-card");
@@ -712,16 +713,16 @@ public class InventoryController implements Initializable {
         card.setMinWidth(10);
         card.setMaxWidth(Double.MAX_VALUE);
         card.setAlignment(Pos.TOP_CENTER);
+        card.setPadding(new javafx.geometry.Insets(INVENTORY_CARD_INSET));
 
         StackPane imageBox = new StackPane();
         imageBox.getStyleClass().add("inventory-card-image-box");
         imageBox.setPrefSize(imageWidth, imageHeight);
         imageBox.setMinSize(imageWidth, imageHeight);
         imageBox.setMaxSize(imageWidth, imageHeight);
-        VBox.setMargin(imageBox, new javafx.geometry.Insets(2, 2, 0, 2));
         Rectangle imageClip = new Rectangle(imageWidth, imageHeight);
-        imageClip.setArcWidth(20);
-        imageClip.setArcHeight(20);
+        imageClip.setArcWidth(16);
+        imageClip.setArcHeight(16);
         imageBox.setClip(imageClip);
 
         ImageView imgView = new ImageView();
