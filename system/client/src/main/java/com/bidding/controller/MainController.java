@@ -5,10 +5,13 @@ import com.bidding.network.NetworkClient;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.PasswordField;
@@ -22,6 +25,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import com.bidding.util.WinnerCelebrationDialog;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -32,6 +36,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.function.Consumer;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -215,6 +220,7 @@ public class MainController {
             case "GLOBAL_NOTIFY" -> addNotification(extractNotificationMessage(json), json);
             case "NEW_NOTIFICATION" -> addNotification(extractNotificationMessage(json), json);
             case "NOTIFICATIONS_LIST" -> populateSidebarFromServer(json);
+            case "AUCTION_FINISHED" -> WinnerCelebrationDialog.show(json, getClass());
             default -> { }
         }
     }
@@ -513,31 +519,126 @@ public class MainController {
     }
     @FXML
     private void handleOpenDeposit() {
-        // Sếp dùng cái TextInputDialog như anh em mình bàn lúc nãy
-        javafx.scene.control.TextInputDialog dialog = new javafx.scene.control.TextInputDialog("500000");
-        dialog.setTitle("Ví BidVault");
-        dialog.setHeaderText("Nạp thêm Polime vào ví");
-        dialog.setContentText("Số tiền (VNĐ):");
-        try {
-            dialog.getDialogPane().getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
+        showDepositDialog().ifPresent(amount -> {
+            JsonObject request = new JsonObject();
+            request.addProperty("action", "DEPOSIT");
+            request.addProperty("amount", amount);
+            NetworkClient.getInstance().sendJson(request);
+        });
+    }
 
-            // Xóa cái icon dấu chấm hỏi màu xanh dương mặc định cho nó ngầu
-            dialog.setGraphic(null);
-        } catch (Exception e) {
-            System.err.println("Lỗi load CSS cho Dialog nạp tiền!");
+    private Optional<Double> showDepositDialog() {
+        NumberFormat currencyFmt = NumberFormat.getNumberInstance(Locale.forLanguageTag("vi-VN"));
+        double currentBalance = UserSession.getInstance().getBalance();
+
+        Dialog<Double> dialog = new Dialog<>();
+        dialog.setTitle("BidVault Private Banking");
+        dialog.setResizable(false);
+
+        ButtonType confirmType = new ButtonType("Xác nhận nạp", ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelType = new ButtonType("Để sau", ButtonBar.ButtonData.CANCEL_CLOSE);
+        dialog.getDialogPane().getButtonTypes().setAll(confirmType, cancelType);
+
+        Label kicker = new Label("PRIVATE VAULT");
+        kicker.getStyleClass().add("deposit-dialog-kicker");
+        Label title = new Label("Nạp tiền đấu giá");
+        title.getStyleClass().add("deposit-dialog-title");
+        Label subtitle = new Label("Nâng hạn mức ví để sẵn sàng chốt các phiên đấu giá cao cấp.");
+        subtitle.getStyleClass().add("deposit-dialog-subtitle");
+        subtitle.setWrapText(true);
+
+        VBox header = new VBox(6, kicker, title, subtitle);
+        header.getStyleClass().add("deposit-dialog-header");
+
+        Label balanceCaption = new Label("Số dư hiện tại");
+        balanceCaption.getStyleClass().add("deposit-balance-caption");
+        Label balanceValue = new Label(currencyFmt.format(currentBalance) + " ₫");
+        balanceValue.getStyleClass().add("deposit-balance-value");
+        VBox balanceBox = new VBox(4, balanceCaption, balanceValue);
+        balanceBox.getStyleClass().add("deposit-balance-card");
+        balanceBox.setAlignment(Pos.CENTER_LEFT);
+
+        TextField amountField = new TextField("500000");
+        amountField.getStyleClass().add("deposit-amount-field");
+        amountField.setPromptText("Nhập số tiền (VNĐ)");
+
+        Label amountLabel = new Label("Số tiền nạp");
+        amountLabel.getStyleClass().add("deposit-field-label");
+        VBox amountBox = new VBox(8, amountLabel, amountField);
+
+        Label quickLabel = new Label("Gợi ý nhanh");
+        quickLabel.getStyleClass().add("deposit-field-label");
+        HBox quickRow = new HBox(8);
+        quickRow.getStyleClass().add("deposit-quick-row");
+        for (long preset : new long[]{500_000, 1_000_000, 2_000_000, 5_000_000, 10_000_000}) {
+            Button chip = new Button(formatDepositChip(preset));
+            chip.getStyleClass().add("deposit-quick-chip");
+            chip.setOnAction(e -> amountField.setText(String.valueOf(preset)));
+            quickRow.getChildren().add(chip);
         }
-        dialog.showAndWait().ifPresent(amountStr -> {
+
+        Label note = new Label("Giao dịch được xử lý tức thì. Số dư cập nhật ngay sau khi xác nhận.");
+        note.getStyleClass().add("deposit-dialog-note");
+        note.setWrapText(true);
+
+        VBox content = new VBox(18, header, balanceBox, amountBox, quickLabel, quickRow, note);
+        content.getStyleClass().add("deposit-dialog-content");
+        content.setPadding(new Insets(4, 4, 0, 4));
+
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().setHeader(null);
+        applyStylesheet(dialog.getDialogPane());
+        dialog.getDialogPane().getStyleClass().add("deposit-dialog-pane");
+
+        dialog.setOnShown(e -> {
+            Node confirmBtn = dialog.getDialogPane().lookupButton(confirmType);
+            Node cancelBtn = dialog.getDialogPane().lookupButton(cancelType);
+            if (confirmBtn != null) {
+                confirmBtn.getStyleClass().add("deposit-dialog-confirm");
+            }
+            if (cancelBtn != null) {
+                cancelBtn.getStyleClass().add("deposit-dialog-cancel");
+            }
+            amountField.requestFocus();
+            amountField.selectAll();
+        });
+
+        dialog.setResultConverter(button -> {
+            if (button != confirmType) {
+                return null;
+            }
             try {
-                double amount = Double.parseDouble(amountStr.replaceAll("[,.]", ""));
-                // Bắn lệnh DEPOSIT lên Server thông qua NetworkClient
-                com.google.gson.JsonObject request = new com.google.gson.JsonObject();
-                request.addProperty("action", "DEPOSIT");
-                request.addProperty("amount", amount);
-                com.bidding.network.NetworkClient.getInstance().sendJson(request);
-            } catch (Exception e) {
+                double amount = Double.parseDouble(amountField.getText().replaceAll("[,.\\s]", ""));
+                if (amount <= 0) {
+                    System.err.println("Số tiền nạp phải lớn hơn 0!");
+                    return null;
+                }
+                return amount;
+            } catch (Exception ex) {
                 System.err.println("Vui lòng nhập số tiền hợp lệ!");
+                return null;
             }
         });
+
+        return dialog.showAndWait();
+    }
+
+    private String formatDepositChip(long amount) {
+        if (amount >= 1_000_000 && amount % 1_000_000 == 0) {
+            return (amount / 1_000_000) + "M";
+        }
+        if (amount >= 1_000 && amount % 1_000 == 0) {
+            return (amount / 1_000) + "K";
+        }
+        return String.valueOf(amount);
+    }
+
+    private void applyStylesheet(javafx.scene.control.DialogPane pane) {
+        try {
+            pane.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
+        } catch (Exception e) {
+            System.err.println("Lỗi load CSS cho dialog nạp tiền!");
+        }
     }
     public void updateBalanceDisplay() {
         if (balanceLabel != null) {

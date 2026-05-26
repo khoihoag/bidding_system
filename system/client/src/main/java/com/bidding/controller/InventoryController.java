@@ -24,11 +24,17 @@ import javafx.scene.shape.Rectangle;
 
 import java.net.URL;
 import java.util.ResourceBundle;
-import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 public class InventoryController implements Initializable {
+    private static final int INVENTORY_GRID_COLUMNS = 2;
+    private static final double INVENTORY_GRID_GAP = 12;
     @FXML private javafx.scene.control.CheckBox chkReverseNow, chkReverseSchedule;
     @FXML private javafx.scene.control.TextField txtDropStepNow, txtDropStepSchedule;
-    @FXML private FlowPane wonItemsGrid;
+    @FXML private GridPane wonItemsGrid;
+    @FXML private ScrollPane inventoryScroll;
     @FXML private Button btnSubmitItem;
     @FXML private Button btnCancelEdit;
     @FXML private Button btnRemoveSelectedImage;
@@ -39,7 +45,7 @@ public class InventoryController implements Initializable {
     private final List<JsonObject> inventoryItems = new ArrayList<>();
     private String selectedItemId;
     private String editingItemId;
-    @FXML private FlowPane inventoryGrid;
+    @FXML private GridPane inventoryGrid;
     @FXML private TextField txtInventorySearch;
     @FXML private TextField txtItemIdSchedule, txtStartTime, txtEndTime;
     // --- Tab Bán Ngay ---
@@ -144,6 +150,13 @@ public class InventoryController implements Initializable {
         comboCondition.setValue("NEW");
 
         txtInventorySearch.textProperty().addListener((obs, oldVal, newVal) -> renderInventoryGrid());
+        if (inventoryGrid != null) {
+            inventoryGrid.widthProperty().addListener((obs, oldVal, newVal) -> {
+                if (newVal != null && newVal.doubleValue() > 0 && !inventoryItems.isEmpty()) {
+                    renderInventoryGrid();
+                }
+            });
+        }
         forceNumericOnly(txtDuration);
         forceNumericOnly(txtDropStepNow);
         forceNumericOnly(txtDropStepSchedule);
@@ -342,7 +355,7 @@ public class InventoryController implements Initializable {
                         }
                         renderInventoryGrid();
                     } else {
-                        inventoryGrid.getChildren().add(new Label("Kho đồ trống. Hãy nhập thêm vật phẩm!"));
+                        addGridMessage(inventoryGrid, "Kho đồ trống. Hãy nhập thêm vật phẩm!");
                     }
                 }
 
@@ -421,6 +434,7 @@ public class InventoryController implements Initializable {
                 else if ("WON_ITEMS_LIST".equals(action)) {
                     wonItemsGrid.getChildren().clear(); // Dọn dẹp lưới cũ
                     if (response.has("items")) {
+                        int index = 0;
                         for (JsonElement elem : response.getAsJsonArray("items")) {
                             JsonObject item = elem.getAsJsonObject();
                             String id = item.has("id") ? item.get("id").getAsString() : "UNKNOWN";
@@ -430,10 +444,10 @@ public class InventoryController implements Initializable {
 
                             // Tái sử dụng hàm vẽ Thẻ Ảnh chuẩn Sotheby's
                             javafx.scene.layout.VBox card = createItemCard(item, false);
-                            wonItemsGrid.getChildren().add(card);
+                            addCardToGrid(wonItemsGrid, card, index++);
                         }
                     } else {
-                        wonItemsGrid.getChildren().add(new Label("Chưa có chiến lợi phẩm nào. Hãy ra sảnh đấu giá thử vận may nhé!"));
+                        addGridMessage(wonItemsGrid, "Chưa có chiến lợi phẩm nào. Hãy ra sảnh đấu giá thử vận may nhé!");
                     }
                 }
                 else if ("ERROR".equals(action)) {
@@ -611,15 +625,46 @@ public class InventoryController implements Initializable {
         if (inventoryGrid == null) return;
         inventoryGrid.getChildren().clear();
 
+        int index = 0;
         for (JsonObject item : inventoryItems) {
             if (matchesInventorySearch(item)) {
-                inventoryGrid.getChildren().add(createItemCard(item, true));
+                addCardToGrid(inventoryGrid, createItemCard(item, true), index++);
             }
         }
 
         if (inventoryGrid.getChildren().isEmpty()) {
-            inventoryGrid.getChildren().add(new Label("Không có sản phẩm phù hợp."));
+            addGridMessage(inventoryGrid, "Không có sản phẩm phù hợp.");
         }
+    }
+
+    private void addCardToGrid(GridPane grid, javafx.scene.Node node, int index) {
+        int col = index % INVENTORY_GRID_COLUMNS;
+        int row = index / INVENTORY_GRID_COLUMNS;
+        GridPane.setColumnIndex(node, col);
+        GridPane.setRowIndex(node, row);
+        if (node instanceof Region region) {
+            GridPane.setHgrow(region, Priority.ALWAYS);
+            region.setMaxWidth(Double.MAX_VALUE);
+        }
+        grid.getChildren().add(node);
+    }
+
+    private void addGridMessage(GridPane grid, String message) {
+        Label label = new Label(message);
+        label.setWrapText(true);
+        GridPane.setColumnSpan(label, INVENTORY_GRID_COLUMNS);
+        grid.getChildren().add(label);
+    }
+
+    private double getGridCardWidth(GridPane grid) {
+        double gridWidth = grid != null ? grid.getWidth() : 0;
+        if (gridWidth <= 1 && grid != null && grid.getParent() instanceof ScrollPane scroll) {
+            gridWidth = scroll.getViewportBounds().getWidth();
+        }
+        if (gridWidth <= 1) {
+            return 197;
+        }
+        return Math.max(150, Math.floor((gridWidth - INVENTORY_GRID_GAP) / INVENTORY_GRID_COLUMNS));
     }
 
     private boolean matchesInventorySearch(JsonObject item) {
@@ -655,18 +700,17 @@ public class InventoryController implements Initializable {
         String type = item.has("type") ? item.get("type").getAsString() : "";
         String name = item.has("name") ? item.get("name").getAsString() : "Không tên";
 
-        final double cardWidth = 188;
+        GridPane sizeGrid = editable ? inventoryGrid : wonItemsGrid;
+        final double cardWidth = getGridCardWidth(sizeGrid);
         final double imageWidth = cardWidth - 4;
-        final double imageHeight = 112;
+        final double imageHeight = 138;
         final double contentWidth = cardWidth - 28;
 
-        VBox card = new VBox(10);
+        VBox card = new VBox(8);
         card.getStyleClass().add("inventory-item-card");
         card.setPrefWidth(cardWidth);
-        card.setMinWidth(cardWidth);
-        card.setMaxWidth(cardWidth);
-        card.setMinHeight(216);
-        card.setPrefHeight(216);
+        card.setMinWidth(10);
+        card.setMaxWidth(Double.MAX_VALUE);
         card.setAlignment(Pos.TOP_CENTER);
 
         StackPane imageBox = new StackPane();
@@ -701,15 +745,15 @@ public class InventoryController implements Initializable {
         Label lblType = new Label(type);
         lblType.getStyleClass().add("inventory-card-badge");
         StackPane.setAlignment(lblType, Pos.TOP_LEFT);
-        StackPane.setMargin(lblType, new javafx.geometry.Insets(12));
-        imageBox.getChildren().add(lblType);
+        StackPane.setMargin(lblType, new javafx.geometry.Insets(6, 0, 0, 6));
 
         String approvalStatus = item.has("approvalStatus") ? item.get("approvalStatus").getAsString() : "APPROVED";
         Label lblApproval = new Label(approvalStatusLabel(approvalStatus));
         lblApproval.getStyleClass().addAll("inventory-status-badge", approvalStatusStyleClass(approvalStatus));
         StackPane.setAlignment(lblApproval, Pos.TOP_RIGHT);
-        StackPane.setMargin(lblApproval, new javafx.geometry.Insets(12));
-        imageBox.getChildren().add(lblApproval);
+        StackPane.setMargin(lblApproval, new javafx.geometry.Insets(6, 6, 0, 0));
+
+        imageBox.getChildren().addAll(lblType, lblApproval);
 
         Label lblName = new Label(name);
         lblName.getStyleClass().add("card-name");
@@ -718,7 +762,7 @@ public class InventoryController implements Initializable {
         lblName.setMaxWidth(contentWidth);
 
         Button btnDetails = new Button("Xem chi tiết");
-        btnDetails.getStyleClass().add("primary-button");
+        btnDetails.getStyleClass().addAll("primary-button", "inventory-card-detail-btn");
         btnDetails.setMaxWidth(Double.MAX_VALUE);
         btnDetails.setOnAction(e -> {
             if (editable) {
@@ -786,7 +830,7 @@ public class InventoryController implements Initializable {
         if (txtItemIdSchedule != null) txtItemIdSchedule.setText(id);
     }
 
-    private void clearCardSelection(FlowPane grid) {
+    private void clearCardSelection(Pane grid) {
         if (grid == null) return;
         for (javafx.scene.Node node : grid.getChildren()) {
             node.getStyleClass().remove("inventory-item-card-selected");
