@@ -3,7 +3,7 @@ package com.bidding.controller.auctiondetail;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import javafx.scene.chart.LineChart;
+import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.XYChart;
 
 /**
@@ -12,11 +12,11 @@ import javafx.scene.chart.XYChart;
 public class AuctionDetailChartBinder {
 
     private final AuctionDetailState state;
-    private final LineChart<String, Number> priceChart;
+    private final AreaChart<String, Number> priceChart;
     private final AuctionDetailUiPresenter ui;
 
     public AuctionDetailChartBinder(AuctionDetailState state,
-                                    LineChart<String, Number> priceChart,
+                                    AreaChart<String, Number> priceChart,
                                     AuctionDetailUiPresenter ui) {
         this.state = state;
         this.priceChart = priceChart;

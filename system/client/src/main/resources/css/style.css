@@ -1165,6 +1165,8 @@
     -fx-padding: 28;
     -fx-background-radius: 24;
     -fx-border-radius: 24;
+    -fx-background-color: linear-gradient(to bottom right, #fffdf8, #faf4e6);
+    -fx-border-color: #ead9b0;
 }
 
 .trading-kicker,
@@ -1320,45 +1322,135 @@
     -fx-text-fill: #b08a1e;
 }
 
-.trading-chart-frame {
-    -fx-background-color: #ffffff;
-    -fx-background-radius: 18;
+.trading-image-preview {
+    -fx-spacing: 10;
+}
+
+.trading-item-image-frame {
+    -fx-background-color: transparent;
     -fx-border-color: transparent;
-    -fx-padding: 12;
+    -fx-alignment: CENTER;
+    -fx-min-height: 0;
+    -fx-pref-height: 280;
+    -fx-max-height: 300;
+}
+
+.trading-thumb-zone {
+    -fx-padding: 0;
+    -fx-alignment: center-left;
+}
+
+.trading-thumb-strip,
+.trading-thumb-strip .viewport {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+
+.trading-thumb-strip {
+    -fx-padding: 0;
+    -fx-pref-height: 80;
+}
+
+.trading-thumbnails-row {
+    -fx-padding: 2 0;
+    -fx-alignment: center-left;
+}
+
+.trading-thumb-active,
+.trading-thumb-muted {
+    -fx-min-width: 72;
+    -fx-min-height: 64;
+    -fx-pref-width: 72;
+    -fx-pref-height: 64;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-padding: 5;
+    -fx-cursor: hand;
+    -fx-alignment: center;
+}
+
+.trading-thumb-active {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #785600;
+    -fx-border-width: 3;
+    -fx-opacity: 1;
+    -fx-effect: dropshadow(gaussian, rgba(120, 86, 0, 0.24), 8, 0.2, 0, 2);
+}
+
+.trading-thumb-muted {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #e2e2e2;
+    -fx-border-width: 1;
+    -fx-opacity: 0.52;
+}
+
+.trading-thumb-muted:hover {
+    -fx-opacity: 0.78;
+    -fx-border-color: #d3c4af;
+}
+
+.trading-chart-frame {
+    -fx-background-color: linear-gradient(to bottom, #fffef9 0%, #f8f3e8 100%);
+    -fx-background-radius: 18;
+    -fx-border-color: #e8dcc8;
+    -fx-border-radius: 18;
+    -fx-border-width: 1;
+    -fx-padding: 14 12 10 12;
     -fx-min-height: 500;
+    -fx-effect: innershadow(gaussian, rgba(31, 122, 107, 0.06), 18, 0.12, 0, 1);
 }
 
 .trading-price-chart {
     -fx-background-color: transparent;
-    -fx-padding: 8;
+    -fx-padding: 4 0 0 0;
 }
 
 .trading-price-chart .chart-plot-background {
-    -fx-background-color: #ffffff;
+    -fx-background-color: linear-gradient(to bottom, #fffef9 0%, #f5f0e4 100%);
 }
 
-.trading-price-chart .chart-vertical-grid-lines,
+.trading-price-chart .chart-vertical-grid-lines {
+    -fx-stroke: transparent;
+}
+
 .trading-price-chart .chart-horizontal-grid-lines {
-    -fx-stroke: #f1f5f9;
+    -fx-stroke: #d7ebe8;
+    -fx-stroke-width: 1px;
 }
 
 .trading-price-chart .axis {
-    -fx-tick-label-fill: #94a3b8;
+    -fx-tick-label-fill: #5c6b78;
+    -fx-font-size: 11px;
 }
 
 .trading-price-chart .axis-label {
-    -fx-text-fill: #94a3b8;
+    -fx-text-fill: #5c6b78;
 }
 
+.trading-price-chart .chart-series-area-line,
 .trading-price-chart .chart-series-line {
-    -fx-stroke: #cbd5e1;
-    -fx-stroke-width: 2px;
+    -fx-stroke: #1f7a6b;
+    -fx-stroke-width: 2.5px;
+}
+
+.trading-price-chart .default-color0.chart-series-area-fill {
+    -fx-fill: linear-gradient(from 0% 0% to 0% 100%, #3d9a8a 0%, rgba(61, 154, 138, 0.35) 35%, rgba(255, 248, 232, 0.08) 100%);
 }
 
 .trading-price-chart .chart-line-symbol {
-    -fx-background-color: #cbd5e1, #cbd5e1;
-    -fx-background-radius: 5px;
-    -fx-padding: 5px;
+    -fx-background-color: #f97316, #fff7ed;
+    -fx-background-insets: 0, 2;
+    -fx-background-radius: 8px;
+    -fx-padding: 6px;
+    -fx-effect: dropshadow(gaussian, rgba(249, 115, 22, 0.55), 12, 0.35, 0, 0);
+}
+
+.trading-price-chart .axis:left {
+    -fx-border-color: transparent;
+}
+
+.trading-price-chart .axis:bottom {
+    -fx-tick-label-fill: #64748b;
 }
 
 .notification-card,

@@ -115,6 +115,23 @@
                 <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="trading-sidebar-scroll">
                     <VBox spacing="18" styleClass="trading-sidebar">
 
+                        <HBox alignment="TOP_LEFT" spacing="8">
+                            <Button text="← Quay lại" onAction="#handleBackToShowcase" styleClass="trading-back-button"/>
+                        </HBox>
+
+                        <VBox spacing="8" styleClass="trading-image-preview" alignment="TOP_LEFT">
+                            <StackPane fx:id="tradingImageMainContainer" styleClass="trading-item-image-frame">
+                                <ImageView fx:id="tradingImageMainView" fitWidth="260" fitHeight="280"
+                                           preserveRatio="true" smooth="true"/>
+                            </StackPane>
+                            <StackPane styleClass="trading-thumb-zone">
+                                <ScrollPane hbarPolicy="AS_NEEDED" vbarPolicy="NEVER" fitToHeight="true"
+                                            styleClass="trading-thumb-strip">
+                                    <HBox fx:id="tradingThumbnailsBox" spacing="10" styleClass="trading-thumbnails-row"/>
+                                </ScrollPane>
+                            </StackPane>
+                        </VBox>
+
                         <VBox spacing="18" styleClass="trading-session-card">
                             <Label text="THÔNG TIN PHIÊN" styleClass="trading-kicker"/>
                             <Label fx:id="itemNameLabel" text="Đang tải..." wrapText="true" styleClass="trading-title"/>
@@ -165,22 +182,20 @@
                 </ScrollPane>
 
                 <VBox spacing="18" styleClass="trading-chart-card">
-                    <HBox alignment="CENTER_LEFT">
-                        <Button text="← Quay lại" onAction="#handleBackToShowcase" styleClass="trading-back-button"/>
-                        <Region minWidth="12"/>
+                    <HBox alignment="CENTER_LEFT" spacing="12">
                         <Label text="BIỂU ĐỒ GIÁ REALTIME" styleClass="trading-card-heading"/>
                         <Region HBox.hgrow="ALWAYS"/>
                         <Label fx:id="lastUpdateLabel" text="" styleClass="trading-last-update"/>
                     </HBox>
                     <StackPane VBox.vgrow="ALWAYS" styleClass="trading-chart-frame">
-                        <LineChart fx:id="priceChart" animated="false" createSymbols="true" legendVisible="false" styleClass="trading-price-chart">
+                        <AreaChart fx:id="priceChart" animated="false" createSymbols="true" legendVisible="false" styleClass="trading-price-chart">
                             <xAxis>
                                 <CategoryAxis fx:id="timeAxis" side="BOTTOM" tickLabelRotation="-35" />
                             </xAxis>
                             <yAxis>
                                 <NumberAxis fx:id="priceAxis" side="LEFT" forceZeroInRange="false" />
                             </yAxis>
-                        </LineChart>
+                        </AreaChart>
                     </StackPane>
                 </VBox>
 

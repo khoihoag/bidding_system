@@ -5,9 +5,11 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import javafx.fxml.FXML;
 import javafx.scene.chart.CategoryAxis;
-import javafx.scene.chart.LineChart;
+import javafx.scene.chart.AreaChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ScrollPane; // ĐÃ THÊM IMPORT
@@ -58,9 +60,12 @@ public class AuctionDetailController {
     @FXML private Button autoBidButton;
     @FXML private Label resultLabel;
     @FXML private Label lastUpdateLabel;
-    @FXML private LineChart<String, Number> priceChart;
+    @FXML private AreaChart<String, Number> priceChart;
     @FXML private CategoryAxis timeAxis;
     @FXML private NumberAxis priceAxis;
+    @FXML private HBox tradingThumbnailsBox;
+    @FXML private ImageView tradingImageMainView;
+    @FXML private StackPane tradingImageMainContainer;
 
     private final AuctionDetailState state = new AuctionDetailState();
     private AuctionDetailNetworkGateway network;
@@ -120,6 +125,8 @@ public class AuctionDetailController {
 
         tradingRoomView.setVisible(true);
         tradingRoomView.setManaged(true);
+
+        updateTradingImageViews();
     }
 
     @FXML
@@ -129,6 +136,165 @@ public class AuctionDetailController {
 
         showcaseView.setVisible(true);
         showcaseView.setManaged(true);
+    }
+
+    @FXML
+    private void handleViewTradingImage() {
+        if (showcaseImagePaths.isEmpty()) {
+            AuctionDetailItemDialog.showWarning(AuctionDetailController.class, "Phiên này chưa có hình ảnh để xem.");
+            return;
+        }
+        showTradingImageDialog(currentShowcaseImageIndex);
+    }
+
+    private void updateTradingImageViews() {
+        if (tradingImageMainView != null && tradingImageMainContainer != null) {
+            loadTradingMainAt(currentShowcaseImageIndex);
+        }
+        renderTradingThumbnails();
+    }
+
+    private void loadTradingMainAt(int index) {
+        if (tradingImageMainView == null || tradingImageMainContainer == null) return;
+
+        tradingImageMainContainer.getChildren().removeIf(node -> "trading-no-image".equals(node.getUserData()));
+
+        if (showcaseImagePaths.isEmpty() || index < 0 || index >= showcaseImagePaths.size()) {
+            tradingImageMainView.setImage(null);
+            return;
+        }
+
+        try {
+            File file = new File(showcaseImagePaths.get(index));
+            if (file.exists()) {
+                tradingImageMainView.setImage(new Image(file.toURI().toString()));
+                return;
+            }
+        } catch (Exception e) {
+            System.err.println("Lỗi load ảnh chính khi đấu giá: " + e.getMessage());
+        }
+
+        tradingImageMainView.setImage(null);
+        Label noImgLabel = new Label("Không có hình ảnh");
+        noImgLabel.setUserData("trading-no-image");
+        noImgLabel.setStyle("-fx-text-fill: #9CA3AF; -fx-font-style: italic; -fx-font-size: 16px;");
+        StackPane.setAlignment(noImgLabel, javafx.geometry.Pos.CENTER);
+        tradingImageMainContainer.getChildren().add(noImgLabel);
+    }
+
+    private void renderTradingThumbnails() {
+        if (tradingThumbnailsBox == null) return;
+
+        tradingThumbnailsBox.getChildren().clear();
+
+        for (int i = 0; i < showcaseImagePaths.size(); i++) {
+            int imageIndex = i;
+            StackPane thumbnail = new StackPane();
+            thumbnail.getStyleClass().add(imageIndex == currentShowcaseImageIndex
+                    ? "trading-thumb-active"
+                    : "trading-thumb-muted");
+            thumbnail.setOnMouseClicked(event -> {
+                currentShowcaseImageIndex = imageIndex;
+                loadTradingMainAt(currentShowcaseImageIndex);
+                loadShowcaseImageAt(currentShowcaseImageIndex);
+                updateShowcaseImageNavigation();
+                renderShowcaseThumbnails();
+                renderTradingThumbnails();
+            });
+
+            File file = new File(showcaseImagePaths.get(imageIndex));
+            if (file.exists()) {
+                ImageView thumbnailImage = new ImageView(new Image(file.toURI().toString()));
+                thumbnailImage.setFitWidth(60);
+                thumbnailImage.setFitHeight(52);
+                thumbnailImage.setPreserveRatio(true);
+                thumbnailImage.setSmooth(true);
+                thumbnail.getChildren().add(thumbnailImage);
+            } else {
+                Label fallbackLabel = new Label(String.valueOf(imageIndex + 1));
+                fallbackLabel.getStyleClass().add("auction-detail-thumb-label");
+                thumbnail.getChildren().add(fallbackLabel);
+            }
+
+            tradingThumbnailsBox.getChildren().add(thumbnail);
+        }
+    }
+
+    private void showTradingImageDialog(int startIndex) {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Xem ảnh vật phẩm");
+
+        try {
+            dialog.getDialogPane().getStylesheets()
+                    .add(getClass().getResource("/css/style.css").toExternalForm());
+            dialog.getDialogPane().setStyle("-fx-background-color: #05070a;");
+        } catch (Exception ignored) {
+        }
+
+        VBox content = new VBox(12);
+        content.setStyle("-fx-padding: 18;");
+
+        ImageView imgView = new ImageView();
+        imgView.setFitWidth(680);
+        imgView.setFitHeight(480);
+        imgView.setPreserveRatio(true);
+        imgView.setSmooth(true);
+
+        Label counter = new Label();
+        counter.setStyle("-fx-text-fill: #e5e7eb; -fx-font-weight: 800;");
+
+        Button prevBtn = new Button("←");
+        Button nextBtn = new Button("→");
+        HBox nav = new HBox(12, prevBtn, nextBtn);
+        nav.setAlignment(javafx.geometry.Pos.CENTER);
+
+        final int[] idx = {
+                Math.max(0, Math.min(startIndex, showcaseImagePaths.size() - 1))
+        };
+
+        Runnable update = () -> {
+            if (showcaseImagePaths.isEmpty()) {
+                imgView.setImage(null);
+                counter.setText("");
+                prevBtn.setDisable(true);
+                nextBtn.setDisable(true);
+                return;
+            }
+
+            String path = showcaseImagePaths.get(idx[0]);
+            try {
+                File file = new File(path);
+                if (file.exists()) {
+                    imgView.setImage(new Image(file.toURI().toString()));
+                } else {
+                    imgView.setImage(null);
+                }
+            } catch (Exception e) {
+                imgView.setImage(null);
+            }
+
+            counter.setText((idx[0] + 1) + " / " + showcaseImagePaths.size());
+            boolean hasMultiple = showcaseImagePaths.size() > 1;
+            prevBtn.setDisable(!hasMultiple);
+            nextBtn.setDisable(!hasMultiple);
+        };
+
+        prevBtn.setOnAction(e -> {
+            idx[0] = (idx[0] - 1 + showcaseImagePaths.size()) % showcaseImagePaths.size();
+            update.run();
+        });
+        nextBtn.setOnAction(e -> {
+            idx[0] = (idx[0] + 1) % showcaseImagePaths.size();
+            update.run();
+        });
+
+        update.run();
+
+        content.getChildren().addAll(imgView, counter, nav);
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+
+        dialog.showAndWait();
     }
 
     // ================= TỰ ĐỘNG ĐỔ ẢNH VÀ MÔ TẢ RA MÀN HÌNH CHÍNH =================
@@ -164,6 +330,9 @@ public class AuctionDetailController {
         boolean hasImage = loadShowcaseImageAt(currentShowcaseImageIndex);
         updateShowcaseImageNavigation();
         renderShowcaseThumbnails();
+
+        // Khi vào màn đấu giá trực tiếp, dùng chung danh sách ảnh này
+        updateTradingImageViews();
 
         // Đóng dấu chữ "Không có ảnh" nếu load thất bại
         if (!hasImage) {
@@ -270,6 +439,7 @@ public class AuctionDetailController {
                 loadShowcaseImageAt(currentShowcaseImageIndex);
                 updateShowcaseImageNavigation();
                 renderShowcaseThumbnails();
+                updateTradingImageViews();
             });
 
             File file = new File(showcaseImagePaths.get(imageIndex));
