@@ -1144,8 +1144,7 @@
 }
 
 .trading-session-card,
-.trading-card,
-.trading-chart-card {
+.trading-card {
     -fx-background-color: #ffffff;
     -fx-background-radius: 22;
     -fx-border-color: #eef0f4;
@@ -1166,7 +1165,9 @@
     -fx-background-radius: 24;
     -fx-border-radius: 24;
     -fx-background-color: #ffffff;
-    -fx-border-color: #eef0f4;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-effect: none;
 }
 
 .trading-kicker,
@@ -1393,22 +1394,25 @@
     -fx-background-color: #ffffff;
     -fx-background-insets: 0;
     -fx-background-radius: 18;
-    -fx-border-color: #eef0f4;
-    -fx-border-radius: 18;
-    -fx-border-width: 1;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
     -fx-padding: 14 12 10 12;
     -fx-min-height: 500;
     -fx-effect: none;
 }
 
 .trading-price-chart {
-    -fx-background-color: #ffffff;
+    -fx-background-color: transparent;
     -fx-background-insets: 0;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
     -fx-padding: 4 0 0 0;
 }
 
 .trading-price-chart .chart-plot-background {
     -fx-background-color: #ffffff;
+    -fx-background-radius: 18;
+    -fx-background-insets: 0;
 }
 
 .trading-price-chart .chart-content,
@@ -1416,6 +1420,8 @@
 .trading-price-chart .chart-vertical-zero-line,
 .trading-price-chart .chart-horizontal-zero-line {
     -fx-background-color: #ffffff;
+    -fx-background-radius: 18;
+    -fx-background-insets: 0;
 }
 
 .trading-price-chart .chart-vertical-grid-lines {
@@ -1430,6 +1436,8 @@
 .trading-price-chart .axis {
     -fx-tick-label-fill: #5c6b78;
     -fx-font-size: 11px;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
 }
 
 .trading-price-chart .axis-label {
@@ -1460,6 +1468,27 @@
 
 .trading-price-chart .axis:bottom {
     -fx-tick-label-fill: #64748b;
+}
+
+/* Xóa nét đường axis-line/tick-mark để khỏi lộ "viền mờ" ở góc bo */
+.trading-price-chart .axis .axis-line {
+    -fx-stroke: transparent;
+}
+
+.trading-price-chart .axis .tick-mark,
+.trading-price-chart .axis .minor-tick-mark {
+    -fx-stroke: transparent;
+    -fx-opacity: 0;
+}
+
+.trading-price-chart .chart {
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-padding: 0;
+}
+
+.trading-price-chart .chart-legend {
+    -fx-background-color: transparent;
 }
 
 .notification-card,
