@@ -5,15 +5,12 @@ import com.bidding.server.model.transaction.BiddingTransactionEntity;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
-import org.hibernate.cfg.Configuration;
+import com.bidding.server.config.HibernateSessionFactory;
 import org.hibernate.query.Query;
 import java.util.List;
 
 public class UserRepository {
-    // Vẫn xài chung cấu hình Hibernate
-    private static final SessionFactory factory = new Configuration()
-            .configure("hibernate.cfg.xml")
-            .buildSessionFactory();
+    private static final SessionFactory factory = HibernateSessionFactory.getSessionFactory();
 
     // Lưu hoặc cập nhật User
     public void saveOrUpdate(User user) {
@@ -24,7 +21,7 @@ public class UserRepository {
             transaction.commit();
         } catch (Exception e) {
             if (transaction != null) transaction.rollback();
-            e.printStackTrace();
+            throw new RuntimeException("Failed to save user: " + user.getId(), e);
         }
     }
 
@@ -32,6 +29,24 @@ public class UserRepository {
     public User findById(String id) {
         try (Session session = factory.openSession()) {
             return session.get(User.class, id);
+        }
+    }
+
+    public User findByUsername(String username) {
+        try (Session session = factory.openSession()) {
+            String hql = "FROM User WHERE username = :u";
+            Query<User> query = session.createQuery(hql, User.class);
+            query.setParameter("u", username);
+            return query.uniqueResult();
+        }
+    }
+
+    public User findByEmail(String email) {
+        try (Session session = factory.openSession()) {
+            String hql = "FROM User WHERE email = :e";
+            Query<User> query = session.createQuery(hql, User.class);
+            query.setParameter("e", email);
+            return query.uniqueResult();
         }
     }
 

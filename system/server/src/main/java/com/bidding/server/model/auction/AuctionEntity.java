@@ -8,11 +8,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
-import lombok.Setter;
-import lombok.Getter;
 
-@Getter
-@Setter
 @jakarta.persistence.Entity
 @Table(name = "auctions")
 public class AuctionEntity extends Entity {
@@ -72,4 +68,28 @@ public class AuctionEntity extends Entity {
     }
 
     // Lombok đã tự động lo toàn bộ Getter và Setter ở ngầm bên dưới rồi!
+    public boolean isReverse() { return isReverse; }
+    public void setReverse(boolean reverse) { isReverse = reverse; }
+    public double getDropStep() { return dropStep; }
+    public void setDropStep(double dropStep) { this.dropStep = dropStep; }
+    public Item getItem() { return item; }
+    public void setItem(Item item) { this.item = item; }
+    public AuctionStatus getStatus() { return status; }
+    public void setStatus(AuctionStatus status) { this.status = status; }
+    public LocalDateTime getStartTime() { return startTime; }
+    public void setStartTime(LocalDateTime startTime) { this.startTime = startTime; }
+    public LocalDateTime getEndTime() { return endTime; }
+    public void setEndTime(LocalDateTime endTime) { this.endTime = endTime; }
+    public Double getCurrentPrice() { return currentPrice; }
+    public void setCurrentPrice(Double currentPrice) { this.currentPrice = currentPrice; }
+    public User getCurrentWinner() { return currentWinner; }
+    public void setCurrentWinner(User currentWinner) { this.currentWinner = currentWinner; }
+    public List<BiddingTransactionEntity> getTransactions() { return transactions; }
+    public void setTransactions(List<BiddingTransactionEntity> transactions) { this.transactions = transactions; }
+    public int getAntiSnipingSeconds() { return antiSnipingSeconds; }
+    public void setAntiSnipingSeconds(int antiSnipingSeconds) { this.antiSnipingSeconds = antiSnipingSeconds; }
+    public int getExtensionSeconds() { return extensionSeconds; }
+    public void setExtensionSeconds(int extensionSeconds) { this.extensionSeconds = extensionSeconds; }
+    public int getVersion() { return version; }
+    public void setVersion(int version) { this.version = version; }
 }

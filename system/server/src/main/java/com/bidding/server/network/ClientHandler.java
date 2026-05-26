@@ -1,7 +1,6 @@
 package com.bidding.server.network;
 
 import com.bidding.server.controller.*;
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.bidding.server.model.user.User;
@@ -9,39 +8,40 @@ import com.bidding.server.service.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 
 public class ClientHandler implements Runnable {
     private Socket socket;
     private BufferedReader in;
     private PrintWriter out;
-    private ClientManager loaPhuong;
+    private final ClientManager clientManager;
 
-    // BIẾN QUYỀN LỰC
     private User loggedInUser = null;
 
-    // CÁC ĐỆ TỬ (CONTROLLERS)
-    private AuthController authController;
-    private ItemController itemController;
-    private AuctionController auctionController;
-    private AdminController adminController;
+    private final AuthController authController;
+    private final ItemController itemController;
+    private final AuctionController auctionController;
+    private final AdminController adminController;
 
-    public ClientHandler(Socket socket, AuctionService tongQuan, ClientManager loaPhuong, UserService baoVe, ItemService quanLyKho, AdminService adminService) {
+    public ClientHandler(Socket socket, AuctionService auctionService, ClientManager clientManager,
+                         UserService userService, ItemService itemService, AdminService adminService) {
         this.socket = socket;
-        this.loaPhuong = loaPhuong;
+        this.clientManager = clientManager;
 
-        // Cấp phát vũ khí cho các đệ tử
-        this.authController = new AuthController(this, baoVe);
-        this.itemController = new ItemController(this, quanLyKho, tongQuan);
-        this.auctionController = new AuctionController(this, tongQuan, quanLyKho, loaPhuong, baoVe);        this.adminController = new AdminController(this, adminService, tongQuan);
+        this.authController = new AuthController(this, userService);
+        this.itemController = new ItemController(this, itemService, auctionService);
+        this.auctionController = new AuctionController(this, auctionService, itemService, clientManager, userService);
+        this.adminController = new AdminController(this, adminService, auctionService, clientManager);
     }
 
     @Override
     public void run() {
         try {
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            out = new PrintWriter(socket.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+            out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
 
             System.out.println("Khách kết nối: " + socket.getInetAddress());
 
@@ -50,13 +50,17 @@ public class ClientHandler implements Runnable {
                 System.out.println("[RAW DATA TỪ CLIENT]: " + clientMessage);
                 try {
                     JsonObject request = JsonParser.parseString(clientMessage).getAsJsonObject();
+                    if (!request.has("action") || request.get("action").isJsonNull()) {
+                        sendError("Thiếu trường action trong yêu cầu.");
+                        continue;
+                    }
                     String action = request.get("action").getAsString();
 
-                    // MENU CHUYỂN MẠCH THUẦN LOGIC
                     switch (action) {
                         // Nhóm Auth
                         case "LOGIN": authController.handleLogin(request); break;
                         case "REGISTER": authController.handleRegister(request); break;
+                        case "UPDATE_PROFILE": authController.handleUpdateProfile(request); break;
                         case "DEPOSIT": authController.handleDeposit(request);break;
                         // Nhóm Kho Đồ (Item)
                         case "GET_ITEMS": itemController.handleGetItems(); break;
@@ -68,6 +72,7 @@ public class ClientHandler implements Runnable {
                         case "START_AUCTION": auctionController.handleStartAuction(request); break;
                         case "SCHEDULE_AUCTION": auctionController.handleScheduleAuction(request); break;
                         case "GET_AUCTIONS": auctionController.handleGetAuctions(); break;
+                        case "GET_SELLER_PROFILE": auctionController.handleGetSellerProfile(request); break;
                         case "BID": auctionController.handleBid(request); break;
                         case "REGISTER_AUTO_BID": auctionController.handleRegisterAutoBid(request);break;
                         //lich su ca nhan
@@ -76,16 +81,31 @@ public class ClientHandler implements Runnable {
                         //lich su de vẽ biểu đồ
                         case "GET_AUCTION_HISTORY": auctionController.handleGetAuctionHistory(request);break;
                         case "GET_WON_ITEMS": itemController.handleGetWonItems();break;
-
-                        // Nhóm Quản Trị (Admin)
+                        // Nằm trong hàm xử lý JSON nhận được từ Client
+                        // Nằm trong hàm xử lý JSON nhận được từ Client
+                        case "FOLLOW_AUCTION": auctionController.handleFollowAuction(request); break;
+                        case "UNFOLLOW_AUCTION": auctionController.handleUnfollowAuction(request); break;
+                        // Trong hàm xử lý Action chính của Server
+                        // Trong vòng switch-case xử lý lệnh từ Client của sếp
+                        case "GET_NOTIFICATIONS":
+                            // Sếp gọi controller nào quản lý thông báo? Nếu là AuctionController thì:
+                            auctionController.handleGetNotifications(request);
+                            break;
                         case "GET_ALL_USERS": adminController.handleGetAllUsers(); break;
                         case "FORCE_CLOSE": adminController.handleForceClose(request); break;
                         case "BAN_USER": adminController.handleBanUser(request); break;
+                        case "UNBAN_USER": adminController.handleUnbanUser(request); break;
+                        case "GET_ADMIN_AUCTION_BID_HISTORY": adminController.handleGetAuctionBidHistory(request); break;
+                        case "GET_PENDING_ITEMS": adminController.handleGetPendingItems(); break;
+                        case "APPROVE_ITEM": adminController.handleApproveItem(request); break;
+                        case "REJECT_ITEM": adminController.handleRejectItem(request); break;
+                        case "CREATE_ADMIN_LEVEL1": adminController.handleCreateAdminLevel1(request); break;
 
                         default:
                             sendError("Lệnh action không tồn tại trên Server!");
                     }
                 } catch (Exception e) {
+                    System.err.println("[ClientHandler] Request failed: " + e.getMessage());
                     sendError("Gửi JSON sai format hoặc lỗi Server!");
                 }
             }
@@ -113,7 +133,7 @@ public class ClientHandler implements Runnable {
     }
 
     private void closeEverything() {
-        if (loaPhuong != null) loaPhuong.removeClient(this);
+        if (clientManager != null) clientManager.removeClient(this);
         try {
             if (in != null) in.close();
             if (out != null) out.close();

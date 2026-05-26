@@ -5,11 +5,6 @@ import com.bidding.server.model.auction.AuctionEntity;
 import com.bidding.server.model.user.User; // <--- THÊM IMPORT NÀY
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import lombok.Getter;
-import lombok.Setter;
-
-@Getter
-@Setter
 @Entity
 @Table(name = "bidding_transactions")
 public class BiddingTransactionEntity {
@@ -43,4 +38,21 @@ public class BiddingTransactionEntity {
     private boolean isExtended;
     public BiddingTransactionEntity() {
     }
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public User getBidder() { return bidder; }
+    public void setBidder(User bidder) { this.bidder = bidder; }
+    public AuctionEntity getAuction() { return auction; }
+    public void setAuction(AuctionEntity auction) { this.auction = auction; }
+    public Double getBidAmount() { return bidAmount; }
+    public void setBidAmount(Double bidAmount) { this.bidAmount = bidAmount; }
+    public LocalDateTime getBidTime() { return bidTime; }
+    public void setBidTime(LocalDateTime bidTime) { this.bidTime = bidTime; }
+    public BidStatus getStatus() { return status; }
+    public void setStatus(BidStatus status) { this.status = status; }
+    public boolean isAutoBid() { return isAutoBid; }
+    public void setAutoBid(boolean autoBid) { isAutoBid = autoBid; }
+    public boolean isExtended() { return isExtended; }
+    public void setExtended(boolean extended) { isExtended = extended; }
 }

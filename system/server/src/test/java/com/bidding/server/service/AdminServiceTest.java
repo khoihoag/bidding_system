@@ -41,7 +41,7 @@ class AdminServiceTest {
     @DisplayName("Test 1 (Chặn cửa): Người dùng thường cố dùng quyền Admin và cái kết")
     void testRequireAdminFails() {
         // Giả lập: Người gọi lệnh KHÔNG phải Admin
-        when(mockAdmin.hasRole(UserRole.ADMIN)).thenReturn(false);
+        when(mockAdmin.getRole()).thenReturn(UserRole.USER);
 
         assertThrows(SecurityException.class, () -> {
             adminService.getAllUsers(mockAdmin);
@@ -52,7 +52,7 @@ class AdminServiceTest {
     @DisplayName("Test 2 (Khóa User): Admin thực hiện khóa tài khoản vi phạm")
     void testBanUserSuccess() {
         // Giả lập: Người gọi là Admin, ID là "admin-01"
-        when(mockAdmin.hasRole(UserRole.ADMIN)).thenReturn(true);
+        when(mockAdmin.getRole()).thenReturn(UserRole.ADMIN);
         when(mockAdmin.getId()).thenReturn("admin-01");
 
         // Mục tiêu là user "user-99"
@@ -69,7 +69,7 @@ class AdminServiceTest {
     @Test
     @DisplayName("Test 3 (Tự hủy): Admin cố tình khóa chính mình và bị hệ thống chặn")
     void testBanSelfFails() {
-        when(mockAdmin.hasRole(UserRole.ADMIN)).thenReturn(true);
+        when(mockAdmin.getRole()).thenReturn(UserRole.ADMIN);
         when(mockAdmin.getId()).thenReturn("admin-01");
 
         // Cố tình ban chính mình bằng cách truyền ID của mình vào target
@@ -79,9 +79,24 @@ class AdminServiceTest {
     }
 
     @Test
+    @DisplayName("Test 3.1 (Mở khóa User): Admin thực hiện mở khóa tài khoản")
+    void testUnbanUserSuccess() {
+        when(mockAdmin.getRole()).thenReturn(UserRole.ADMIN);
+
+        String targetId = "user-99";
+        when(userRepository.findById(targetId)).thenReturn(mockTargetUser);
+
+        boolean result = adminService.unbanUser(mockAdmin, targetId);
+
+        assertTrue(result);
+        verify(mockTargetUser).setActive(true);
+        verify(userRepository).saveOrUpdate(mockTargetUser);
+    }
+
+    @Test
     @DisplayName("Test 4 (Cưỡng chế đóng phiên): Admin dùng quyền lực đóng phiên đấu giá ngay lập tức")
     void testForceCloseAuction() {
-        when(mockAdmin.hasRole(UserRole.ADMIN)).thenReturn(true);
+        when(mockAdmin.getRole()).thenReturn(UserRole.ADMIN);
         String auctionId = "AUC-101";
 
         adminService.forceCloseAuction(mockAdmin, auctionId);
@@ -93,7 +108,7 @@ class AdminServiceTest {
     @Test
     @DisplayName("Test 5 (Xem danh sách): Admin yêu cầu xem toàn bộ cư dân trong hệ thống")
     void testGetAllUsers() {
-        when(mockAdmin.hasRole(UserRole.ADMIN)).thenReturn(true);
+        when(mockAdmin.getRole()).thenReturn(UserRole.ADMIN);
         List<User> list = List.of(mockTargetUser);
         when(userRepository.findAll()).thenReturn(list);
 

@@ -1,17 +1,16 @@
 package com.bidding.server.repository;
 
 import com.bidding.server.model.auction.AuctionEntity;
+import com.bidding.server.model.transaction.BiddingTransactionEntity;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
-import org.hibernate.cfg.Configuration;
+import com.bidding.server.config.HibernateSessionFactory;
+import org.hibernate.query.Query;
 import java.util.List;
 
 public class AuctionRepository {
-    // Singleton: Cả cái app chỉ cần 1 cái máy sản xuất Session duy nhất
-    private static final SessionFactory factory = new Configuration()
-            .configure("hibernate.cfg.xml") // Nó sẽ tự mò vào thư mục resources để đọc file này
-            .buildSessionFactory();
+    private static final SessionFactory factory = HibernateSessionFactory.getSessionFactory();
 
     /**
      * Hàm "Cất đồ": Dùng cho cả tạo mới (Insert) và cập nhật (Update)
@@ -29,7 +28,7 @@ public class AuctionRepository {
             System.out.println("Lưu Database thành công cho Auction ID: " + entity.getId());
         } catch (Exception e) {
             if (transaction != null) transaction.rollback();
-            e.printStackTrace();
+            throw new RuntimeException("Failed to save auction: " + entity.getId(), e);
         }
     }
 
@@ -52,7 +51,8 @@ public class AuctionRepository {
         Session session = factory.openSession();
         try {
             String hql = "SELECT DISTINCT a FROM AuctionEntity a " +
-                    "LEFT JOIN FETCH a.transactions " +    // Lôi theo lịch sử đặt giá
+                    "LEFT JOIN FETCH a.transactions t " +  // Lôi theo lịch sử đặt giá
+                    "LEFT JOIN FETCH t.bidder " +          // Lôi theo người đặt giá
                     "LEFT JOIN FETCH a.currentWinner " +   // Lôi theo User (người thắng)
                     "LEFT JOIN FETCH a.item";
             return session.createQuery(hql, AuctionEntity.class).getResultList();
@@ -67,6 +67,9 @@ public class AuctionRepository {
             transaction = session.beginTransaction();
 
             AuctionEntity auction = session.get(AuctionEntity.class, auctionId);
+            if (auction == null) {
+                throw new IllegalStateException("Auction not found: " + auctionId);
+            }
             auction.setCurrentPrice(newPrice);
             auction.setEndTime(newEndTime);
             auction.setCurrentWinner(winner);
@@ -104,6 +107,87 @@ public class AuctionRepository {
         } catch (Exception e) {
             if (tx != null) tx.rollback();
             throw e;
+        }
+    }
+
+    public List<BiddingTransactionEntity> findBidHistoryByAuctionId(String auctionId) {
+        try (Session session = factory.openSession()) {
+            String hql = "SELECT t FROM BiddingTransactionEntity t " +
+                    "LEFT JOIN FETCH t.bidder " +
+                    "LEFT JOIN FETCH t.auction " +
+                    "WHERE t.auction.id = :auctionId " +
+                    "ORDER BY t.bidTime DESC";
+            Query<BiddingTransactionEntity> query = session.createQuery(hql, BiddingTransactionEntity.class);
+            query.setParameter("auctionId", auctionId);
+            return query.list();
+        }
+    }
+
+    public boolean existsByItemId(String itemId) {
+        try (Session session = factory.openSession()) {
+            Long count = session.createQuery(
+                            "SELECT COUNT(a) FROM AuctionEntity a WHERE a.item.id = :itemId",
+                            Long.class)
+                    .setParameter("itemId", itemId)
+                    .uniqueResult();
+            return count != null && count > 0;
+        }
+    }
+
+    public long countBySellerId(String sellerId) {
+        try (Session session = factory.openSession()) {
+            Long count = session.createQuery(
+                            "SELECT COUNT(a) FROM AuctionEntity a WHERE a.item.sellerId = :sellerId",
+                            Long.class)
+                    .setParameter("sellerId", sellerId)
+                    .uniqueResult();
+            return count != null ? count : 0;
+        }
+    }
+
+    public long countBySellerIdAndStatuses(String sellerId, List<com.bidding.server.enums.AuctionStatus> statuses) {
+        if (statuses == null || statuses.isEmpty()) {
+            return 0;
+        }
+        try (Session session = factory.openSession()) {
+            Long count = session.createQuery(
+                            "SELECT COUNT(a) FROM AuctionEntity a " +
+                                    "WHERE a.item.sellerId = :sellerId AND a.status IN (:statuses)",
+                            Long.class)
+                    .setParameter("sellerId", sellerId)
+                    .setParameter("statuses", statuses)
+                    .uniqueResult();
+            return count != null ? count : 0;
+        }
+    }
+
+    public long countWonByUserId(String userId) {
+        try (Session session = factory.openSession()) {
+            Long count = session.createQuery(
+                            "SELECT COUNT(a) FROM AuctionEntity a " +
+                                    "WHERE a.currentWinner.id = :userId " +
+                                    "AND a.status IN (:statuses)",
+                            Long.class)
+                    .setParameter("userId", userId)
+                    .setParameter("statuses", List.of(
+                            com.bidding.server.enums.AuctionStatus.FINISHED,
+                            com.bidding.server.enums.AuctionStatus.PAID))
+                    .uniqueResult();
+            return count != null ? count : 0;
+        }
+    }
+
+    public AuctionEntity findByItemId(String itemId) {
+        try (Session session = factory.openSession()) {
+            return session.createQuery(
+                            "SELECT a FROM AuctionEntity a " +
+                                    "LEFT JOIN FETCH a.currentWinner " +
+                                    "WHERE a.item.id = :itemId " +
+                                    "ORDER BY a.startTime DESC",
+                            AuctionEntity.class)
+                    .setParameter("itemId", itemId)
+                    .setMaxResults(1)
+                    .uniqueResult();
         }
     }
 }

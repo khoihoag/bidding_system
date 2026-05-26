@@ -29,12 +29,13 @@ public class LoginController {
         String password = passwordField.getText().trim();
 
         if (username.isEmpty() || password.isEmpty()) {
-            showError("Vui long nhap day du ten dang nhap va mat khau.");
+            showError("Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.");
             return;
         }
 
         loginButton.setDisable(true);
         errorLabel.setVisible(false);
+        UserSession.getInstance().clear();
 
         JsonObject request = new JsonObject();
         request.addProperty("action", "LOGIN");
@@ -59,7 +60,7 @@ public class LoginController {
                     loginButton.setDisable(false);
                     showError(response.has("message")
                             ? response.get("message").getAsString()
-                            : "Dang nhap that bai.");
+                            : "Đăng nhập thất bại.");
                 }
                 default -> {}
             }
@@ -70,14 +71,17 @@ public class LoginController {
         String status = response.has("status") ? response.get("status").getAsString() : "";
         if (!"SUCCESS".equals(status)) {
             loginButton.setDisable(false);
-            showError("Dang nhap that bai.");
+            showError("Đăng nhập thất bại.");
             return;
         }
 
         UserSession session = UserSession.getInstance();
         session.setUserId(response.has("myId") ? response.get("myId").getAsString() : "");
         session.setRole(response.has("role") ? response.get("role").getAsString() : "USER");
-        session.setUsername(usernameField.getText().trim());
+        session.setAdminLevel(response.has("adminLevel") ? response.get("adminLevel").getAsInt() : 0);
+        session.setUsername(response.has("username") ? response.get("username").getAsString() : usernameField.getText().trim());
+        session.setFullName(response.has("fullName") ? response.get("fullName").getAsString() : session.getUsername());
+        session.setEmail(response.has("email") ? response.get("email").getAsString() : "");
         session.setBalance(response.has("balance") ? response.get("balance").getAsDouble() : 0.0);
 
         if ("ADMIN".equals(session.getRole())) {

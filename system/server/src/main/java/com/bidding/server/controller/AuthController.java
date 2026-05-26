@@ -1,8 +1,11 @@
 package com.bidding.server.controller;
 
+import com.bidding.server.enums.UserRole;
+import com.bidding.server.model.user.Admin;
 import com.bidding.server.network.ClientHandler;
 import com.bidding.server.model.user.User;
 import com.bidding.server.service.UserService;
+import com.bidding.server.utils.ApiResponse;
 import com.google.gson.JsonObject;
 
 public class AuthController {
@@ -19,17 +22,21 @@ public class AuthController {
         String pass = request.get("password").getAsString();
 
         try {
+            client.setLoggedInUser(null);
             User loggedInUser = baoVe.login(user, pass);
             client.setLoggedInUser(loggedInUser); // Set ngược lại vào Lễ tân
 
-            // SỬA Ở ĐÂY: Thêm trường \"balance\": %s vào chuỗi JSON và truyền loggedInUser.getBalance()
-            client.sendMessage(String.format(
-                    "{\"action\": \"LOGIN_REPLY\", \"status\": \"SUCCESS\", \"myId\": \"%s\", \"role\": \"%s\", \"balance\": %s}",
+            client.sendMessage(ApiResponse.loginSuccess(
                     loggedInUser.getId(),
+                    loggedInUser.getUsername(),
+                    loggedInUser.getFullName(),
+                    loggedInUser.getEmail(),
                     loggedInUser.getRole().name(),
-                    loggedInUser.getBalance() // Móc tiền ra gửi về cho UI
-            ));
+                    getAdminLevel(loggedInUser),
+                    loggedInUser.getBalance()
+            ).toString());
         } catch (Exception e) {
+            client.setLoggedInUser(null);
             client.sendError(e.getMessage());
         }
     }
@@ -87,5 +94,55 @@ public class AuthController {
         } catch (Exception e) {
             client.sendError("Lỗi nạp tiền: " + e.getMessage());
         }
+    }
+
+    public void handleUpdateProfile(JsonObject request) {
+        User user = client.getLoggedInUser();
+        if (user == null) {
+            client.sendError("Vui lòng đăng nhập để cập nhật thông tin.");
+            return;
+        }
+
+        try {
+            String fullName = request.has("fullName") && !request.get("fullName").isJsonNull()
+                    ? request.get("fullName").getAsString()
+                    : "";
+            String email = request.has("email") && !request.get("email").isJsonNull()
+                    ? request.get("email").getAsString()
+                    : "";
+            String currentPassword = request.has("currentPassword") && !request.get("currentPassword").isJsonNull()
+                    ? request.get("currentPassword").getAsString()
+                    : "";
+            String newPassword = request.has("newPassword") && !request.get("newPassword").isJsonNull()
+                    ? request.get("newPassword").getAsString()
+                    : "";
+
+            User updatedUser = baoVe.updateProfile(user.getId(), fullName, email, currentPassword, newPassword);
+            client.setLoggedInUser(updatedUser);
+
+            JsonObject reply = new JsonObject();
+            reply.addProperty("action", "UPDATE_PROFILE_REPLY");
+            reply.addProperty("status", "SUCCESS");
+            reply.addProperty("username", updatedUser.getUsername());
+            reply.addProperty("fullName", updatedUser.getFullName());
+            reply.addProperty("email", updatedUser.getEmail());
+            client.sendMessage(reply.toString());
+        } catch (Exception e) {
+            JsonObject reply = new JsonObject();
+            reply.addProperty("action", "UPDATE_PROFILE_REPLY");
+            reply.addProperty("status", "ERROR");
+            reply.addProperty("message", e.getMessage());
+            client.sendMessage(reply.toString());
+        }
+    }
+
+    private int getAdminLevel(User user) {
+        if (user == null || user.getRole() != UserRole.ADMIN) {
+            return 0;
+        }
+        if (user instanceof Admin admin) {
+            return admin.getAdminLevel();
+        }
+        return 2;
     }
 }

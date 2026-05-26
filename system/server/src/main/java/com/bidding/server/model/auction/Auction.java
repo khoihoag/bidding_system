@@ -15,11 +15,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import com.bidding.server.model.user.User;
-import lombok.Setter;
-import lombok.Getter;
-@Getter
-@Setter
 public class Auction extends Entity {
+    private final CopyOnWriteArrayList<AuctionObserver> observers = new CopyOnWriteArrayList<>();
+    private CopyOnWriteArrayList<String> followerIds;
     private boolean isReverse = false; // Đánh dấu đây là đấu giá ngược
     private double dropStep = 0.0;
     private Item item;
@@ -40,8 +38,15 @@ public class Auction extends Entity {
         this.bidHistory = new CopyOnWriteArrayList<>();
         this.autoBidQueue = new PriorityBlockingQueue<>();
         this.lock = new ReentrantLock();
+        this.followerIds = new CopyOnWriteArrayList<>(); // THÊM DÒNG NÀY
     }
-
+    public void addObserver(AuctionObserver observer) { observers.add(observer); }
+    public void removeObserver(AuctionObserver observer) { observers.remove(observer); }
+    private void notifyObservers(AuctionEvent event) {
+        for (AuctionObserver observer : observers) {
+            observer.onBidPlaced(event); // Cái này sẽ gọi hàm onBidPlaced trong ClientManager
+        }
+    }
     public Auction(String id, Item item, LocalDateTime startTime, LocalDateTime endTime, int antiSnipingSeconds, int extensionSeconds) {
         super();
         // Nhất quán với cách ông làm ở User và Item để không mất ID khi lưu/load
@@ -53,6 +58,7 @@ public class Auction extends Entity {
         this.endTime = endTime;
         this.status = AuctionStatus.OPEN; // Mặc định là OPEN
         this.currentPrice = new AtomicReference<>(item != null ? item.getStartingPrice() : 0.0);
+        this.followerIds = new CopyOnWriteArrayList<>(); // THÊM DÒNG NÀY
         this.bidHistory = new CopyOnWriteArrayList<>();
         this.lock = new ReentrantLock();
         this.antiSnipingSeconds = antiSnipingSeconds;
@@ -60,8 +66,40 @@ public class Auction extends Entity {
         this.autoBidQueue = new PriorityBlockingQueue<>();
     }
 
+    public boolean isReverse() { return isReverse; }
+    public void setReverse(boolean reverse) { isReverse = reverse; }
+    public double getDropStep() { return dropStep; }
+    public void setDropStep(double dropStep) { this.dropStep = dropStep; }
+    public Item getItem() { return item; }
+    public void setItem(Item item) { this.item = item; }
+    public AuctionStatus getStatus() { return status; }
+    public void setStatus(AuctionStatus status) { this.status = status; }
+    public LocalDateTime getStartTime() { return startTime; }
+    public void setStartTime(LocalDateTime startTime) { this.startTime = startTime; }
+    public LocalDateTime getEndTime() { return endTime; }
+    public void setEndTime(LocalDateTime endTime) { this.endTime = endTime; }
+    public AtomicReference<Double> getCurrentPrice() { return currentPrice; }
+    public void setCurrentPrice(AtomicReference<Double> currentPrice) { this.currentPrice = currentPrice; }
+    public User getCurrentWinner() { return currentWinner; }
+    public void setCurrentWinner(User currentWinner) { this.currentWinner = currentWinner; }
+    public CopyOnWriteArrayList<BiddingTransaction> getBidHistory() { return bidHistory; }
+    public void setBidHistory(CopyOnWriteArrayList<BiddingTransaction> bidHistory) { this.bidHistory = bidHistory; }
+    public CopyOnWriteArrayList<String> getFollowerIds() { return followerIds; }
+    public void setFollowerIds(CopyOnWriteArrayList<String> followerIds) { this.followerIds = followerIds; }
+    public void setAutoBidQueue(PriorityBlockingQueue<AutoBidConfig> autoBidQueue) { this.autoBidQueue = autoBidQueue; }
+    public int getAntiSnipingSeconds() { return antiSnipingSeconds; }
+    public void setAntiSnipingSeconds(int antiSnipingSeconds) { this.antiSnipingSeconds = antiSnipingSeconds; }
+    public int getExtensionSeconds() { return extensionSeconds; }
+    public void setExtensionSeconds(int extensionSeconds) { this.extensionSeconds = extensionSeconds; }
+    public ReentrantLock getLock() { return lock; }
+    public void setLock(ReentrantLock lock) { this.lock = lock; }
+
     // Đặt giá
     // ĐÃ XÓA CHỮ 'synchronized' Ở ĐÂY
+    public BiddingTransaction placeBid(User bidder, double amount) {
+        return placeBid(bidder, amount, false);
+    }
+
     public BiddingTransaction placeBid(User bidder, double amount,boolean isAutoBid) {
         // 1. Kiểm tra trạng thái phiên (Fail-fast validation)
         if (this.status != AuctionStatus.RUNNING) {
@@ -82,6 +120,9 @@ public class Auction extends Entity {
             }
 
             // 3. Ngăn chặn Lost Update bằng AtomicReference.compareAndSet
+            // Trong hàm placeBid của file Auction.java
+
+// 3. Ngăn chặn Lost Update bằng AtomicReference.compareAndSet
             if (currentPrice.compareAndSet(expectedPrice, amount)) {
 
                 // Cập nhật người thắng tạm thời
@@ -96,6 +137,16 @@ public class Auction extends Entity {
                 );
 
                 this.bidHistory.add(newTransaction);
+
+                // ================= GẮN BOM TING TING (ĐÃ FIX ĐỦ 5 THAM SỐ) =================
+                notifyObservers(new AuctionEvent(
+                        EventType.BID_PLACED,             // 1. Event Type
+                        this,                             // 2. Đối tượng Auction hiện tại
+                        newTransaction,                   // 3. Giao dịch vừa thực hiện
+                        LocalDateTime.now(),              // 4. Thời gian
+                        "Mức giá mới: " + amount          // 5. Nội dung thông báo
+                ));
+                // ===========================================================================
 
             } else {
                 throw new InvalidBidAmountException("Giá đã bị thay đổi bởi luồng khác. Vui lòng tải lại và thử lại.");
@@ -140,12 +191,6 @@ public class Auction extends Entity {
         }
 
     }
-
-    // Gia hạn phiên (Đã sửa tên hàm cho đúng chính tả)
-    public void extendTime(int seconds) {
-        // TODO: Implement extendTime logic
-    }
-
 
     // Kiểm tra giá đặt hợp lệ
     private boolean isValidBid(double amount) {
@@ -203,6 +248,22 @@ public class Auction extends Entity {
     // Kiểm tra xem phiên đã có người đặt giá hay chưa
     public boolean hasBids() {
         return this.bidHistory != null && !this.bidHistory.isEmpty();
+    }
+    // ========================================================
+    // HÀM CHO TÍNH NĂNG THEO DÕI
+    // ========================================================
+    public void addFollower(String userId) {
+        // Chỉ thêm nếu ông này chưa bấm theo dõi (tránh spam)
+        if (userId != null && !this.followerIds.contains(userId)) {
+            this.followerIds.add(userId);
+            System.out.println("[Theo Dõi] Đã thêm User " + userId + " vào danh sách hóng phiên " + this.getId());
+        }
+    }
+
+    public void removeFollower(String userId) {
+        if (userId != null && this.followerIds.remove(userId)) {
+            System.out.println("[Theo Dõi] Đã gỡ User " + userId + " khỏi phiên " + this.getId());
+        }
     }
 
 }

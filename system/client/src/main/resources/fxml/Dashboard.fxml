@@ -2,24 +2,66 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
+<?import javafx.scene.image.*?>
 
-<ScrollPane fitToWidth="true" style="-fx-background-color: transparent;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.bidding.controller.DashboardController">
-    <VBox spacing="20" styleClass="content-area">
-        <padding>
-            <Insets top="20" right="20" bottom="20" left="20"/>
-        </padding>
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.bidding.controller.DashboardController"
+            stylesheets="@../css/style.css"
+            styleClass="content-surface">
 
-        <HBox alignment="CENTER_LEFT">
-            <VBox spacing="5">
-                <Label text="🏛 Sảnh Đấu Giá" styleClass="page-title" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
-                <Label text="Các phiên đấu giá đang diễn ra trên toàn server" styleClass="page-subtitle" style="-fx-text-fill: #7f8c8d;"/>
+    <top>
+        <HBox alignment="CENTER_LEFT" prefHeight="76" minHeight="76" maxHeight="76" styleClass="dashboard-header">
+            <padding>
+                <Insets top="0" right="28" bottom="0" left="28"/>
+            </padding>
+
+            <VBox spacing="2" alignment="CENTER_LEFT">
+                <Label text="SẢNH ĐẤU GIÁ" styleClass="dashboard-header-kicker"/>
+                <Label text="BidVault Auction Hall" styleClass="dashboard-header-title"/>
             </VBox>
             <Region HBox.hgrow="ALWAYS"/>
-            <Button text="🔄 Làm mới Sảnh" onAction="#handleRefresh" styleClass="action-button"/>
+
+            <HBox alignment="CENTER_RIGHT" spacing="14" styleClass="dashboard-header-actions">
+                <VBox alignment="CENTER_LEFT" spacing="3" styleClass="dashboard-balance-chip">
+                    <Label text="Số dư ví" styleClass="dashboard-balance-caption"/>
+                    <Label fx:id="dashboardBalanceLabel" text="0 ₫" styleClass="dashboard-balance-value" maxWidth="220"/>
+                </VBox>
+
+                <HBox alignment="CENTER_LEFT" spacing="12" styleClass="dashboard-user-chip">
+                    <StackPane styleClass="dashboard-avatar-ring">
+                        <StackPane styleClass="dashboard-avatar-inner">
+                            <ImageView fitWidth="18" fitHeight="18" preserveRatio="true">
+                                <image><Image url="@../images/icons/user.png"/></image>
+                            </ImageView>
+                        </StackPane>
+                    </StackPane>
+                    <VBox spacing="2" alignment="CENTER_LEFT">
+                        <Label fx:id="dashboardUsernameLabel" text="Người dùng" styleClass="dashboard-user-name"/>
+                        <Label fx:id="dashboardHandleLabel" text="@nguoidung" styleClass="dashboard-user-handle"/>
+                    </VBox>
+                </HBox>
+            </HBox>
         </HBox>
+    </top>
 
-        <Separator/>
+    <center>
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="content-surface">
+            <VBox spacing="24" styleClass="dashboard-body">
+                <HBox alignment="CENTER_LEFT" spacing="12" styleClass="dashboard-search-row">
+                    <HBox alignment="CENTER_LEFT" spacing="0" HBox.hgrow="ALWAYS" styleClass="dashboard-search-shell">
+                        <Label text="⌕" styleClass="dashboard-search-icon" mouseTransparent="true"/>
+                        <TextField fx:id="auctionSearchField"
+                                   promptText="Tìm theo tên sản phẩm, mã phiên, loại, người bán..."
+                                   onAction="#handleAuctionSearch"
+                                   HBox.hgrow="ALWAYS"
+                                   styleClass="dashboard-search-field"/>
+                    </HBox>
+                    <Button text="Xóa lọc" onAction="#clearAuctionSearch" styleClass="dashboard-search-clear-button"/>
+                </HBox>
 
-        <VBox fx:id="auctionContainer" spacing="20"/>
-    </VBox>
-</ScrollPane>
+                <VBox fx:id="auctionContainer" spacing="22"/>
+            </VBox>
+        </ScrollPane>
+    </center>
+</BorderPane>

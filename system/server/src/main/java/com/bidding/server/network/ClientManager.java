@@ -43,6 +43,12 @@ public class ClientManager implements AuctionObserver {
     // =========================================================
     @Override
     public void onBidPlaced(AuctionEvent event) {
+        System.out.println("[Debug] BidPlaced event received. Auction: " + event.getAuctionId());
+        if (event.getAuction().getFollowerIds() != null) {
+            System.out.println("[Debug] Danh sách follower: " + event.getAuction().getFollowerIds().size());
+        } else {
+            System.out.println("[Debug] followerIds đang là NULL!");
+        }
         JsonObject json = new JsonObject();
         json.addProperty("action", "NEW_BID");
 
@@ -73,30 +79,76 @@ public class ClientManager implements AuctionObserver {
         }
         // =======================================================
 
+        // ... (Code cũ của sếp ở trên)
         broadcast(json.toString());
-    }
+
+        // ================= GỬI THÔNG BÁO CHO NGƯỜI THEO DÕI =================
+        if (event.getAuction() != null) {
+            // LƯU Ý: Sếp cần tự thêm thuộc tính followerIds (List<String>) vào Model Auction của sếp nhé!
+            List<String> followers = event.getAuction().getFollowerIds();
+
+            if (followers != null && !followers.isEmpty()) {
+                JsonObject notif = new JsonObject();
+                notif.addProperty("action", "NEW_NOTIFICATION");
+
+                JsonObject notifData = new JsonObject();
+                notifData.addProperty("time", java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss")));
+
+                // Format lại giá tiền cho đẹp
+                java.text.NumberFormat fmt = java.text.NumberFormat.getNumberInstance(new java.util.Locale("vi", "VN"));
+                String priceStr = fmt.format(event.getNewPrice());
+
+                notifData.addProperty("message", "🔥 Phiên đấu giá [" + event.getAuction().getItem().getName() + "] vừa có giá mới: " + priceStr + " đ!");
+                notif.add("data", notifData);
+
+                // Gửi thông báo đến những người đang follow (ngoại trừ ông vừa đặt giá)
+                List<String> notifyList = new java.util.ArrayList<>(followers);
+                if (event.getAuction().getCurrentWinner() != null) {
+                    notifyList.remove(event.getAuction().getCurrentWinner().getId()); // Đừng gửi cho người vừa đặt giá
+                }
+
+                sendToUsers(notifyList, notif.toString());
+            }
+        }}
     // =========================================================
     // 3. KHI PHIÊN ĐẤU GIÁ KẾT THÚC (HẾT GIỜ HOẶC ADMIN ĐÓNG)
     // =========================================================
     @Override
     public void onAuctionClosed(AuctionEvent event) {
-        // 1. Vẫn giữ cái thông báo chung cho cả làng cùng biết[cite: 10]
+        var auction = event.getAuction();
+
+        // 1. Vẫn giữ cái thông báo chung cho cả làng cùng biết (null-safe để khỏi văng NPE khi test/mock)
+        String itemName = "Vật phẩm đấu giá";
+        if (auction != null && auction.getItem() != null && auction.getItem().getName() != null) {
+            itemName = auction.getItem().getName();
+        }
+
         JsonObject notifyJson = new JsonObject();
         notifyJson.addProperty("action", "GLOBAL_NOTIFY");
-        notifyJson.addProperty("message", "Phiên đấu giá [" + event.getAuction().getItem().getName() + "] đã kết thúc!");
+        notifyJson.addProperty("message", "Phiên đấu giá [" + itemName + "] đã kết thúc!");
         broadcast(notifyJson.toString());
 
-        // 2. Bắn thêm gói tin CHI TIẾT để UI "khóa sổ" và hiện người thắng
+        // 2. Bắn thêm gói tin CHI TIẾT để UI hiển thị kết quả
         JsonObject endJson = new JsonObject();
         endJson.addProperty("action", "AUCTION_FINISHED");
         endJson.addProperty("auctionId", event.getAuctionId());
 
-        // Lấy tên người thắng cuối cùng từ Auction
-        String winnerName = (event.getAuction().getCurrentWinner() != null)
-                ? event.getAuction().getCurrentWinner().getUsername()
-                : "Không có người đặt giá";
+        // Giá chốt: ưu tiên dùng convenience getter để lấy đúng giá từ RAM model (AtomicReference)
+        double finalPrice = event.getNewPrice() != null ? event.getNewPrice() : 0.0;
+
+        // Người thắng cuối cùng: lấy từ Auction nếu có, fallback để chạy test/mock
+        String winnerName;
+        if (auction == null) {
+            winnerName = "NONE";
+        } else {
+            winnerName = (auction.getCurrentWinner() != null)
+                    ? auction.getCurrentWinner().getUsername()
+                    : "Không có người đặt giá";
+        }
 
         endJson.addProperty("winnerId", winnerName);
+        endJson.addProperty("itemName", itemName);
+        endJson.addProperty("finalPrice", finalPrice);
         broadcast(endJson.toString());
     }
 
@@ -109,6 +161,54 @@ public class ClientManager implements AuctionObserver {
     public void broadcast(String message) {
         for (ClientHandler client : activeClients) {
             client.sendMessage(message);
+        }
+    }
+    // =========================================================
+    // HÚ RIÊNG CHO MỘT NHÓM ANH EM (DÙNG CHO THÔNG BÁO THEO DÕI)
+    // =========================================================
+    // =========================================================
+    // KHAI BÁO HÒM THƯ (RAM) ĐỂ LƯU THÔNG BÁO CHO TỪNG USER
+    // =========================================================
+    public static final java.util.concurrent.ConcurrentHashMap<String, java.util.List<JsonObject>> mailbox = new java.util.concurrent.ConcurrentHashMap<>();
+
+    // HÚ RIÊNG VÀ NHÉT VÀO HÒM THƯ
+    public void sendToUsers(List<String> userIds, String message) {
+        if (userIds == null || userIds.isEmpty()) return;
+
+        // 1. Tách lấy phần 'data' (chứa message và time) để cất vào hòm thư
+        try {
+            JsonObject msgObj = com.google.gson.JsonParser.parseString(message).getAsJsonObject();
+            if (msgObj.has("data")) {
+                JsonObject dataObj = msgObj.getAsJsonObject("data");
+                // Nhét vào hòm thư của từng ông
+                for(String uid : userIds) {
+                    mailbox.computeIfAbsent(uid, k -> new java.util.ArrayList<>()).add(dataObj);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Lỗi lưu hòm thư: " + e.getMessage());
+        }
+
+        // 2. Vẫn gửi Live cho những ông đang online
+        for (ClientHandler client : activeClients) {
+            if (client.getLoggedInUser() != null && userIds.contains(client.getLoggedInUser().getId())) {
+                client.sendMessage(message);
+            }
+        }
+    }
+
+    public void notifyUserAccountBanned(String userId) {
+        if (userId == null || userId.isEmpty()) return;
+
+        JsonObject json = new JsonObject();
+        json.addProperty("action", "ACCOUNT_BANNED");
+        json.addProperty("message", "Tai khoan cua ban da bi admin khoa.");
+
+        for (ClientHandler client : activeClients) {
+            if (client.getLoggedInUser() != null && userId.equals(client.getLoggedInUser().getId())) {
+                client.setLoggedInUser(null);
+                client.sendMessage(json.toString());
+            }
         }
     }
 }

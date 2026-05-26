@@ -31,6 +31,7 @@ public class AuctionService {
     private final ConcurrentHashMap<String, Auction> activeAuctions = new ConcurrentHashMap<>();
     private UserService baoVe;
     private final ConcurrentHashMap<String, java.util.concurrent.ScheduledFuture<?>> auctionTimers = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, java.util.concurrent.ScheduledFuture<?>> reversePriceTimers = new ConcurrentHashMap<>();
 
     // BỘ ĐẾM THỜI GIAN
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
@@ -97,7 +98,7 @@ public class AuctionService {
 
         // ================= ĐỒNG HỒ TỤT GIÁ TỰ ĐỘNG =================
         if (auction.isReverse()) {
-            scheduler.scheduleAtFixedRate(() -> {
+            java.util.concurrent.ScheduledFuture<?> dropTask = scheduler.scheduleAtFixedRate(() -> {
                 if (auction.getStatus() == AuctionStatus.RUNNING) {
                     double current = auction.getCurrentPrice().get();
                     double newPrice = current - auction.getDropStep();
@@ -125,8 +126,29 @@ public class AuctionService {
                     }
                 }
             }, 5, 5, TimeUnit.SECONDS);
+            reversePriceTimers.put(auction.getId(), dropTask);
         }
         // ============================================================
+    }
+
+    private void cancelAuctionTimers(String auctionId) {
+        java.util.concurrent.ScheduledFuture<?> endTimer = auctionTimers.remove(auctionId);
+        if (endTimer != null) {
+            endTimer.cancel(false);
+        }
+        java.util.concurrent.ScheduledFuture<?> dropTimer = reversePriceTimers.remove(auctionId);
+        if (dropTimer != null) {
+            dropTimer.cancel(false);
+        }
+    }
+
+    public Auction findAuctionById(String auctionId) {
+        Auction active = activeAuctions.get(auctionId);
+        if (active != null) {
+            return active;
+        }
+        AuctionEntity entity = repository.findById(auctionId);
+        return entity != null ? mapper.toModel(entity) : null;
     }
 
     private void handleOpenAuctionOnStartup(Auction auction) {
@@ -171,6 +193,7 @@ public class AuctionService {
     // ============================================================
 
     private void closeAuction(Auction auction) {
+        cancelAuctionTimers(auction.getId());
         try {
             auction.end();
             auction.setStatus(AuctionStatus.FINISHED);
@@ -205,6 +228,38 @@ public class AuctionService {
             System.err.println("❌ LỖI CHỐT ĐƠN PHIÊN " + auction.getId() + ": " + e.getMessage());
             e.printStackTrace();
         }
+    }
+
+    public AuctionRepository getAuctionRepository() {
+        return repository;
+    }
+
+    public long countAuctionsCreatedBySeller(String sellerId) {
+        if (sellerId == null || sellerId.isEmpty()) {
+            return 0;
+        }
+        return repository.countBySellerId(sellerId);
+    }
+
+    public long countSuccessfulAuctionsBySeller(String sellerId) {
+        if (sellerId == null || sellerId.isEmpty()) {
+            return 0;
+        }
+        return repository.countBySellerIdAndStatuses(sellerId, List.of(AuctionStatus.FINISHED, AuctionStatus.PAID));
+    }
+
+    public long countCanceledAuctionsBySeller(String sellerId) {
+        if (sellerId == null || sellerId.isEmpty()) {
+            return 0;
+        }
+        return repository.countBySellerIdAndStatuses(sellerId, List.of(AuctionStatus.CANCELED, AuctionStatus.FAILED));
+    }
+
+    public long countWonItemsByUser(String userId) {
+        if (userId == null || userId.isEmpty()) {
+            return 0;
+        }
+        return repository.countWonByUserId(userId);
     }
 
     public void forceCloseManual(String auctionId) {
@@ -378,12 +433,47 @@ public class AuctionService {
         return false;
     }
 
+    public Auction findActiveAuctionByItemId(String itemId) {
+        for (Auction auction : activeAuctions.values()) {
+            if (auction.getItem() != null && auction.getItem().getId().equals(itemId)) {
+                return auction;
+            }
+        }
+        return null;
+    }
+
+    public boolean isItemInAnyAuction(String itemId) {
+        if (isItemInActiveAuction(itemId)) {
+            return true;
+        }
+        return repository.existsByItemId(itemId);
+    }
+
     public List<Auction> getActiveAuctions() {
         return new ArrayList<>(activeAuctions.values());
     }
 
+    public List<Auction> getAllAuctionsForDisplay() {
+        java.util.LinkedHashMap<String, Auction> auctionsById = new java.util.LinkedHashMap<>();
+
+        for (Auction auction : mapper.toModelList(repository.findAll())) {
+            auctionsById.put(auction.getId(), auction);
+        }
+
+        for (Auction auction : activeAuctions.values()) {
+            auctionsById.put(auction.getId(), auction);
+        }
+
+        return new ArrayList<>(auctionsById.values());
+    }
+
     // ================= KHỞI TẠO PHIÊN =================
+    public Auction startAuction(Item item, int durationMinutes) {
+        return startAuction(item, durationMinutes, false, 0.0);
+    }
+
     public Auction startAuction(Item item, int durationMinutes, boolean isReverse, double dropStep) {
+        if (!item.isApprovedForAuction()) throw new RuntimeException("San pham chua duoc admin duyet.");
         if (isItemInActiveAuction(item.getId())) throw new RuntimeException("Sản phẩm này đang được đấu giá rồi!");
 
         LocalDateTime startTime = LocalDateTime.now();
@@ -416,6 +506,7 @@ public class AuctionService {
     }
 
     public Auction scheduleAuction(Item item, LocalDateTime startTime, LocalDateTime endTime, boolean isReverse, double dropStep) {
+        if (!item.isApprovedForAuction()) throw new RuntimeException("San pham chua duoc admin duyet.");
         if (isItemInActiveAuction(item.getId())) throw new RuntimeException("Sản phẩm này đang nằm trong một phiên đấu giá khác!");
         if (startTime.isBefore(LocalDateTime.now())) throw new RuntimeException("Thời gian bắt đầu không được ở trong quá khứ!");
         if (endTime.isBefore(startTime)) throw new RuntimeException("Thời gian kết thúc phải diễn ra sau thời gian bắt đầu!");

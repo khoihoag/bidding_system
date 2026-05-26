@@ -10,7 +10,7 @@ import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import com.bidding.server.service.AdminService;
-import com.bidding.server.repository.UserRepository;
+
 public class ServerMain {
 
     public static void main(String[] args) {
@@ -26,11 +26,11 @@ public class ServerMain {
         // Tạo Loa Phường (Chuyên giữ danh sách khách và phát JSON)
         ClientManager loaPhuong = new ClientManager();
         UserRepository userRepo = new UserRepository();
-        AdminService admin= new AdminService(userRepo,tongQuan);
+        ItemRepository itemRepo = new ItemRepository();
+        AdminService admin= new AdminService(userRepo,tongQuan, itemRepo);
         // Ký hợp đồng: Ép thằng Loa phường hóng tin từ Tổng quản
         tongQuan.addObserver(loaPhuong);
         UserService baoVe = new UserService();
-        ItemRepository itemRepo = new ItemRepository();
         ItemService quanLyKho = new ItemService(itemRepo);
         // =======================================================
         // BƯỚC 2: MỞ CỬA ĐÓN KHÁCH (Dùng ThreadPool xịn của ông)
