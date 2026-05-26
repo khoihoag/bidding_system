@@ -51,7 +51,6 @@ public class MainController {
     @FXML private Button btnDashboard;
     @FXML private Button btnInventory;
     @FXML private Button btnHistory;
-    @FXML private Button btnNotifications;
     @FXML private Button btnSettings;
     @FXML private Button btnLogout;
     @FXML
@@ -176,7 +175,7 @@ public class MainController {
 
     @FXML
     private void handleViewNotificationDetail() {
-        setActiveMenu(btnNotifications);
+        setActiveMenu(null);
         loadSubView("/fxml/Notifications.fxml");
     }
 
@@ -381,9 +380,6 @@ public class MainController {
         btnDashboard.getStyleClass().remove("menu-btn-active");
         btnInventory.getStyleClass().remove("menu-btn-active");
         btnHistory.getStyleClass().remove("menu-btn-active");
-        if (btnNotifications != null) {
-            btnNotifications.getStyleClass().remove("menu-btn-active");
-        }
         if (btnSettings != null) {
             btnSettings.getStyleClass().remove("menu-btn-active");
         }

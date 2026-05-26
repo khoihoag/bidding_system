@@ -12,11 +12,13 @@
     <Tab text="Kho Đồ Của Tôi">
         <BorderPane styleClass="inventory-page">
             <center>
-                <HBox spacing="32" styleClass="inventory-workspace">
-                    <VBox spacing="18" minWidth="560" prefWidth="620" HBox.hgrow="ALWAYS" styleClass="inventory-panel">
+                <HBox spacing="14" styleClass="inventory-workspace">
+                    <VBox spacing="14" minWidth="430" prefWidth="430" maxWidth="430" styleClass="inventory-panel">
                         <VBox spacing="4">
                             <HBox spacing="10" alignment="CENTER_LEFT">
                                 <Label text="Kho Đồ Của Tôi" styleClass="inventory-title"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <Button text="Tải lại" onAction="#handleRefreshInventory" styleClass="reload-button" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
                             </HBox>
                             <Label text="Chọn một món đồ để xem chi tiết, chỉnh sửa hoặc đưa lên đấu giá." styleClass="hint-label"/>
                         </VBox>
@@ -25,32 +27,12 @@
                                    promptText="Tìm kiếm theo tên, ID, mô tả..."
                                    styleClass="inventory-search-field"/>
 
-                        <HBox spacing="10" alignment="CENTER_LEFT">
-                            <Button fx:id="btnViewSelectedItem"
-                                    text="Xem chi tiết"
-                                    onAction="#handleViewSelectedItem"
-                                    HBox.hgrow="ALWAYS"
-                                    maxWidth="Infinity"
-                                    styleClass="primary-button"/>
-                            <Button fx:id="btnEditSelectedItem"
-                                    text="Sửa sản phẩm"
-                                    onAction="#handleEditSelectedItem"
-                                    HBox.hgrow="ALWAYS"
-                                    maxWidth="Infinity"
-                                    styleClass="secondary-button"/>
-                            <Button text="Làm mới"
-                                    onAction="#handleRefreshInventory"
-                                    HBox.hgrow="ALWAYS"
-                                    maxWidth="Infinity"
-                                    styleClass="secondary-button"/>
-                        </HBox>
-
-                        <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" VBox.vgrow="ALWAYS" styleClass="inventory-scroll">
-                            <FlowPane fx:id="inventoryGrid" hgap="18" vgap="18" styleClass="inventory-grid"/>
+                        <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" maxWidth="Infinity" VBox.vgrow="ALWAYS" styleClass="inventory-scroll">
+                            <FlowPane fx:id="inventoryGrid" hgap="12" vgap="12" prefWrapLength="388" styleClass="inventory-grid"/>
                         </ScrollPane>
                     </VBox>
 
-                    <VBox spacing="18" minWidth="520" prefWidth="560" maxWidth="620" styleClass="inventory-action-panel">
+                    <VBox spacing="16" minWidth="560" prefWidth="620" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="inventory-action-panel">
                         <VBox spacing="4">
                             <Label text="Bảng Thao Tác" styleClass="inventory-title"/>
                             <Label text="Mở phiên, hẹn giờ đấu hoặc nhập vật phẩm mới từ cùng một khu vực." styleClass="hint-label"/>
@@ -117,7 +99,7 @@
                             </Tab>
 
                             <Tab fx:id="itemFormTab" text="Nhập Đồ Mới">
-                                <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="inventory-form-scroll">
+                                <ScrollPane fitToWidth="true" hbarPolicy="NEVER" maxWidth="Infinity" styleClass="inventory-form-scroll">
                                     <VBox spacing="16" styleClass="inventory-form-pane">
                                         <GridPane hgap="14" vgap="12">
                                             <columnConstraints>
@@ -227,10 +209,14 @@
     <Tab text="Chiến Lợi Phẩm" onSelectionChanged="#handleRefreshWonItems">
         <VBox spacing="18" styleClass="inventory-page">
             <VBox spacing="4">
-                <Label text="Chiến Lợi Phẩm" styleClass="inventory-title"/>
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="Chiến Lợi Phẩm" styleClass="inventory-title"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="Tải lại" onAction="#handleRefreshWonItems" styleClass="reload-button" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                </HBox>
                 <Label text="Tài sản bạn đã đấu giá thành công" styleClass="hint-label"/>
             </VBox>
-            <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" VBox.vgrow="ALWAYS" styleClass="inventory-scroll">
+            <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" maxWidth="Infinity" VBox.vgrow="ALWAYS" styleClass="inventory-scroll">
                 <FlowPane fx:id="wonItemsGrid" hgap="18" vgap="18" styleClass="inventory-grid"/>
             </ScrollPane>
         </VBox>

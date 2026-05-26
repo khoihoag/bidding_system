@@ -9,6 +9,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
+import javafx.geometry.Rectangle2D;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
@@ -19,6 +20,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Rectangle;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -27,8 +29,6 @@ public class InventoryController implements Initializable {
     @FXML private javafx.scene.control.CheckBox chkReverseNow, chkReverseSchedule;
     @FXML private javafx.scene.control.TextField txtDropStepNow, txtDropStepSchedule;
     @FXML private FlowPane wonItemsGrid;
-    @FXML private Button btnViewSelectedItem;
-    @FXML private Button btnEditSelectedItem;
     @FXML private Button btnSubmitItem;
     @FXML private Button btnCancelEdit;
     @FXML private Button btnRemoveSelectedImage;
@@ -448,13 +448,25 @@ public class InventoryController implements Initializable {
 
     private String approvalStatusLabel(String status) {
         if (status == null || status.isEmpty()) {
-            return "Da duyet";
+            return "Đã duyệt";
         }
-        return switch (status) {
-            case "PENDING" -> "Cho duyet";
-            case "REJECTED" -> "Bi tu choi";
-            case "APPROVED" -> "Da duyet";
+        return switch (status.toUpperCase()) {
+            case "PENDING" -> "Đang chờ";
+            case "REJECTED" -> "Từ chối";
+            case "APPROVED" -> "Đã duyệt";
             default -> status;
+        };
+    }
+
+    private String approvalStatusStyleClass(String status) {
+        if (status == null || status.isEmpty()) {
+            return "status-approved";
+        }
+        return switch (status.toUpperCase()) {
+            case "PENDING" -> "status-pending";
+            case "REJECTED" -> "status-rejected";
+            case "APPROVED" -> "status-approved";
+            default -> "status-pending";
         };
     }
 
@@ -494,15 +506,6 @@ public class InventoryController implements Initializable {
         });
     }
     @FXML
-    private void handleViewSelectedItem() {
-        if (selectedItemId == null || selectedItemId.isBlank()) {
-            showAlert(AlertType.INFORMATION, "Chưa chọn vật phẩm", "Vui lòng chọn một vật phẩm trong kho trước.");
-            return;
-        }
-        handleViewDetailsById(selectedItemId);
-    }
-
-    @FXML
     private void handleEditSelectedItem() {
         if (selectedItemId == null || selectedItemId.isBlank()) {
             showAlert(AlertType.INFORMATION, "Chưa chọn vật phẩm", "Vui lòng chọn một vật phẩm trong kho trước.");
@@ -536,18 +539,22 @@ public class InventoryController implements Initializable {
 
     @FXML
     private void handleViewDetailsById(String id) {
+        handleViewDetailsById(id, true);
+    }
+
+    private void handleViewDetailsById(String id, boolean editable) {
         JsonObject item = itemDatabase.get(id);
         if (item == null) return;
 
         // Chuyển việc vẽ giao diện cho "cỗ máy" ItemDetail.fxml xử lý
-        openXinyItemDetail(item);
+        openXinyItemDetail(item, editable);
     }
 
 
     // ================= CỖ MÁY CHUYỂN CẢNH SANG SHOWROOM XỊN =================
     // ================= CỖ MÁY MỞ CỬA SỔ SHOWROOM XỊN =================
     // ================= CỖ MÁY MỞ CỬA SỔ SHOWROOM XỊN =================
-    private void openXinyItemDetail(JsonObject selectedItemJson) {
+    private void openXinyItemDetail(JsonObject selectedItemJson, boolean editable) {
         try {
             javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/fxml/ItemDetail.fxml"));
             javafx.scene.Parent detailRoot = loader.load();
@@ -557,6 +564,15 @@ public class InventoryController implements Initializable {
 
             javafx.stage.Stage stage = new javafx.stage.Stage();
             controller.setDeleteCallback(itemId -> handleDeleteItemFromDetail(itemId, stage));
+            if (editable) {
+                controller.setEditCallback(itemId -> {
+                    selectedItemId = itemId;
+                    stage.close();
+                    handleEditSelectedItem();
+                });
+            } else {
+                controller.setEditCallback(null);
+            }
             javafx.stage.Window ownerWindow = inventoryGrid.getScene().getWindow();
             javafx.scene.Parent ownerRoot = ownerWindow.getScene().getRoot();
             javafx.scene.effect.Effect previousEffect = ownerRoot.getEffect();
@@ -636,38 +652,48 @@ public class InventoryController implements Initializable {
 
     private VBox createItemCard(JsonObject item, boolean editable) {
         String id = item.has("id") ? item.get("id").getAsString() : "";
-        String price = item.has("startingPrice") ? formatPrice(item.get("startingPrice").getAsDouble()) : "";
         String type = item.has("type") ? item.get("type").getAsString() : "";
         String name = item.has("name") ? item.get("name").getAsString() : "Không tên";
 
-        final double cardWidth = 258;
-        final double contentWidth = 230;
+        final double cardWidth = 188;
+        final double imageWidth = cardWidth - 4;
+        final double imageHeight = 112;
+        final double contentWidth = cardWidth - 28;
 
-        VBox card = new VBox(12);
+        VBox card = new VBox(10);
         card.getStyleClass().add("inventory-item-card");
         card.setPrefWidth(cardWidth);
         card.setMinWidth(cardWidth);
         card.setMaxWidth(cardWidth);
-        card.setMinHeight(336);
-        card.setPrefHeight(336);
+        card.setMinHeight(216);
+        card.setPrefHeight(216);
         card.setAlignment(Pos.TOP_CENTER);
 
         StackPane imageBox = new StackPane();
         imageBox.getStyleClass().add("inventory-card-image-box");
-        imageBox.setPrefSize(cardWidth, 164);
-        imageBox.setMinSize(cardWidth, 164);
-        imageBox.setMaxSize(cardWidth, 164);
+        imageBox.setPrefSize(imageWidth, imageHeight);
+        imageBox.setMinSize(imageWidth, imageHeight);
+        imageBox.setMaxSize(imageWidth, imageHeight);
+        VBox.setMargin(imageBox, new javafx.geometry.Insets(2, 2, 0, 2));
+        Rectangle imageClip = new Rectangle(imageWidth, imageHeight);
+        imageClip.setArcWidth(20);
+        imageClip.setArcHeight(20);
+        imageBox.setClip(imageClip);
 
         ImageView imgView = new ImageView();
-        imgView.setFitWidth(contentWidth);
-        imgView.setFitHeight(140);
-        imgView.setPreserveRatio(true);
+        imgView.setFitWidth(imageWidth);
+        imgView.setFitHeight(imageHeight);
+        imgView.setPreserveRatio(false);
         imgView.setSmooth(true);
         if (item.has("images") && item.getAsJsonArray("images").size() > 0) {
             String imgPath = item.getAsJsonArray("images").get(0).getAsString();
             try {
                 File file = new File(imgPath);
-                if (file.exists()) imgView.setImage(new Image(file.toURI().toString()));
+                if (file.exists()) {
+                    Image image = new Image(file.toURI().toString());
+                    imgView.setImage(image);
+                    applyCoverViewport(imgView, image, imageWidth, imageHeight);
+                }
             } catch (Exception e) {}
         }
         imageBox.getChildren().add(imgView);
@@ -675,35 +701,21 @@ public class InventoryController implements Initializable {
         Label lblType = new Label(type);
         lblType.getStyleClass().add("inventory-card-badge");
         StackPane.setAlignment(lblType, Pos.TOP_LEFT);
-        StackPane.setMargin(lblType, new javafx.geometry.Insets(0));
+        StackPane.setMargin(lblType, new javafx.geometry.Insets(12));
         imageBox.getChildren().add(lblType);
+
+        String approvalStatus = item.has("approvalStatus") ? item.get("approvalStatus").getAsString() : "APPROVED";
+        Label lblApproval = new Label(approvalStatusLabel(approvalStatus));
+        lblApproval.getStyleClass().addAll("inventory-status-badge", approvalStatusStyleClass(approvalStatus));
+        StackPane.setAlignment(lblApproval, Pos.TOP_RIGHT);
+        StackPane.setMargin(lblApproval, new javafx.geometry.Insets(12));
+        imageBox.getChildren().add(lblApproval);
 
         Label lblName = new Label(name);
         lblName.getStyleClass().add("card-name");
         lblName.setWrapText(true);
         lblName.setAlignment(Pos.CENTER_LEFT);
         lblName.setMaxWidth(contentWidth);
-
-        Label priceCaption = new Label("Giá khởi điểm");
-        priceCaption.getStyleClass().add("inventory-card-price-caption");
-
-        Label lblPrice = new Label(price.isBlank() ? "—" : price);
-        lblPrice.getStyleClass().add("inventory-card-price-value");
-        lblPrice.setMaxWidth(contentWidth);
-
-        VBox priceBlock = new VBox(2, priceCaption, lblPrice);
-        priceBlock.setAlignment(Pos.TOP_LEFT);
-        priceBlock.setMaxWidth(contentWidth);
-
-        String approvalStatus = item.has("approvalStatus") ? item.get("approvalStatus").getAsString() : "APPROVED";
-        Label lblApproval = new Label(approvalStatusLabel(approvalStatus));
-        lblApproval.getStyleClass().add("card-id");
-        lblApproval.setStyle("-fx-font-size: 11px; -fx-font-weight: 700;");
-        if ("REJECTED".equals(approvalStatus)) {
-            lblApproval.setStyle("-fx-font-size: 11px; -fx-font-weight: 700; -fx-text-fill: #b91c1c;");
-        } else if ("PENDING".equals(approvalStatus)) {
-            lblApproval.setStyle("-fx-font-size: 11px; -fx-font-weight: 700; -fx-text-fill: #b45309;");
-        }
 
         Button btnDetails = new Button("Xem chi tiết");
         btnDetails.getStyleClass().add("primary-button");
@@ -712,18 +724,10 @@ public class InventoryController implements Initializable {
             if (editable) {
                 selectItemCard(card, id);
             }
-            handleViewDetailsById(id);
+            handleViewDetailsById(id, editable);
         });
 
-        Button btnEdit = new Button("Sửa");
-        btnEdit.getStyleClass().add("secondary-button");
-        btnEdit.setMaxWidth(Double.MAX_VALUE);
-        btnEdit.setOnAction(e -> {
-            selectItemCard(card, id);
-            handleEditSelectedItem();
-        });
-
-        VBox body = new VBox(6, lblName, priceBlock, lblApproval);
+        VBox body = new VBox(6, lblName);
         body.getStyleClass().add("inventory-card-body");
         body.setAlignment(Pos.TOP_LEFT);
         body.setMaxWidth(contentWidth);
@@ -731,12 +735,7 @@ public class InventoryController implements Initializable {
         HBox actions = new HBox(8);
         actions.getStyleClass().add("inventory-card-actions");
         HBox.setHgrow(btnDetails, javafx.scene.layout.Priority.ALWAYS);
-        HBox.setHgrow(btnEdit, javafx.scene.layout.Priority.ALWAYS);
-        if (editable) {
-            actions.getChildren().addAll(btnDetails, btnEdit);
-        } else {
-            actions.getChildren().add(btnDetails);
-        }
+        actions.getChildren().add(btnDetails);
 
         card.getChildren().addAll(imageBox, body, actions);
 
@@ -747,6 +746,34 @@ public class InventoryController implements Initializable {
         });
 
         return card;
+    }
+
+    private void applyCoverViewport(ImageView imageView, Image image, double targetWidth, double targetHeight) {
+        double imageWidth = image.getWidth();
+        double imageHeight = image.getHeight();
+        if (imageWidth <= 0 || imageHeight <= 0) {
+            image.widthProperty().addListener((observable, oldValue, newValue) ->
+                    applyCoverViewport(imageView, image, targetWidth, targetHeight));
+            return;
+        }
+
+        double targetRatio = targetWidth / targetHeight;
+        double imageRatio = imageWidth / imageHeight;
+
+        double viewportWidth = imageWidth;
+        double viewportHeight = imageHeight;
+        double viewportX = 0;
+        double viewportY = 0;
+
+        if (imageRatio > targetRatio) {
+            viewportWidth = imageHeight * targetRatio;
+            viewportX = (imageWidth - viewportWidth) / 2;
+        } else if (imageRatio < targetRatio) {
+            viewportHeight = imageWidth / targetRatio;
+            viewportY = (imageHeight - viewportHeight) / 2;
+        }
+
+        imageView.setViewport(new Rectangle2D(viewportX, viewportY, viewportWidth, viewportHeight));
     }
 
     private void selectItemCard(VBox card, String id) {

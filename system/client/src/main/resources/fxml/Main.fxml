@@ -66,13 +66,6 @@
                         </ImageView>
                     </graphic>
                 </Button>
-                <Button fx:id="btnNotifications" text="Thông báo" onAction="#handleViewNotificationDetail" maxWidth="Infinity" styleClass="menu-button">
-                    <graphic>
-                        <ImageView fitWidth="16" fitHeight="16" preserveRatio="true">
-                            <image><Image url="@../images/icons/notification.png"/></image>
-                        </ImageView>
-                    </graphic>
-                </Button>
             </VBox>
 
             <Button text="Nạp tiền" onAction="#handleOpenDeposit" maxWidth="Infinity" styleClass="deposit-button"/>

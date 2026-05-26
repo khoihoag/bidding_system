@@ -55,6 +55,8 @@
     <bottom>
         <HBox alignment="CENTER_LEFT" styleClass="item-detail-footer">
             <Button fx:id="deleteItemButton" text="Xóa sản phẩm" onAction="#onDeleteButtonClicked" styleClass="item-detail-delete-button"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="editItemButton" text="Sửa sản phẩm" onAction="#onEditButtonClicked" styleClass="item-detail-edit-button"/>
         </HBox>
     </bottom>
 </BorderPane>

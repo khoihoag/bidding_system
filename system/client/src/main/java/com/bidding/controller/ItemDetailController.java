@@ -24,12 +24,14 @@ public class ItemDetailController {
     @FXML private Label descriptionLabel;
     @FXML private VBox specsContainer;
     @FXML private Button deleteItemButton;
+    @FXML private Button editItemButton;
 
     private final List<String> imagePaths = new ArrayList<>();
     private int currentImageIndex = 0;
     private String itemId;
     private Runnable goBackCallback;
     private Consumer<String> deleteCallback;
+    private Consumer<String> editCallback;
 
     public void setGoBackCallback(Runnable goBackCallback) {
         this.goBackCallback = goBackCallback;
@@ -40,6 +42,14 @@ public class ItemDetailController {
         if (deleteItemButton != null) {
             deleteItemButton.setVisible(deleteCallback != null);
             deleteItemButton.setManaged(deleteCallback != null);
+        }
+    }
+
+    public void setEditCallback(Consumer<String> editCallback) {
+        this.editCallback = editCallback;
+        if (editItemButton != null) {
+            editItemButton.setVisible(editCallback != null);
+            editItemButton.setManaged(editCallback != null);
         }
     }
 
@@ -138,6 +148,13 @@ public class ItemDetailController {
     private void onDeleteButtonClicked() {
         if (deleteCallback != null && itemId != null && !itemId.isBlank()) {
             deleteCallback.accept(itemId);
+        }
+    }
+
+    @FXML
+    private void onEditButtonClicked() {
+        if (editCallback != null && itemId != null && !itemId.isBlank()) {
+            editCallback.accept(itemId);
         }
     }
 }
