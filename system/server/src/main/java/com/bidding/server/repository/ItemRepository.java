@@ -46,6 +46,17 @@ public class ItemRepository {
         }
     }
     // Hàm lấy tất cả vật phẩm (Ví dụ để hiển thị lên trang chủ)
+    public long countBySellerId(String sellerId) {
+        try (Session session = factory.openSession()) {
+            Long count = session.createQuery(
+                            "SELECT COUNT(i) FROM Item i WHERE i.sellerId = :sid",
+                            Long.class)
+                    .setParameter("sid", sellerId)
+                    .uniqueResult();
+            return count != null ? count : 0;
+        }
+    }
+
     public List<Item> findByApprovalStatus(ItemApprovalStatus status) {
         try (Session session = factory.openSession()) {
             String hql = "FROM Item i WHERE i.approvalStatus = :status";

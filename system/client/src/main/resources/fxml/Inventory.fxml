@@ -52,22 +52,17 @@
                                         <TextField fx:id="txtItemIdSchedule" visible="false" managed="false"/>
                                     </VBox>
 
-                                    <GridPane hgap="14" vgap="12">
-                                        <columnConstraints>
-                                            <ColumnConstraints percentWidth="50"/>
-                                            <ColumnConstraints percentWidth="50"/>
-                                        </columnConstraints>
-                                        <VBox spacing="6" GridPane.columnIndex="0">
-                                            <Label text="Thời gian đấu giá (phút)" styleClass="field-label"/>
-                                            <TextField fx:id="txtDuration" promptText="VD: 60" styleClass="input-field"/>
-                                        </VBox>
-                                        <VBox spacing="6" GridPane.columnIndex="1">
-                                            <Label text="Bước giảm giá (VNĐ)" styleClass="field-label"/>
-                                            <TextField fx:id="txtDropStepNow" promptText="Chỉ dùng khi đấu giá ngược" disable="true" styleClass="input-field"/>
-                                        </VBox>
-                                    </GridPane>
+                                    <VBox spacing="6">
+                                        <Label text="Thời gian đấu giá (phút)" styleClass="field-label"/>
+                                        <TextField fx:id="txtDuration" promptText="VD: 60" styleClass="input-field"/>
+                                    </VBox>
 
                                     <CheckBox fx:id="chkReverseNow" text="Kích hoạt đấu giá ngược" styleClass="inventory-check"/>
+
+                                    <VBox spacing="6">
+                                        <Label text="Bước giảm giá (VNĐ)" styleClass="field-label"/>
+                                        <TextField fx:id="txtDropStepNow" promptText="Chỉ dùng khi đấu giá ngược" disable="true" styleClass="input-field"/>
+                                    </VBox>
 
                                     <Region VBox.vgrow="ALWAYS"/>
                                     <Button text="Bắt Đầu Phiên Đấu Giá" onAction="#handleStartNow" maxWidth="Infinity" styleClass="primary-button"/>
@@ -91,12 +86,12 @@
                                         </VBox>
                                     </GridPane>
 
+                                    <CheckBox fx:id="chkReverseSchedule" text="Kích hoạt đấu giá ngược" styleClass="inventory-check"/>
+
                                     <VBox spacing="6">
                                         <Label text="Bước giảm giá (VNĐ)" styleClass="field-label"/>
                                         <TextField fx:id="txtDropStepSchedule" promptText="Chỉ dùng khi đấu giá ngược" disable="true" styleClass="input-field"/>
                                     </VBox>
-
-                                    <CheckBox fx:id="chkReverseSchedule" text="Kích hoạt đấu giá ngược" styleClass="inventory-check"/>
 
                                     <Region VBox.vgrow="ALWAYS"/>
                                     <Button text="Đặt Lịch Ngay" onAction="#handleSchedule" maxWidth="Infinity" styleClass="primary-button"/>

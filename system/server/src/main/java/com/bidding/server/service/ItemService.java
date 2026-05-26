@@ -96,6 +96,13 @@ public class ItemService {
         // Hàm này ở bước trước anh em mình vừa thêm vào ItemRepository
         return itemRepository.findBySellerId(actor.getId());
     }
+    public long countItemsBySellerId(String sellerId) {
+        if (sellerId == null || sellerId.isEmpty()) {
+            return 0;
+        }
+        return itemRepository.countBySellerId(sellerId);
+    }
+
     public Item findById(String itemId) {
         // Chỉ đơn giản là gọi xuống Repo để lấy đồ
         return itemRepository.findById(itemId);

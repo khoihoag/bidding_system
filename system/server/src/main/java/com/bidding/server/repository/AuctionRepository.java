@@ -134,6 +134,49 @@ public class AuctionRepository {
         }
     }
 
+    public long countBySellerId(String sellerId) {
+        try (Session session = factory.openSession()) {
+            Long count = session.createQuery(
+                            "SELECT COUNT(a) FROM AuctionEntity a WHERE a.item.sellerId = :sellerId",
+                            Long.class)
+                    .setParameter("sellerId", sellerId)
+                    .uniqueResult();
+            return count != null ? count : 0;
+        }
+    }
+
+    public long countBySellerIdAndStatuses(String sellerId, List<com.bidding.server.enums.AuctionStatus> statuses) {
+        if (statuses == null || statuses.isEmpty()) {
+            return 0;
+        }
+        try (Session session = factory.openSession()) {
+            Long count = session.createQuery(
+                            "SELECT COUNT(a) FROM AuctionEntity a " +
+                                    "WHERE a.item.sellerId = :sellerId AND a.status IN (:statuses)",
+                            Long.class)
+                    .setParameter("sellerId", sellerId)
+                    .setParameter("statuses", statuses)
+                    .uniqueResult();
+            return count != null ? count : 0;
+        }
+    }
+
+    public long countWonByUserId(String userId) {
+        try (Session session = factory.openSession()) {
+            Long count = session.createQuery(
+                            "SELECT COUNT(a) FROM AuctionEntity a " +
+                                    "WHERE a.currentWinner.id = :userId " +
+                                    "AND a.status IN (:statuses)",
+                            Long.class)
+                    .setParameter("userId", userId)
+                    .setParameter("statuses", List.of(
+                            com.bidding.server.enums.AuctionStatus.FINISHED,
+                            com.bidding.server.enums.AuctionStatus.PAID))
+                    .uniqueResult();
+            return count != null ? count : 0;
+        }
+    }
+
     public AuctionEntity findByItemId(String itemId) {
         try (Session session = factory.openSession()) {
             return session.createQuery(

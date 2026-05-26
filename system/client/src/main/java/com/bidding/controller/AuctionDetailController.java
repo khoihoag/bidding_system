@@ -16,6 +16,7 @@ import javafx.scene.control.ScrollPane; // ĐÃ THÊM IMPORT
 import javafx.scene.control.SplitPane;  // ĐÃ THÊM IMPORT
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -41,6 +42,9 @@ public class AuctionDetailController {
     @FXML private Label showcaseTimeLabel;
     @FXML private Label showcasePriceLabel;
     @FXML private Label showcaseWinnerLabel;
+    @FXML private Label sellerAvatarLabel;
+    @FXML private Label sellerNameLabel;
+    @FXML private Label sellerMetaLabel;
 
     // ================= BIẾN CỦA MÀN 2 (TRADING ROOM - PHÒNG GIAO DỊCH) =================
     @FXML private VBox manualBidContainer;
@@ -79,6 +83,18 @@ public class AuctionDetailController {
     private AuctionDetailResponseHandler responseHandler;
     private final List<String> showcaseImagePaths = new ArrayList<>();
     private int currentShowcaseImageIndex = 0;
+    private String currentSellerId;
+    private String currentSellerName;
+    private Dialog<Void> sellerProfileDialog;
+    private Label sellerProfileNameValue;
+    private Label sellerProfileEmailValue;
+    private Label sellerProfileCreatedAuctionsValue;
+    private Label sellerProfileSuccessfulAuctionsValue;
+    private Label sellerProfileCanceledAuctionsValue;
+    private Label sellerProfileWonItemsValue;
+    private Label sellerProfileAuctionProductsValue;
+    private boolean sellerProfileLoading;
+    private int sellerProfileRequestVersion;
 
     @FXML
     public void initialize() {
@@ -322,6 +338,13 @@ public class AuctionDetailController {
     public void renderSothebysItemDetails(JsonObject item) {
         if (item == null) return;
 
+        currentSellerId = getStringSafe(item, "sellerId");
+        currentSellerName = getStringSafe(item, "sellerFullName");
+        if (currentSellerName.isBlank()) {
+            currentSellerName = "Người bán";
+        }
+        updateSellerCard();
+
         // 1. Đổ Mô Tả
         showcaseDescLabel.setText(item.has("description") && !item.get("description").isJsonNull()
                 ? item.get("description").getAsString() : "Chưa có mô tả chi tiết.");
@@ -384,6 +407,219 @@ public class AuctionDetailController {
                 addSpecRow(key, specs.get(key).getAsString());
             }
         }
+    }
+
+    private void updateSellerCard() {
+        if (sellerNameLabel != null) {
+            sellerNameLabel.setText(currentSellerName);
+        }
+        if (sellerMetaLabel != null) {
+            sellerMetaLabel.setText(currentSellerId == null || currentSellerId.isBlank()
+                    ? "Người bán đã xác minh"
+                    : "ID: " + currentSellerId + " • Người bán đã xác minh");
+        }
+        if (sellerAvatarLabel != null) {
+            sellerAvatarLabel.setText(buildInitials(currentSellerName));
+        }
+    }
+
+    @FXML
+    private void handleViewSellerProfile() {
+        if (currentSellerId == null || currentSellerId.isBlank()) {
+            AuctionDetailItemDialog.showWarning(AuctionDetailController.class, "Chưa có dữ liệu người bán cho phiên này.");
+            return;
+        }
+
+        showSellerProfileDialog();
+        sellerProfileLoading = true;
+        int requestVersion = ++sellerProfileRequestVersion;
+        network.requestSellerProfile(currentSellerId);
+
+        javafx.animation.PauseTransition timeout =
+                new javafx.animation.PauseTransition(javafx.util.Duration.seconds(5));
+        timeout.setOnFinished(event -> {
+            if (sellerProfileLoading && requestVersion == sellerProfileRequestVersion) {
+                renderSellerProfileError("Chưa nhận được phản hồi từ server. Hãy khởi động lại server để nạp action GET_SELLER_PROFILE.");
+            }
+        });
+        timeout.play();
+    }
+
+    private void showSellerProfileDialog() {
+        sellerProfileDialog = new Dialog<>();
+        sellerProfileDialog.setTitle("Hồ sơ người bán");
+
+        try {
+            sellerProfileDialog.getDialogPane().getStylesheets()
+                    .add(getClass().getResource("/css/style.css").toExternalForm());
+        } catch (Exception ignored) {
+        }
+
+        VBox content = new VBox(18);
+        content.getStyleClass().add("seller-profile-dialog");
+
+        HBox header = new HBox(14);
+        header.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
+        StackPane avatar = new StackPane();
+        avatar.getStyleClass().add("seller-profile-avatar");
+        Label avatarText = new Label(buildInitials(currentSellerName));
+        avatarText.getStyleClass().add("seller-profile-avatar-text");
+        avatar.getChildren().add(avatarText);
+
+        VBox headerText = new VBox(4);
+        Label title = new Label("Hồ sơ người bán");
+        title.getStyleClass().add("seller-profile-title");
+        Label subtitle = new Label("Thông tin tổng quan và hiệu suất đấu giá");
+        subtitle.getStyleClass().add("seller-profile-subtitle");
+        headerText.getChildren().addAll(title, subtitle);
+        header.getChildren().addAll(avatar, headerText);
+
+        VBox infoList = new VBox(0);
+        infoList.getStyleClass().add("seller-profile-info-list");
+        sellerProfileNameValue = new Label(currentSellerName);
+        sellerProfileEmailValue = new Label("Đang tải...");
+        infoList.getChildren().addAll(
+                createProfileInfoRow("Họ và tên", sellerProfileNameValue),
+                createProfileInfoRow("Email", sellerProfileEmailValue)
+        );
+
+        GridPane statsGrid = new GridPane();
+        statsGrid.setHgap(12);
+        statsGrid.setVgap(12);
+        statsGrid.getColumnConstraints().addAll(
+                createPercentColumn(50),
+                createPercentColumn(50)
+        );
+
+        sellerProfileCreatedAuctionsValue = addProfileStat(statsGrid, 0, "Số phiên đã tạo");
+        sellerProfileSuccessfulAuctionsValue = addProfileStat(statsGrid, 1, "Số phiên thành công");
+        sellerProfileCanceledAuctionsValue = addProfileStat(statsGrid, 2, "Số phiên bị hủy");
+        sellerProfileWonItemsValue = addProfileStat(statsGrid, 3, "Số chiến lợi phẩm");
+        sellerProfileAuctionProductsValue = addProfileStat(statsGrid, 4, "Số sản phẩm đấu giá");
+
+        content.getChildren().addAll(header, infoList, statsGrid);
+        sellerProfileDialog.getDialogPane().setContent(content);
+        sellerProfileDialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        sellerProfileDialog.show();
+    }
+
+    private HBox createProfileInfoRow(String label, Label valueLabel) {
+        HBox row = new HBox(16);
+        row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        row.getStyleClass().add("seller-profile-info-row");
+
+        Label keyLabel = new Label(label);
+        keyLabel.getStyleClass().add("seller-profile-info-label");
+        keyLabel.setMinWidth(120);
+        keyLabel.setPrefWidth(120);
+
+        valueLabel.getStyleClass().add("seller-profile-info-value");
+        valueLabel.setWrapText(true);
+        HBox.setHgrow(valueLabel, javafx.scene.layout.Priority.ALWAYS);
+
+        row.getChildren().addAll(keyLabel, valueLabel);
+        return row;
+    }
+
+    private javafx.scene.layout.ColumnConstraints createPercentColumn(double percentWidth) {
+        javafx.scene.layout.ColumnConstraints column = new javafx.scene.layout.ColumnConstraints();
+        column.setPercentWidth(percentWidth);
+        column.setHgrow(javafx.scene.layout.Priority.ALWAYS);
+        return column;
+    }
+
+    private Label addProfileStat(GridPane grid, int index, String caption) {
+        VBox statCard = new VBox(5);
+        statCard.getStyleClass().add("seller-profile-stat-card");
+
+        Label value = new Label("...");
+        value.getStyleClass().add("seller-profile-stat-value");
+
+        Label captionLabel = new Label(caption);
+        captionLabel.getStyleClass().add("seller-profile-stat-caption");
+        captionLabel.setWrapText(true);
+
+        statCard.getChildren().addAll(value, captionLabel);
+        GridPane.setColumnIndex(statCard, index % 2);
+        GridPane.setRowIndex(statCard, index / 2);
+        grid.getChildren().add(statCard);
+        return value;
+    }
+
+    public void renderSellerProfile(JsonObject response) {
+        if (sellerProfileDialog == null) {
+            return;
+        }
+
+        sellerProfileLoading = false;
+        String status = getStringSafe(response, "status");
+        if (!"SUCCESS".equals(status)) {
+            String message = getStringSafe(response, "message");
+            renderSellerProfileError(message.isBlank() ? "Không tải được hồ sơ người bán." : message);
+            return;
+        }
+
+        sellerProfileNameValue.setText(getStringOrFallback(response, "fullName", currentSellerName));
+        sellerProfileEmailValue.setText(getStringOrFallback(response, "email", "Chưa có email"));
+        sellerProfileCreatedAuctionsValue.setText(getIntString(response, "createdAuctions"));
+        sellerProfileSuccessfulAuctionsValue.setText(getIntString(response, "successfulAuctions"));
+        sellerProfileCanceledAuctionsValue.setText(getIntString(response, "canceledAuctions"));
+        sellerProfileWonItemsValue.setText(getIntString(response, "wonItems"));
+        sellerProfileAuctionProductsValue.setText(getIntString(response, "auctionProducts"));
+    }
+
+    public boolean isSellerProfileLoading() {
+        return sellerProfileLoading;
+    }
+
+    public void renderSellerProfileError(String message) {
+        sellerProfileLoading = false;
+        if (sellerProfileEmailValue != null) {
+            sellerProfileEmailValue.setText(message == null || message.isBlank()
+                    ? "Không tải được hồ sơ người bán."
+                    : message);
+        }
+        if (sellerProfileNameValue != null && (sellerProfileNameValue.getText() == null || sellerProfileNameValue.getText().isBlank())) {
+            sellerProfileNameValue.setText(currentSellerName);
+        }
+        setProfileStats("-");
+    }
+
+    private void setProfileStats(String value) {
+        sellerProfileCreatedAuctionsValue.setText(value);
+        sellerProfileSuccessfulAuctionsValue.setText(value);
+        sellerProfileCanceledAuctionsValue.setText(value);
+        sellerProfileWonItemsValue.setText(value);
+        sellerProfileAuctionProductsValue.setText(value);
+    }
+
+    private String getIntString(JsonObject json, String key) {
+        return json != null && json.has(key) && !json.get(key).isJsonNull()
+                ? String.valueOf(json.get(key).getAsInt())
+                : "0";
+    }
+
+    private String getStringOrFallback(JsonObject json, String key, String fallback) {
+        String value = getStringSafe(json, key);
+        return value.isBlank() ? fallback : value;
+    }
+
+    private String getStringSafe(JsonObject json, String key) {
+        return json != null && json.has(key) && !json.get(key).isJsonNull()
+                ? json.get(key).getAsString()
+                : "";
+    }
+
+    private String buildInitials(String name) {
+        if (name == null || name.isBlank()) {
+            return "--";
+        }
+
+        String[] parts = name.trim().split("\\s+");
+        String first = parts[0].substring(0, 1);
+        String second = parts.length > 1 ? parts[parts.length - 1].substring(0, 1) : "";
+        return (first + second).toUpperCase(java.util.Locale.ROOT);
     }
 
     @FXML

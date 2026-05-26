@@ -27,6 +27,13 @@ public class AuctionDetailNetworkGateway {
         networkClient.sendJson(request);
     }
 
+    public void requestSellerProfile(String sellerId) {
+        JsonObject request = new JsonObject();
+        request.addProperty("action", "GET_SELLER_PROFILE");
+        request.addProperty("sellerId", sellerId);
+        networkClient.sendJson(request);
+    }
+
     public void sendBid(String auctionId, double amount) {
         JsonObject request = new JsonObject();
         request.addProperty("action", "BID");

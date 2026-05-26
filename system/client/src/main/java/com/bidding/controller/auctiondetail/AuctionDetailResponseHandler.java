@@ -45,6 +45,7 @@ public class AuctionDetailResponseHandler {
             case "REGISTER_AUTO_BID_REPLY" -> handleAutoBidReply(json);
             case "NEW_BID" -> handleRealtimeBidUpdate(json);
             case "AUCTIONS_LIST" -> handleAuctionsListForInfo(json);
+            case "SELLER_PROFILE_REPLY" -> handleSellerProfileReply(json);
             case "ERROR" -> handleError(json);
             default -> { }
         }
@@ -195,6 +196,10 @@ public class AuctionDetailResponseHandler {
         }
     }
 
+    private void handleSellerProfileReply(JsonObject json) {
+        Platform.runLater(() -> controller.renderSellerProfile(json));
+    }
+
     private void applyAuctionInfo(String itemName,
                                   double currentPrice,
                                   String status,
@@ -236,6 +241,11 @@ public class AuctionDetailResponseHandler {
     private void handleError(JsonObject json) {
         String message = AuctionDetailFormats.getStringSafe(json, "message");
         Platform.runLater(() -> {
+            if (controller.isSellerProfileLoading()) {
+                controller.renderSellerProfileError(message);
+                return;
+            }
+
             boolean pendingManualBid = ui.isBidLoading();
             boolean pendingAutoBid = ui.isAutoBidLoading();
 

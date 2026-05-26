@@ -234,6 +234,34 @@ public class AuctionService {
         return repository;
     }
 
+    public long countAuctionsCreatedBySeller(String sellerId) {
+        if (sellerId == null || sellerId.isEmpty()) {
+            return 0;
+        }
+        return repository.countBySellerId(sellerId);
+    }
+
+    public long countSuccessfulAuctionsBySeller(String sellerId) {
+        if (sellerId == null || sellerId.isEmpty()) {
+            return 0;
+        }
+        return repository.countBySellerIdAndStatuses(sellerId, List.of(AuctionStatus.FINISHED, AuctionStatus.PAID));
+    }
+
+    public long countCanceledAuctionsBySeller(String sellerId) {
+        if (sellerId == null || sellerId.isEmpty()) {
+            return 0;
+        }
+        return repository.countBySellerIdAndStatuses(sellerId, List.of(AuctionStatus.CANCELED, AuctionStatus.FAILED));
+    }
+
+    public long countWonItemsByUser(String userId) {
+        if (userId == null || userId.isEmpty()) {
+            return 0;
+        }
+        return repository.countWonByUserId(userId);
+    }
+
     public void forceCloseManual(String auctionId) {
         Auction auction = activeAuctions.get(auctionId);
         if (auction == null) {

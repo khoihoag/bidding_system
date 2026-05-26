@@ -1112,6 +1112,82 @@
     -fx-underline: true;
 }
 
+.seller-profile-dialog {
+    -fx-background-color: #ffffff;
+    -fx-padding: 18;
+    -fx-min-width: 520;
+}
+
+.seller-profile-avatar {
+    -fx-background-color: #f3e6c4;
+    -fx-background-radius: 999;
+    -fx-min-width: 56;
+    -fx-min-height: 56;
+    -fx-pref-width: 56;
+    -fx-pref-height: 56;
+}
+
+.seller-profile-avatar-text {
+    -fx-text-fill: #785600;
+    -fx-font-size: 16px;
+    -fx-font-weight: 900;
+}
+
+.seller-profile-title {
+    -fx-text-fill: #1a1c1c;
+    -fx-font-size: 22px;
+    -fx-font-weight: 900;
+}
+
+.seller-profile-subtitle {
+    -fx-text-fill: #6b6560;
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+}
+
+.seller-profile-info-list {
+    -fx-background-color: #fafafa;
+    -fx-background-radius: 10;
+    -fx-border-color: #e7e2d8;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+}
+
+.seller-profile-info-row {
+    -fx-padding: 12 14;
+    -fx-border-color: transparent transparent #eee9df transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.seller-profile-info-label,
+.seller-profile-stat-caption {
+    -fx-text-fill: #6b6560;
+    -fx-font-size: 12px;
+    -fx-font-weight: 800;
+}
+
+.seller-profile-info-value {
+    -fx-text-fill: #1a1c1c;
+    -fx-font-size: 14px;
+    -fx-font-weight: 800;
+}
+
+.seller-profile-stat-card {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 10;
+    -fx-border-color: #e7e2d8;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 14;
+    -fx-min-height: 82;
+}
+
+.seller-profile-stat-value {
+    -fx-text-fill: #785600;
+    -fx-font-size: 24px;
+    -fx-font-weight: 900;
+}
+
 .auction-detail-about-title {
     -fx-text-fill: #1a1c1c;
     -fx-font-size: 24px;

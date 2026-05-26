@@ -89,14 +89,14 @@
                             <VBox spacing="14" styleClass="auction-detail-seller-card">
                                 <HBox alignment="CENTER_LEFT" spacing="14">
                                     <StackPane styleClass="auction-detail-seller-avatar">
-                                        <Label text="BV" styleClass="auction-detail-seller-avatar-text"/>
+                                        <Label fx:id="sellerAvatarLabel" text="--" styleClass="auction-detail-seller-avatar-text"/>
                                     </StackPane>
                                     <VBox spacing="3" HBox.hgrow="ALWAYS">
-                                        <Label text="BidVault Auction House" styleClass="auction-detail-seller-name"/>
-                                        <Label text="Người bán đã xác minh • Đấu giá bảo đảm" styleClass="auction-detail-seller-meta"/>
+                                        <Label fx:id="sellerNameLabel" text="Đang tải người bán..." styleClass="auction-detail-seller-name"/>
+                                        <Label fx:id="sellerMetaLabel" text="Người bán đã xác minh • Đấu giá bảo đảm" styleClass="auction-detail-seller-meta"/>
                                     </VBox>
                                 </HBox>
-                                <Button text="Xem hồ sơ người bán" maxWidth="Infinity" styleClass="auction-detail-seller-link"/>
+                                <Button text="Xem hồ sơ người bán" onAction="#handleViewSellerProfile" maxWidth="Infinity" styleClass="auction-detail-seller-link"/>
                             </VBox>
                         </VBox>
                     </HBox>

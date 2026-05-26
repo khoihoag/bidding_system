@@ -180,6 +180,47 @@ public class AuctionController {
         }
     }
 
+    public void handleGetSellerProfile(JsonObject request) {
+        JsonObject reply = new JsonObject();
+        reply.addProperty("action", "SELLER_PROFILE_REPLY");
+
+        try {
+            String sellerId = request.has("sellerId") && !request.get("sellerId").isJsonNull()
+                    ? request.get("sellerId").getAsString()
+                    : "";
+
+            if (sellerId.isBlank()) {
+                reply.addProperty("status", "ERROR");
+                reply.addProperty("message", "Thiếu ID người bán.");
+                client.sendMessage(reply.toString());
+                return;
+            }
+
+            com.bidding.server.model.user.User seller = baoVe.findById(sellerId);
+            if (seller == null) {
+                reply.addProperty("status", "ERROR");
+                reply.addProperty("message", "Không tìm thấy hồ sơ người bán.");
+                client.sendMessage(reply.toString());
+                return;
+            }
+
+            reply.addProperty("status", "SUCCESS");
+            reply.addProperty("sellerId", seller.getId());
+            reply.addProperty("fullName", seller.getFullName());
+            reply.addProperty("email", seller.getEmail());
+            reply.addProperty("createdAuctions", tongQuan.countAuctionsCreatedBySeller(sellerId));
+            reply.addProperty("successfulAuctions", tongQuan.countSuccessfulAuctionsBySeller(sellerId));
+            reply.addProperty("canceledAuctions", tongQuan.countCanceledAuctionsBySeller(sellerId));
+            reply.addProperty("wonItems", tongQuan.countWonItemsByUser(sellerId));
+            reply.addProperty("auctionProducts", quanLyKho.countItemsBySellerId(sellerId));
+            client.sendMessage(reply.toString());
+        } catch (Exception e) {
+            reply.addProperty("status", "ERROR");
+            reply.addProperty("message", "Không thể tải hồ sơ người bán: " + e.getMessage());
+            client.sendMessage(reply.toString());
+        }
+    }
+
     public void handleBid(JsonObject request) {
         if (client.getLoggedInUser() == null) {
             client.sendError("Chưa đăng nhập mà đòi đấu giá à?");
