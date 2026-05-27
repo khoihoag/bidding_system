@@ -70,6 +70,8 @@ public class ItemController {
             if (price < 0) {
                 throw new IllegalArgumentException("Giá khởi điểm phải lớn hơn hoặc bằng 0.");
             }
+            double bidStep = requireDouble(request, "bidStep");
+            validateBidStep(price, bidStep);
             String type = request.get("type").getAsString();
 
             com.bidding.server.enums.ItemCondition condition = null;
@@ -105,6 +107,7 @@ public class ItemController {
                     return;
             }
 
+            newItem.setBidStep(bidStep);
             quanLyKho.createItem(client.getLoggedInUser(), newItem);
             client.sendMessage("{\"action\": \"ADD_ITEM_REPLY\", \"status\": \"SUCCESS\", \"message\": \"San pham da duoc gui va dang cho admin duyet.\"}");
 
@@ -124,6 +127,15 @@ public class ItemController {
             throw new IllegalArgumentException(fieldName + " không hợp lệ.");
         }
         return result;
+    }
+
+    private void validateBidStep(double price, double bidStep) {
+        if (bidStep <= 0) {
+            throw new IllegalArgumentException("Bước giá phải lớn hơn 0.");
+        }
+        if (bidStep > price) {
+            throw new IllegalArgumentException("Bước giá không được lớn hơn giá trị sản phẩm.");
+        }
     }
 
     private int requireInt(JsonObject request, String fieldName) {
@@ -164,6 +176,8 @@ public class ItemController {
             if (price < 0) {
                 throw new IllegalArgumentException("Giá khởi điểm phải lớn hơn hoặc bằng 0.");
             }
+            double bidStep = requireDouble(request, "bidStep");
+            validateBidStep(price, bidStep);
 
             com.bidding.server.enums.ItemCondition condition = null;
             if (request.has("condition") && !request.get("condition").isJsonNull()) {
@@ -194,6 +208,7 @@ public class ItemController {
                     return;
             }
 
+            updateData.setBidStep(bidStep);
             quanLyKho.updateItem(client.getLoggedInUser(), itemId, updateData);
             client.sendMessage("{\"action\": \"UPDATE_ITEM_REPLY\", \"status\": \"SUCCESS\"}");
 
@@ -308,6 +323,11 @@ public class ItemController {
         Auction activeAuction = tongQuan.findActiveAuctionByItemId(itemId);
         if (activeAuction != null) {
             String activeStatus = activeAuction.getStatus() != null ? activeAuction.getStatus().name() : "UNKNOWN";
+            itemJson.addProperty("auctionId", activeAuction.getId());
+            itemJson.addProperty("auctionPrice", activeAuction.getCurrentPrice() != null ? activeAuction.getCurrentPrice().get() : 0.0);
+            if (activeAuction.getEndTime() != null) {
+                itemJson.addProperty("paymentDeadline", activeAuction.getEndTime().plusMinutes(10).toString());
+            }
             itemJson.addProperty("auctionStatus", activeStatus);
             itemJson.addProperty("auctionLabel", toAuctionLabel(activeStatus, activeAuction.getCurrentWinner() != null));
             return;
@@ -321,11 +341,19 @@ public class ItemController {
         }
 
         String status = auction.getStatus() != null ? auction.getStatus().name() : "UNKNOWN";
+        itemJson.addProperty("auctionId", auction.getId());
+        itemJson.addProperty("auctionPrice", auction.getCurrentPrice() != null ? auction.getCurrentPrice() : 0.0);
+        if (auction.getEndTime() != null) {
+            itemJson.addProperty("paymentDeadline", auction.getEndTime().plusMinutes(10).toString());
+        }
         itemJson.addProperty("auctionStatus", status);
         itemJson.addProperty("auctionLabel", toAuctionLabel(status, auction.getCurrentWinner() != null));
     }
 
     private String toAuctionLabel(String status, boolean hasWinner) {
+        if ("PAID".equals(status)) {
+            return "Đã thanh toán";
+        }
         if ("FINISHED".equals(status)) {
             return hasWinner ? "Thành công" : "Đã kết thúc";
         }

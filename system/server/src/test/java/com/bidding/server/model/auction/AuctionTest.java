@@ -120,6 +120,19 @@ class AuctionTest {
     }
 
     @Test
+    @DisplayName("placeBid() - Ném InvalidBidAmountException khi giá đặt chưa đạt bước giá sản phẩm")
+    void testPlaceBidThrowsExceptionWhenAmountBelowBidStep() {
+        when(mockItem.getBidStep()).thenReturn(25.0);
+        auction.start();
+
+        InvalidBidAmountException exception = assertThrows(InvalidBidAmountException.class, () -> {
+            auction.placeBid(mockUser1, 120.0);
+        });
+
+        assertEquals("Giá đặt phải lớn hơn hoặc bằng 125.0.", exception.getMessage());
+    }
+
+    @Test
     @DisplayName("placeBid() - Xử lý nhiều người đặt giá liên tiếp (Luồng cơ bản)")
     void testMultipleBidsSequential() {
         auction.start();

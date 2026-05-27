@@ -74,6 +74,7 @@ public class ClientHandler implements Runnable {
                         case "GET_AUCTIONS": auctionController.handleGetAuctions(); break;
                         case "GET_SELLER_PROFILE": auctionController.handleGetSellerProfile(request); break;
                         case "BID": auctionController.handleBid(request); break;
+                        case "PAY_AUCTION": auctionController.handlePayAuction(request); break;
                         case "REGISTER_AUTO_BID": auctionController.handleRegisterAutoBid(request);break;
                         //lich su ca nhan
                         case "GET_HISTORY": auctionController.handleGetHistory(); break;

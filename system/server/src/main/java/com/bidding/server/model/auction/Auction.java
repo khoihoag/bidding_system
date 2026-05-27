@@ -116,7 +116,12 @@ public class Auction extends Entity {
 
             // Kiểm tra giá đặt có hợp lệ không
             if (!isValidBid(amount)) {
-                throw new InvalidBidAmountException("Giá đặt thấp hơn hoặc bằng giá hiện tại.");
+                double requiredBidStep = getRequiredBidStep();
+                if (requiredBidStep <= 0) {
+                    throw new InvalidBidAmountException("Giá đặt thấp hơn hoặc bằng giá hiện tại.");
+                }
+                double minimumBid = expectedPrice + requiredBidStep;
+                throw new InvalidBidAmountException("Giá đặt phải lớn hơn hoặc bằng " + minimumBid + ".");
             }
 
             // 3. Ngăn chặn Lost Update bằng AtomicReference.compareAndSet
@@ -194,7 +199,15 @@ public class Auction extends Entity {
 
     // Kiểm tra giá đặt hợp lệ
     private boolean isValidBid(double amount) {
-        return amount > currentPrice.get();
+        double requiredBidStep = getRequiredBidStep();
+        if (requiredBidStep <= 0) {
+            return amount > currentPrice.get();
+        }
+        return amount >= currentPrice.get() + requiredBidStep;
+    }
+
+    private double getRequiredBidStep() {
+        return item != null ? Math.max(0.0, item.getBidStep()) : 0.0;
     }
 
     private boolean checkAntiSnipe() {

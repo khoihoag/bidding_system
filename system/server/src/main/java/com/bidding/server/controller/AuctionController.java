@@ -118,6 +118,21 @@ public class AuctionController {
         }
     }
 
+    public void handlePayAuction(JsonObject request) {
+        if (client.getLoggedInUser() == null) {
+            client.sendError("Bạn phải đăng nhập để thanh toán.");
+            return;
+        }
+
+        try {
+            String auctionId = request.get("auctionId").getAsString();
+            tongQuan.payWonAuction(auctionId, client.getLoggedInUser());
+            client.sendMessage("{\"action\": \"PAY_AUCTION_REPLY\", \"status\": \"SUCCESS\", \"auctionId\": \"" + auctionId + "\"}");
+        } catch (Exception e) {
+            client.sendError("Lỗi khi thanh toán phiên đấu giá: " + e.getMessage());
+        }
+    }
+
     public void handleGetAuctions() {
         try {
             List<Auction> activeAuctions = tongQuan.getAllAuctionsForDisplay();
@@ -138,6 +153,15 @@ public class AuctionController {
                 // 3. Cờ đấu giá ngược & Follow
                 aucObj.addProperty("isReverse", auc.isReverse());
                 aucObj.addProperty("dropStep", auc.getDropStep());
+                Item displayItem = auc.getItem();
+                if (displayItem != null && displayItem.getBidStep() <= 0 && displayItem.getId() != null) {
+                    Item freshItem = quanLyKho.findById(displayItem.getId());
+                    if (freshItem != null) {
+                        displayItem = freshItem;
+                        auc.getItem().setBidStep(freshItem.getBidStep());
+                    }
+                }
+                aucObj.addProperty("bidStep", displayItem != null ? displayItem.getBidStep() : 0.0);
 
                 boolean isFollowing = false;
                 if (client.getLoggedInUser() != null) {
@@ -153,8 +177,8 @@ public class AuctionController {
                 }
 
                 // 5. Đóng gói Item
-                if (auc.getItem() != null) {
-                    aucObj.add("item", ItemJsonMapper.toJson(auc.getItem()));
+                if (displayItem != null) {
+                    aucObj.add("item", ItemJsonMapper.toJson(displayItem));
                 }
 
                 // CHỈ ADD DUY NHẤT 1 LẦN Ở ĐÂY

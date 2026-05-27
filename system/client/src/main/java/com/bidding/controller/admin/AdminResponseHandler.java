@@ -149,9 +149,11 @@ public class AdminResponseHandler {
             state.allAuctions.add(new AuctionRow(id, title, status, price, itemJson));
             switch (status) {
                 case "RUNNING" -> running++;
-                case "FINISHED", "PAID", "FAILED" -> {
+                case "FINISHED", "PAID", "FAILED", "CANCELED" -> {
                     ended++;
-                    totalRevenue += price;
+                    if ("PAID".equals(status)) {
+                        totalRevenue += price;
+                    }
                 }
                 default -> other++;
             }

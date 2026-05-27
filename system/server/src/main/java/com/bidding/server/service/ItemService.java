@@ -43,6 +43,7 @@ public class ItemService {
         existingItem.setName(updateData.getName());
         existingItem.setDescription(updateData.getDescription());
         existingItem.setStartingPrice(updateData.getStartingPrice());
+        existingItem.setBidStep(updateData.getBidStep());
         existingItem.setCondition(updateData.getCondition());
         existingItem.setImages(updateData.getImages());
 

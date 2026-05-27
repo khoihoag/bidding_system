@@ -122,19 +122,29 @@ public class ClientManager implements AuctionObserver {
         if (auction != null && auction.getItem() != null && auction.getItem().getName() != null) {
             itemName = auction.getItem().getName();
         }
+        String auctionStatus = auction != null && auction.getStatus() != null
+                ? auction.getStatus().name()
+                : "UNKNOWN";
+        boolean canceled = "CANCELED".equals(auctionStatus);
 
         JsonObject notifyJson = new JsonObject();
         notifyJson.addProperty("action", "GLOBAL_NOTIFY");
         notifyJson.addProperty("message", "Phiên đấu giá [" + itemName + "] đã kết thúc!");
+        if (canceled) {
+            notifyJson.addProperty("message", "Phiên đấu giá [" + itemName + "] đã bị admin buộc dừng.");
+        }
         broadcast(notifyJson.toString());
 
         // 2. Bắn thêm gói tin CHI TIẾT để UI hiển thị kết quả
         JsonObject endJson = new JsonObject();
         endJson.addProperty("action", "AUCTION_FINISHED");
         endJson.addProperty("auctionId", event.getAuctionId());
+        endJson.addProperty("status", auctionStatus);
 
         // Giá chốt: ưu tiên dùng convenience getter để lấy đúng giá từ RAM model (AtomicReference)
-        double finalPrice = event.getNewPrice() != null ? event.getNewPrice() : 0.0;
+        double finalPrice = event.getNewPrice() != null
+                ? event.getNewPrice()
+                : auction != null && auction.getCurrentPrice() != null ? auction.getCurrentPrice().get() : 0.0;
 
         // Người thắng cuối cùng: lấy từ Auction nếu có, fallback để chạy test/mock
         String winnerName;

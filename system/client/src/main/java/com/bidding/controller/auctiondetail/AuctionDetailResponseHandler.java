@@ -66,10 +66,17 @@ public class AuctionDetailResponseHandler {
 
     private void handleAuctionFinished(JsonObject json) {
         String winner = json.get("winnerId").getAsString();
+        String status = json.has("status") && !json.get("status").isJsonNull()
+                ? json.get("status").getAsString()
+                : "FINISHED";
         Platform.runLater(() -> {
             countdown.stop();
-            ui.showAuctionFinished(winner);
-            ui.applyAuctionAccess("FINISHED", false);
+            if ("CANCELED".equals(status)) {
+                ui.showResult("Phiên đấu giá đã bị admin buộc dừng.");
+            } else {
+                ui.showAuctionFinished(winner);
+            }
+            ui.applyAuctionAccess(status, false);
         });
     }
 
@@ -118,6 +125,9 @@ public class AuctionDetailResponseHandler {
         String newEndTimeStr = json.has("newEndTime") ? json.get("newEndTime").getAsString() : null;
 
         Platform.runLater(() -> {
+            if (state.currentSelectedAuction != null) {
+                state.currentSelectedAuction.addProperty("currentPrice", newPrice);
+            }
             ui.updateCurrentPrice(newPrice);
             ui.updateWinner(winnerId);
             chartBinder.addRealtimePoint(displayTime, newPrice);
@@ -145,6 +155,10 @@ public class AuctionDetailResponseHandler {
 
             if (auction.has("item") && auction.get("item").isJsonObject()) {
                 JsonObject item = auction.getAsJsonObject("item");
+                if ((!item.has("bidStep") || item.get("bidStep").isJsonNull() || item.get("bidStep").getAsDouble() <= 0)
+                        && auction.has("bidStep") && !auction.get("bidStep").isJsonNull()) {
+                    item.addProperty("bidStep", auction.get("bidStep").getAsDouble());
+                }
                 itemName = AuctionDetailFormats.getStringSafe(item, "name");
 
                 // ==============================================================

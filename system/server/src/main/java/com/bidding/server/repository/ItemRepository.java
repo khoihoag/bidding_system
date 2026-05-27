@@ -97,7 +97,7 @@ public class ItemRepository {
             // SỬA: Dùng AuctionEntity (là Entity thực sự) thay vì Auction (Model)
             String hql = "SELECT a.item FROM AuctionEntity a " +
                     "WHERE a.currentWinner.id = :uid " +
-                    "AND a.status = 'FINISHED'";
+                    "AND a.status IN ('FINISHED', 'PAID')";
 
             return session.createQuery(hql, Item.class)
                     .setParameter("uid", userId)

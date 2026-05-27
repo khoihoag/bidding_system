@@ -19,6 +19,7 @@ public final class ItemJsonMapper {
         itemObj.addProperty("id", item.getId());
         itemObj.addProperty("name", item.getName());
         itemObj.addProperty("startingPrice", item.getStartingPrice());
+        itemObj.addProperty("bidStep", item.getBidStep());
         itemObj.addProperty("condition", item.getCondition() != null ? item.getCondition().toString() : "NEW");
         itemObj.addProperty("type", item.getCategory());
         itemObj.addProperty("description", item.getDescription());

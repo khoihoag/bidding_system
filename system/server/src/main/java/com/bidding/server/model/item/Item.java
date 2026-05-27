@@ -25,6 +25,9 @@ public abstract class Item extends Entity {
     @Column(name = "starting_price")
     private double startingPrice;
 
+    @Column(name = "bid_step", nullable = false)
+    private double bidStep;
+
     // 2. CẤU HÌNH RÕ RÀNG BẢNG CHỨA ẢNH ĐỂ KHÔNG BỊ LỖI KHÓA NGOẠI
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "item_images", joinColumns = @JoinColumn(name = "item_id"))
@@ -67,6 +70,7 @@ public abstract class Item extends Entity {
         this.name = name;
         this.description = description;
         this.startingPrice = startingPrice;
+        this.bidStep = 0.0;
         this.images = images;
         this.sellerId = sellerId;
         this.sellerFullName = sellerFullName;
@@ -88,6 +92,8 @@ public abstract class Item extends Entity {
     public void setDescription(String description) { this.description = description; }
     public double getStartingPrice() { return startingPrice; }
     public void setStartingPrice(double startingPrice) { this.startingPrice = startingPrice; }
+    public double getBidStep() { return bidStep; }
+    public void setBidStep(double bidStep) { this.bidStep = bidStep; }
     public List<String> getImages() { return images; }
     public void setImages(List<String> images) { this.images = images; }
     public String getSellerId() { return sellerId; }

@@ -61,8 +61,16 @@
                                 <Label text="Phiên đấu giá cao cấp với cập nhật giá theo thời gian thực." wrapText="true" styleClass="auction-detail-summary"/>
 
                                 <VBox spacing="6" styleClass="auction-detail-price-block">
-                                    <Label text="Giá hiện tại" styleClass="auction-detail-caption"/>
-                                    <Label fx:id="showcasePriceLabel" text="0 ₫" styleClass="auction-detail-price"/>
+                                    <HBox alignment="BOTTOM_LEFT" spacing="18">
+                                        <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                            <Label text="Giá hiện tại" styleClass="auction-detail-caption"/>
+                                            <Label fx:id="showcasePriceLabel" text="0 ₫" styleClass="auction-detail-price"/>
+                                        </VBox>
+                                        <VBox spacing="4" alignment="BOTTOM_LEFT" styleClass="auction-detail-bid-step-box">
+                                            <Label text="Bước giá" styleClass="auction-detail-bid-step-caption"/>
+                                            <Label fx:id="showcaseBidStepLabel" text="--" styleClass="auction-detail-bid-step-value"/>
+                                        </VBox>
+                                    </HBox>
                                     <Label text="Theo dõi lịch sử giá trong phòng đấu giá" styleClass="auction-detail-price-note"/>
                                 </VBox>
 
@@ -137,10 +145,16 @@
                             <Label fx:id="itemNameLabel" text="Đang tải..." wrapText="true" styleClass="trading-title"/>
 
                             <VBox spacing="16">
-                                <VBox spacing="4">
-                                    <Label text="Giá hiện hành" styleClass="trading-caption"/>
-                                    <Label fx:id="currentPriceLabel" text="0 ₫" wrapText="true" styleClass="trading-current-price"/>
-                                </VBox>
+                                <HBox spacing="16" alignment="BOTTOM_LEFT">
+                                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                        <Label text="Giá hiện hành" styleClass="trading-caption"/>
+                                        <Label fx:id="currentPriceLabel" text="0 ₫" wrapText="true" styleClass="trading-current-price"/>
+                                    </VBox>
+                                    <VBox spacing="4" alignment="BOTTOM_LEFT" styleClass="trading-bid-step-box">
+                                        <Label text="Bước giá" styleClass="trading-bid-step-caption"/>
+                                        <Label fx:id="tradingBidStepLabel" text="--" wrapText="true" styleClass="trading-bid-step-value"/>
+                                    </VBox>
+                                </HBox>
 
                                 <VBox spacing="4">
                                     <Label text="Thời gian còn lại" styleClass="trading-caption"/>
@@ -164,6 +178,7 @@
 
                         <VBox fx:id="manualBidContainer" spacing="14" styleClass="trading-card">
                             <Label text="ĐẶT GIÁ THỦ CÔNG" styleClass="trading-card-heading"/>
+                            <Label fx:id="manualBidStepLabel" text="Bước giá: --" wrapText="true" styleClass="trading-manual-bid-step"/>
                             <TextField fx:id="bidAmountField" promptText="Nhập mức giá của bạn (₫)..." styleClass="trading-input"/>
                             <Button fx:id="bidButton" text="XÁC NHẬN ĐẶT GIÁ" onAction="#handleBid" maxWidth="Infinity" styleClass="trading-primary-button"/>
                             <Label fx:id="bidErrorLabel" text="" wrapText="true" styleClass="trading-error-label"/>

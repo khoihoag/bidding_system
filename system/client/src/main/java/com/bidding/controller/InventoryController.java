@@ -55,7 +55,7 @@ public class InventoryController implements Initializable {
     @FXML private ListView<String> listSelectedImages;
     private List<String> selectedImagePaths = new ArrayList<>();
     // --- Tab Nhập Đồ Mới (Trường dùng chung) ---
-    @FXML private TextField txtNewName, txtNewDesc, txtNewPrice;
+    @FXML private TextField txtNewName, txtNewDesc, txtNewPrice, txtBidStep;
     @FXML private ComboBox<String> comboType, comboCondition;
 
     // --- Container của các trường riêng biệt ---
@@ -162,6 +162,7 @@ public class InventoryController implements Initializable {
         forceNumericOnly(txtDropStepNow);
         forceNumericOnly(txtDropStepSchedule);
         forceNumericOnly(txtNewPrice);
+        forceNumericOnly(txtBidStep);
         forceNumericOnly(txtArtYear);
         forceNumericOnly(txtVehYear);
         forceNumericOnly(txtVehMileage);
@@ -233,10 +234,11 @@ public class InventoryController implements Initializable {
     private void handleAddNewItem() {
         String name = txtNewName.getText().trim();
         String priceStr = txtNewPrice.getText().trim();
+        String bidStepStr = txtBidStep.getText().trim();
         String type = comboType.getValue();
 
-        if (name.isEmpty() || priceStr.isEmpty()) {
-            showAlert(AlertType.WARNING, "Cảnh báo", "Vui lòng điền Tên món đồ và Giá khởi điểm (*)");
+        if (name.isEmpty() || priceStr.isEmpty() || bidStepStr.isEmpty()) {
+            showAlert(AlertType.WARNING, "Cảnh báo", "Vui lòng điền Tên món đồ, Giá khởi điểm và Bước giá (*).");
             return;
         }
 
@@ -244,15 +246,24 @@ public class InventoryController implements Initializable {
             // ================= VŨ KHÍ CHỐNG TRÀN BỘ NHỚ =================
             // Chặn ngay từ vòng gửi xe nếu sếp nhập quá 15 chữ số
             // (15 số là 999 nghìn tỷ VNĐ rồi, đủ mua lại cả cty Google)
-            if (priceStr.length() > 15) {
+            if (priceStr.length() > 15 || bidStepStr.length() > 15) {
                 showAlert(AlertType.WARNING, "Đại gia quá!", "Giá khởi điểm quá lớn! Hệ thống chỉ hỗ trợ tối đa 999 Nghìn Tỷ VNĐ.");
                 return;
             }
 
             long startingPrice = parseRequiredLong(priceStr, "Giá khởi điểm");
+            long bidStep = parseRequiredLong(bidStepStr, "Bước giá");
 
             if (startingPrice < 0) {
                 showAlert(AlertType.WARNING, "Lỗi logic", "Bạn định tặng kèm tiền cho người mua à? Giá không được âm!");
+                return;
+            }
+            if (bidStep <= 0) {
+                showAlert(AlertType.WARNING, "Lỗi logic", "Bước giá phải lớn hơn 0.");
+                return;
+            }
+            if (bidStep > startingPrice) {
+                showAlert(AlertType.WARNING, "Lỗi logic", "Bước giá không được lớn hơn giá trị sản phẩm.");
                 return;
             }
             // ============================================================
@@ -267,6 +278,7 @@ public class InventoryController implements Initializable {
             request.addProperty("name", name);
             request.addProperty("description", txtNewDesc.getText().trim());
             request.addProperty("startingPrice", startingPrice);
+            request.addProperty("bidStep", bidStep);
             request.addProperty("type", type);
             request.addProperty("condition", comboCondition.getValue());
             JsonArray imagesArray = new JsonArray();
@@ -451,6 +463,11 @@ public class InventoryController implements Initializable {
                         addGridMessage(wonItemsGrid, "Chưa có chiến lợi phẩm nào. Hãy ra sảnh đấu giá thử vận may nhé!");
                     }
                 }
+                else if ("PAY_AUCTION_REPLY".equals(action)) {
+                    showAlert(AlertType.INFORMATION, "Thành công", "Thanh toán thành công. Sản phẩm đã được chuyển vào kho của bạn.");
+                    handleRefreshWonItems();
+                    handleRefreshInventory();
+                }
                 else if ("ERROR".equals(action)) {
                     String msg = response.has("message") ? response.get("message").getAsString() : "Lỗi hệ thống không xác định";
                     showAlert(AlertType.ERROR, "Server Từ Chối", msg);
@@ -510,6 +527,13 @@ public class InventoryController implements Initializable {
     }
 
     // ================= VŨ KHÍ ÉP NHẬP SỐ =================
+    private void handlePayAuction(String auctionId) {
+        JsonObject request = new JsonObject();
+        request.addProperty("action", "PAY_AUCTION");
+        request.addProperty("auctionId", auctionId);
+        networkClient.sendJson(request);
+    }
+
     private void forceNumericOnly(javafx.scene.control.TextField textField) {
         if (textField == null) return;
         textField.textProperty().addListener((observable, oldValue, newValue) -> {
@@ -781,6 +805,15 @@ public class InventoryController implements Initializable {
         actions.getStyleClass().add("inventory-card-actions");
         HBox.setHgrow(btnDetails, javafx.scene.layout.Priority.ALWAYS);
         actions.getChildren().add(btnDetails);
+        String auctionStatus = item.has("auctionStatus") ? item.get("auctionStatus").getAsString() : "";
+        if (!editable && "FINISHED".equals(auctionStatus) && item.has("auctionId")) {
+            Button btnPay = new Button("Thanh toán");
+            btnPay.getStyleClass().addAll("primary-button", "inventory-card-detail-btn");
+            btnPay.setMaxWidth(Double.MAX_VALUE);
+            btnPay.setOnAction(e -> handlePayAuction(item.get("auctionId").getAsString()));
+            HBox.setHgrow(btnPay, javafx.scene.layout.Priority.ALWAYS);
+            actions.getChildren().add(btnPay);
+        }
 
         card.getChildren().addAll(imageBox, body, actions);
 
@@ -875,6 +908,7 @@ public class InventoryController implements Initializable {
         txtNewName.setText(getString(item, "name"));
         txtNewDesc.setText(getString(item, "description"));
         txtNewPrice.setText(item.has("startingPrice") ? String.valueOf(Math.round(item.get("startingPrice").getAsDouble())) : "");
+        txtBidStep.setText(item.has("bidStep") ? String.valueOf(Math.round(item.get("bidStep").getAsDouble())) : "");
         comboType.setValue(getString(item, "type").isBlank() ? "Art" : getString(item, "type"));
         comboCondition.setValue(getString(item, "condition").isBlank() ? "NEW" : getString(item, "condition"));
 
@@ -913,6 +947,7 @@ public class InventoryController implements Initializable {
     private void clearItemForm() {
         txtNewName.clear();
         txtNewPrice.clear();
+        txtBidStep.clear();
         txtNewDesc.clear();
         selectedImagePaths.clear();
         listSelectedImages.getItems().clear();

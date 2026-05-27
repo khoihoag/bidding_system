@@ -41,6 +41,7 @@ public class AuctionDetailController {
     @FXML private Label showcaseNameLabel;
     @FXML private Label showcaseTimeLabel;
     @FXML private Label showcasePriceLabel;
+    @FXML private Label showcaseBidStepLabel;
     @FXML private Label showcaseWinnerLabel;
     @FXML private Label sellerAvatarLabel;
     @FXML private Label sellerNameLabel;
@@ -53,10 +54,12 @@ public class AuctionDetailController {
     @FXML private Label statusBadgeHeader;
     @FXML private Label itemNameLabel;
     @FXML private Label currentPriceLabel;
+    @FXML private Label tradingBidStepLabel;
     @FXML private Label timeRemainingLabel;
     @FXML private Label currentWinnerLabel;
     @FXML private Label totalBidsLabel;
     @FXML private TextField bidAmountField;
+    @FXML private Label manualBidStepLabel;
     @FXML private Label bidErrorLabel;
     @FXML private Button bidButton;
     @FXML private TextField maxBidField;
@@ -344,6 +347,7 @@ public class AuctionDetailController {
             currentSellerName = "Người bán";
         }
         updateSellerCard();
+        updateBidStepDisplay(item);
 
         // 1. Đổ Mô Tả
         showcaseDescLabel.setText(item.has("description") && !item.get("description").isJsonNull()
@@ -406,6 +410,25 @@ public class AuctionDetailController {
             for (String key : specs.keySet()) {
                 addSpecRow(key, specs.get(key).getAsString());
             }
+        }
+    }
+
+    private void updateBidStepDisplay(JsonObject item) {
+        double bidStep = item.has("bidStep") && !item.get("bidStep").isJsonNull()
+                ? item.get("bidStep").getAsDouble()
+                : 0.0;
+        String value = bidStep > 0
+                ? AuctionDetailFormats.CURRENCY_FMT.format(bidStep) + " đ"
+                : "Chưa cấu hình";
+
+        if (showcaseBidStepLabel != null) {
+            showcaseBidStepLabel.setText(value);
+        }
+        if (tradingBidStepLabel != null) {
+            tradingBidStepLabel.setText(value);
+        }
+        if (manualBidStepLabel != null) {
+            manualBidStepLabel.setText("Bước giá: " + value);
         }
     }
 

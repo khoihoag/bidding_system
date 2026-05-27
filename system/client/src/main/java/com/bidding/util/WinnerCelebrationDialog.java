@@ -31,6 +31,13 @@ public final class WinnerCelebrationDialog {
     }
 
     private static void open(JsonObject json, Class<?> resourceClass) {
+        String status = json.has("status") && !json.get("status").isJsonNull()
+                ? json.get("status").getAsString()
+                : "FINISHED";
+        if ("CANCELED".equals(status)) {
+            return;
+        }
+
         String winner = json.has("winnerId") && !json.get("winnerId").isJsonNull()
                 ? json.get("winnerId").getAsString()
                 : "---";

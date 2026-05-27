@@ -7,15 +7,23 @@ import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import com.bidding.server.config.HibernateSessionFactory;
 import org.hibernate.query.Query;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AuctionRepository {
     private static final SessionFactory factory = HibernateSessionFactory.getSessionFactory();
+    private static final AtomicBoolean ITEM_INDEX_CHECKED = new AtomicBoolean(false);
 
     /**
      * Hàm "Cất đồ": Dùng cho cả tạo mới (Insert) và cập nhật (Update)
      */
     public void saveOrUpdate(AuctionEntity entity) {
+        ensureAuctionItemIdAllowsMultipleRows();
         Transaction transaction = null;
         try (Session session = factory.openSession()) {
             transaction = session.beginTransaction();
@@ -30,6 +38,77 @@ public class AuctionRepository {
             if (transaction != null) transaction.rollback();
             throw new RuntimeException("Failed to save auction: " + entity.getId(), e);
         }
+    }
+
+    private void ensureAuctionItemIdAllowsMultipleRows() {
+        if (!ITEM_INDEX_CHECKED.compareAndSet(false, true)) {
+            return;
+        }
+
+        try (Session session = factory.openSession()) {
+            session.doWork(connection -> {
+                List<String> uniqueIndexes = findSingleColumnUniqueItemIndexes(connection);
+                if (uniqueIndexes.isEmpty()) {
+                    return;
+                }
+
+                ensureNonUniqueItemIndex(connection);
+                try (Statement statement = connection.createStatement()) {
+                    for (String indexName : uniqueIndexes) {
+                        statement.execute("ALTER TABLE auctions DROP INDEX `" + quoteIdentifier(indexName) + "`");
+                    }
+                }
+            });
+        } catch (Exception e) {
+            ITEM_INDEX_CHECKED.set(false);
+            throw new RuntimeException("Failed to prepare reusable auction item index", e);
+        }
+    }
+
+    private static List<String> findSingleColumnUniqueItemIndexes(Connection connection) throws SQLException {
+        List<String> indexes = new ArrayList<>();
+        String sql = """
+                SELECT INDEX_NAME
+                FROM information_schema.STATISTICS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = 'auctions'
+                  AND NON_UNIQUE = 0
+                  AND INDEX_NAME <> 'PRIMARY'
+                GROUP BY INDEX_NAME
+                HAVING COUNT(*) = 1 AND MAX(COLUMN_NAME) = 'item_id'
+                """;
+        try (Statement statement = connection.createStatement();
+             ResultSet rs = statement.executeQuery(sql)) {
+            while (rs.next()) {
+                indexes.add(rs.getString("INDEX_NAME"));
+            }
+        }
+        return indexes;
+    }
+
+    private static void ensureNonUniqueItemIndex(Connection connection) throws SQLException {
+        String checkSql = """
+                SELECT COUNT(*) AS index_count
+                FROM information_schema.STATISTICS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = 'auctions'
+                  AND COLUMN_NAME = 'item_id'
+                  AND NON_UNIQUE = 1
+                """;
+        try (Statement statement = connection.createStatement();
+             ResultSet rs = statement.executeQuery(checkSql)) {
+            if (rs.next() && rs.getInt("index_count") > 0) {
+                return;
+            }
+        }
+
+        try (Statement statement = connection.createStatement()) {
+            statement.execute("CREATE INDEX idx_auctions_item_id_reusable ON auctions (item_id)");
+        }
+    }
+
+    private static String quoteIdentifier(String identifier) {
+        return identifier == null ? "" : identifier.replace("`", "``");
     }
 
     /**
@@ -93,6 +172,13 @@ public class AuctionRepository {
     }
     // Trong AuctionRepository.java
     public void finalizeAuction(String auctionId, com.bidding.server.enums.AuctionStatus status, com.bidding.server.model.user.User winner) {
+        finalizeAuction(auctionId, status, winner, null);
+    }
+
+    public void finalizeAuction(String auctionId,
+                                com.bidding.server.enums.AuctionStatus status,
+                                com.bidding.server.model.user.User winner,
+                                java.time.LocalDateTime endTime) {
         org.hibernate.Transaction tx = null;
         try (org.hibernate.Session session = factory.openSession()) {
             tx = session.beginTransaction();
@@ -100,13 +186,29 @@ public class AuctionRepository {
             AuctionEntity entity = session.get(AuctionEntity.class, auctionId);
             if (entity != null) {
                 entity.setStatus(status);
-                if (winner != null) entity.setCurrentWinner(winner);
+                entity.setCurrentWinner(winner);
+                if (endTime != null) {
+                    entity.setEndTime(endTime);
+                }
                 session.merge(entity);
             }
             tx.commit();
         } catch (Exception e) {
             if (tx != null) tx.rollback();
             throw e;
+        }
+    }
+
+    public AuctionEntity findByIdWithDetails(String id) {
+        try (Session session = factory.openSession()) {
+            return session.createQuery(
+                            "SELECT a FROM AuctionEntity a " +
+                                    "LEFT JOIN FETCH a.currentWinner " +
+                                    "LEFT JOIN FETCH a.item " +
+                                    "WHERE a.id = :id",
+                            AuctionEntity.class)
+                    .setParameter("id", id)
+                    .uniqueResult();
         }
     }
 
@@ -126,9 +228,14 @@ public class AuctionRepository {
     public boolean existsByItemId(String itemId) {
         try (Session session = factory.openSession()) {
             Long count = session.createQuery(
-                            "SELECT COUNT(a) FROM AuctionEntity a WHERE a.item.id = :itemId",
+                            "SELECT COUNT(a) FROM AuctionEntity a " +
+                                    "WHERE a.item.id = :itemId " +
+                                    "AND a.status NOT IN (:reusableStatuses)",
                             Long.class)
                     .setParameter("itemId", itemId)
+                    .setParameter("reusableStatuses", List.of(
+                            com.bidding.server.enums.AuctionStatus.CANCELED,
+                            com.bidding.server.enums.AuctionStatus.FAILED))
                     .uniqueResult();
             return count != null && count > 0;
         }

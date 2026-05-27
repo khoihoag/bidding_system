@@ -277,6 +277,7 @@ public final class AdminDialogs {
         details.getChildren().add(detailRow("Loại", JsonUtil.getString(item, "type")));
         details.getChildren().add(detailRow("Tình trạng", formatCondition(JsonUtil.getString(item, "condition"))));
         details.getChildren().add(detailRow("Giá khởi điểm", String.format("%,.0f đ", getStartingPrice(item))));
+        details.getChildren().add(detailRow("Bước giá", String.format("%,.0f đ", getBidStep(item))));
         details.getChildren().add(detailRow("Người bán", JsonUtil.getString(item, "sellerFullName")));
 
         if (item.has("specifications") && item.get("specifications").isJsonObject()) {
@@ -328,6 +329,11 @@ public final class AdminDialogs {
     private static double getStartingPrice(JsonObject item) {
         return item.has("startingPrice") && !item.get("startingPrice").isJsonNull()
                 ? item.get("startingPrice").getAsDouble() : 0.0;
+    }
+
+    private static double getBidStep(JsonObject item) {
+        return item.has("bidStep") && !item.get("bidStep").isJsonNull()
+                ? item.get("bidStep").getAsDouble() : 0.0;
     }
 
     private static Image loadImage(String imagePath) {

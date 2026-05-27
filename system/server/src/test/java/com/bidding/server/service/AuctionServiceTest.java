@@ -44,6 +44,8 @@ class AuctionServiceTest {
         testItem.setName("Bức tranh quý");
         testItem.setSellerId(seller.getId());
         testItem.setSellerFullName(seller.getFullName());
+        testItem.setStartingPrice(1000.0);
+        testItem.setBidStep(100.0);
     }
 
     @Test
