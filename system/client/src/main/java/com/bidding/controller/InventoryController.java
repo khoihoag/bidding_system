@@ -2,6 +2,7 @@ package com.bidding.controller;
 import javafx.stage.FileChooser;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import com.bidding.model.UserSession;
 import com.bidding.network.NetworkClient;
@@ -26,6 +27,8 @@ import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
 
 import java.net.URL;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ResourceBundle;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
@@ -35,9 +38,9 @@ public class InventoryController implements Initializable {
     private static final int INVENTORY_GRID_COLUMNS = 2;
     private static final int WON_ITEMS_GRID_COLUMNS = 4;
     private static final double INVENTORY_GRID_GAP = 12;
-    private static final double WON_ITEMS_GRID_GAP = 10;
+    private static final double WON_ITEMS_GRID_GAP = 16;
     private static final double INVENTORY_CARD_INSET = 8;
-    private static final double WON_ITEM_CARD_INSET = 6;
+    private static final double WON_ITEM_CARD_INSET = 10;
     @FXML private javafx.scene.control.CheckBox chkReverseNow, chkReverseSchedule;
     @FXML private javafx.scene.control.TextField txtDropStepNow, txtDropStepSchedule;
     @FXML private GridPane wonItemsGrid;
@@ -372,6 +375,7 @@ public class InventoryController implements Initializable {
                             itemDatabase.put(id, item);
                             inventoryItems.add(item);
                         }
+                        sortItemsNewestFirst(inventoryItems);
                         renderInventoryGrid();
                     } else {
                         addGridMessage(inventoryGrid, "Kho đồ trống. Hãy nhập thêm vật phẩm!");
@@ -489,6 +493,36 @@ public class InventoryController implements Initializable {
                 System.err.println("Lỗi parse JSON Inventory: " + e.getMessage());
             }
         });
+    }
+
+    private void sortItemsNewestFirst(List<JsonObject> items) {
+        items.sort(Comparator
+                .comparingLong(this::getItemSortTime)
+                .thenComparing(item -> getString(item, "id"), Comparator.nullsLast(String::compareTo))
+                .reversed());
+    }
+
+    private long getItemSortTime(JsonObject item) {
+        long createdAt = parseDateTimeMillis(getString(item, "createdAt"));
+        if (createdAt > 0) {
+            return createdAt;
+        }
+        long updatedAt = parseDateTimeMillis(getString(item, "updatedAt"));
+        if (updatedAt > 0) {
+            return updatedAt;
+        }
+        return parseDateTimeMillis(getString(item, "reviewedAt"));
+    }
+
+    private long parseDateTimeMillis(String value) {
+        if (value == null || value.isBlank()) {
+            return 0;
+        }
+        try {
+            return LocalDateTime.parse(value).toInstant(ZoneOffset.UTC).toEpochMilli();
+        } catch (Exception ignored) {
+            return 0;
+        }
     }
 
     private String approvalStatusLabel(String status) {
@@ -737,9 +771,11 @@ public class InventoryController implements Initializable {
         final double cardWidth = getGridCardWidth(sizeGrid);
         final boolean compact = !editable;
         final double cardInset = compact ? WON_ITEM_CARD_INSET : INVENTORY_CARD_INSET;
-        final double imageWidth = Math.max(compact ? 96 : 120, cardWidth - (cardInset * 2));
-        final double imageHeight = compact ? 88 : 132;
-        final double contentWidth = Math.max(compact ? 96 : 120, cardWidth - (cardInset * 2) - (compact ? 8 : 20));
+        final double imageWidth = Math.max(compact ? 160 : 120, cardWidth - (cardInset * 2));
+        final double imageHeight = compact
+                ? Math.max(150, Math.min(190, imageWidth * 0.48))
+                : 132;
+        final double contentWidth = Math.max(compact ? 160 : 120, cardWidth - (cardInset * 2) - (compact ? 0 : 20));
 
         VBox card = new VBox(compact ? 5 : 8);
         card.getStyleClass().add("inventory-item-card");
@@ -749,6 +785,10 @@ public class InventoryController implements Initializable {
         card.setPrefWidth(cardWidth);
         card.setMinWidth(10);
         card.setMaxWidth(Double.MAX_VALUE);
+        if (compact) {
+            card.setMinHeight(286);
+            card.setPrefHeight(286);
+        }
         card.setAlignment(Pos.TOP_CENTER);
         card.setPadding(new javafx.geometry.Insets(cardInset));
 
@@ -816,6 +856,10 @@ public class InventoryController implements Initializable {
         }
         body.setAlignment(Pos.TOP_LEFT);
         body.setMaxWidth(contentWidth);
+        if (compact) {
+            body.setMinHeight(38);
+            body.setPrefHeight(38);
+        }
 
         HBox actions = new HBox(compact ? 6 : 8);
         actions.getStyleClass().add("inventory-card-actions");

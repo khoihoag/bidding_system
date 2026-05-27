@@ -1,5 +1,6 @@
 package com.bidding.util;
 
+import com.bidding.model.UserSession;
 import com.google.gson.JsonObject;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -14,6 +15,8 @@ import javafx.scene.layout.VBox;
 
 import java.text.NumberFormat;
 import java.util.Locale;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Premium winner announcement dialog for finished auctions.
@@ -22,39 +25,41 @@ public final class WinnerCelebrationDialog {
 
     private static final NumberFormat CURRENCY_FMT =
             NumberFormat.getNumberInstance(Locale.forLanguageTag("vi-VN"));
+    private static final Set<String> SHOWN_DIALOG_KEYS = ConcurrentHashMap.newKeySet();
 
     private WinnerCelebrationDialog() {
     }
 
     public static void show(JsonObject payload, Class<?> resourceClass) {
+        if (!markDialogPending(payload)) {
+            return;
+        }
         Platform.runLater(() -> open(payload, resourceClass));
     }
 
     private static void open(JsonObject json, Class<?> resourceClass) {
-        String status = json.has("status") && !json.get("status").isJsonNull()
-                ? json.get("status").getAsString()
-                : "FINISHED";
+        String status = getString(json, "status", "FINISHED");
         if ("CANCELED".equals(status)) {
             return;
         }
 
-        String winner = json.has("winnerId") && !json.get("winnerId").isJsonNull()
-                ? json.get("winnerId").getAsString()
-                : "---";
-        String itemName = json.has("itemName") && !json.get("itemName").isJsonNull()
-                ? json.get("itemName").getAsString()
-                : "Vật phẩm đấu giá";
+        String winnerUserId = getString(json, "winnerUserId", "");
+        String winnerUsername = getString(json, "winnerUsername", getString(json, "winnerId", "---"));
+        String winnerName = getString(json, "winnerName", winnerUsername);
+        String winnerDisplay = buildWinnerDisplay(winnerName, winnerUsername);
+        String itemName = getString(json, "itemName", "Vật phẩm đấu giá");
         double finalPrice = json.has("finalPrice") && !json.get("finalPrice").isJsonNull()
                 ? json.get("finalPrice").getAsDouble()
                 : 0;
 
-        boolean noWinner = isEmptyWinner(winner);
+        boolean noWinner = isEmptyWinner(winnerDisplay);
+        boolean currentUserWon = !winnerUserId.isBlank()
+                && winnerUserId.equals(UserSession.getInstance().getUserId());
 
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle("BidVault Auction House");
         dialog.setResizable(false);
 
-        // Thông báo chung cho mọi người tham gia phiên đấu giá
         ButtonType closeType = new ButtonType("Đã hiểu", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().setAll(closeType);
 
@@ -66,7 +71,7 @@ public final class WinnerCelebrationDialog {
         Label kicker = new Label("AUCTION CLOSED");
         kicker.getStyleClass().add("winner-dialog-kicker");
 
-        Label title = new Label("Phiên đấu giá đã kết thúc");
+        Label title = new Label(currentUserWon ? "Bạn đã thắng phiên đấu giá" : "Phiên đấu giá đã kết thúc");
         title.getStyleClass().add("winner-dialog-title");
 
         Label subtitle = new Label(noWinner
@@ -81,14 +86,14 @@ public final class WinnerCelebrationDialog {
         itemValue.getStyleClass().add("winner-dialog-item-name");
         itemValue.setWrapText(true);
 
-        Label winnerCaption = new Label("Đại gia chiến thắng");
+        Label winnerCaption = new Label("Người chiến thắng");
         winnerCaption.getStyleClass().add("winner-dialog-field-caption");
-        Label winnerValue = new Label(noWinner ? "Chưa có" : winner);
+        Label winnerValue = new Label(noWinner ? "Chưa có" : winnerDisplay);
         winnerValue.getStyleClass().add(noWinner ? "winner-dialog-winner-muted" : "winner-dialog-winner-name");
 
         Label priceCaption = new Label("Giá chốt");
         priceCaption.getStyleClass().add("winner-dialog-field-caption");
-        Label priceValue = new Label(finalPrice > 0 ? CURRENCY_FMT.format(finalPrice) + " ₫" : "---");
+        Label priceValue = new Label(finalPrice > 0 ? CURRENCY_FMT.format(finalPrice) + " đ" : "---");
         priceValue.getStyleClass().add("winner-dialog-price-value");
 
         VBox spotlight = new VBox(12,
@@ -98,7 +103,9 @@ public final class WinnerCelebrationDialog {
         );
         spotlight.getStyleClass().add("winner-dialog-spotlight");
 
-        Label note = new Label("Cảm ơn bạn đã tham gia phiên đấu giá.");
+        Label note = new Label(currentUserWon
+                ? "Bạn có thể vào chi tiết phiên để thanh toán trong thời hạn quy định."
+                : "Cảm ơn bạn đã tham gia phiên đấu giá.");
         note.getStyleClass().add("winner-dialog-note");
         note.setWrapText(true);
 
@@ -128,6 +135,51 @@ public final class WinnerCelebrationDialog {
         box.setAlignment(Pos.CENTER_LEFT);
         box.setMaxWidth(Double.MAX_VALUE);
         return box;
+    }
+
+    private static boolean markDialogPending(JsonObject json) {
+        String status = getString(json, "status", "FINISHED");
+        if ("CANCELED".equals(status)) {
+            return false;
+        }
+
+        String auctionId = getString(json, "auctionId", "");
+        if (auctionId.isBlank()) {
+            auctionId = getString(json, "itemName", "unknown") + ":" + getString(json, "finalPrice", "0");
+        }
+
+        UserSession session = UserSession.getInstance();
+        String accountKey = session.getUserId() != null && !session.getUserId().isBlank()
+                ? session.getUserId()
+                : session.getUsername();
+        if (accountKey == null || accountKey.isBlank()) {
+            accountKey = "anonymous";
+        }
+
+        return SHOWN_DIALOG_KEYS.add(accountKey + ":" + auctionId);
+    }
+
+    private static String getString(JsonObject json, String key, String fallback) {
+        if (json != null && json.has(key) && !json.get(key).isJsonNull()) {
+            return json.get(key).getAsString();
+        }
+        return fallback;
+    }
+
+    private static String buildWinnerDisplay(String fullName, String username) {
+        if (isEmptyWinner(username) && isEmptyWinner(fullName)) {
+            return "Không có người đặt giá";
+        }
+        if (fullName != null && !fullName.isBlank()
+                && username != null && !username.isBlank()
+                && !fullName.equals(username)
+                && !isEmptyWinner(username)) {
+            return fullName + " (" + username + ")";
+        }
+        if (fullName != null && !fullName.isBlank()) {
+            return fullName;
+        }
+        return username;
     }
 
     private static boolean isEmptyWinner(String winner) {
