@@ -1,135 +1,234 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.geometry.Insets?>
 
-<HBox spacing="20" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.bidding.controller.InventoryController" stylesheets="@../css/style.css">
+<TabPane tabClosingPolicy="UNAVAILABLE"
+         xmlns="http://javafx.com/javafx/21"
+         xmlns:fx="http://javafx.com/fxml/1"
+         fx:controller="com.bidding.controller.InventoryController"
+         stylesheets="@../css/style.css"
+         styleClass="content-surface inventory-root">
 
-    <padding>
-        <Insets top="20" right="20" bottom="20" left="20"/>
-    </padding>
-
-    <VBox styleClass="auction-card" HBox.hgrow="ALWAYS" spacing="10" minWidth="300">
-        <Label text="📦 Kho Đồ Của Tôi" styleClass="card-name"/>
-        <Label text="Chọn một món đồ để thao tác" styleClass="card-id"/>
-        <ListView fx:id="inventoryListView" VBox.vgrow="ALWAYS" style="-fx-background-radius: 5;"/>
-        <Button text="🔍 Xem Chi Tiết Vật Phẩm" onAction="#handleViewDetails" styleClass="action-button" maxWidth="Infinity"/>
-        <Button text="🔄 Làm mới kho đồ" onAction="#handleRefreshInventory" styleClass="card-view-btn" maxWidth="Infinity"/>
-    </VBox>
-
-    <VBox styleClass="auction-card" minWidth="450" spacing="10">
-        <Label text="⚙️ Bảng Thao Tác" styleClass="card-name"/>
-
-        <TabPane tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
-
-            <Tab text="Mở Phiên Đấu Giá">
-                <TabPane tabClosingPolicy="UNAVAILABLE">
-                    <Tab text="Mở Ngay (Bán ngay)">
-                        <VBox spacing="15" style="-fx-padding: 20;">
-                            <Label text="Mã vật phẩm:" style="-fx-font-weight: bold;"/>
-                            <TextField fx:id="txtItemIdNow" promptText="ID vật phẩm (Chọn từ list trái)"/>
-
-                            <Label text="Thời gian đấu giá (Phút):" style="-fx-font-weight: bold;"/>
-                            <TextField fx:id="txtDuration" promptText="VD: 60"/>
-                            <Separator/>
-                            <CheckBox fx:id="chkReverseNow" text="🔥 Kích hoạt Đấu Giá Ngược" style="-fx-font-weight: bold; -fx-text-fill: #d4af37;"/>
-                            <TextField fx:id="txtDropStepNow" promptText="Nhập bước giảm giá (VD: 50000)" disable="true" style="-fx-padding: 8; -fx-background-radius: 5;"/>
-                            <Button text="🚀 Bắt Đầu Ngay" onAction="#handleStartNow" styleClass="action-button" maxWidth="Infinity"/>
-                        </VBox>
-                    </Tab>
-
-                    <Tab text="Đặt Lịch Hẹn Giờ">
-                        <VBox spacing="12" style="-fx-padding: 20;">
-                            <Label text="Mã vật phẩm:" style="-fx-font-weight: bold;"/>
-                            <TextField fx:id="txtItemIdSchedule" promptText="ID vật phẩm"/>
-
-                            <Label text="Thời gian bắt đầu (*):" style="-fx-font-weight: bold;"/>
-                            <TextField fx:id="txtStartTime" promptText="yyyy-MM-ddTHH:mm:ss (VD: 2026-05-01T08:00:00)"/>
-
-                            <Label text="Thời gian kết thúc (*):" style="-fx-font-weight: bold;"/>
-                            <TextField fx:id="txtEndTime" promptText="yyyy-MM-ddTHH:mm:ss"/>
-
-                            <Label text="Ghi chú: Định dạng ISO 8601 là bắt buộc." style="-fx-font-size: 11px; -fx-text-fill: #e67e22; -fx-font-style: italic;"/>
-                            <Separator/>
-                            <CheckBox fx:id="chkReverseSchedule" text="🔥 Kích hoạt Đấu Giá Ngược" style="-fx-font-weight: bold; -fx-text-fill: #d4af37;"/>
-                            <TextField fx:id="txtDropStepSchedule" promptText="Nhập bước giảm giá (VD: 50000)" disable="true" style="-fx-padding: 8; -fx-background-radius: 5;"/>
-                            <Button text="📅 Đặt Lịch Đấu Giá" onAction="#handleSchedule" styleClass="secondary-button" maxWidth="Infinity"/>
-                        </VBox>
-                    </Tab>
-                </TabPane>
-            </Tab>
-
-            <Tab text="Nhập Đồ Mới">
-                <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;">
-                    <VBox spacing="12" style="-fx-padding: 15;">
-                        <Label text="Tên món đồ (*)"/>
-                        <TextField fx:id="txtNewName" promptText="VD: Bức tranh mùa thu"/>
-
-                        <Label text="Mô tả"/>
-                        <TextField fx:id="txtNewDesc" promptText="Tranh vẽ sơn dầu siêu đẹp..."/>
-
-                        <Label text="Giá khởi điểm (*)"/>
-                        <TextField fx:id="txtNewPrice" promptText="VD: 1500000"/>
-
-                        <HBox spacing="10">
-                            <VBox HBox.hgrow="ALWAYS">
-                                <Label text="Loại (*)"/>
-                                <ComboBox fx:id="comboType" promptText="Chọn loại" maxWidth="Infinity"/>
-                            </VBox>
-                            <VBox HBox.hgrow="ALWAYS">
-                                <Label text="Tình trạng"/>
-                                <ComboBox fx:id="comboCondition" promptText="Chọn tình trạng" maxWidth="Infinity"/>
-                            </VBox>
-                        </HBox>
-
-                        <Separator/>
-                        <Label text="Thuộc tính riêng biệt:" style="-fx-font-weight: bold; -fx-text-fill: #d4af37;"/>
-
-                        <VBox fx:id="vboxArt" spacing="10">
-                            <TextField fx:id="txtArtArtist" promptText="Tên tác giả (VD: Nguyễn Văn A)"/>
-                            <TextField fx:id="txtArtMedium" promptText="Chất liệu (VD: Sơn Dầu)"/>
-                            <TextField fx:id="txtArtYear" promptText="Năm sáng tác (VD: 2023)"/>
-                            <TextField fx:id="txtArtDimensions" promptText="Kích thước (VD: 60x80)"/>
+    <Tab text="Kho Đồ Của Tôi">
+        <BorderPane styleClass="inventory-page">
+            <center>
+                <HBox spacing="14" styleClass="inventory-workspace">
+                    <VBox spacing="14" minWidth="430" prefWidth="430" maxWidth="430" styleClass="inventory-panel">
+                        <VBox spacing="4">
+                            <HBox spacing="10" alignment="CENTER_LEFT">
+                                <Label text="Kho Đồ Của Tôi" styleClass="inventory-title"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <Button text="Tải lại" onAction="#handleRefreshInventory" styleClass="reload-button" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                            </HBox>
+                            <Label text="Chọn một món đồ để xem chi tiết, chỉnh sửa hoặc đưa lên đấu giá." styleClass="hint-label"/>
                         </VBox>
 
-                        <VBox fx:id="vboxVehicle" spacing="10" visible="false" managed="false">
-                            <TextField fx:id="txtVehMake" promptText="Hãng xe (VD: Mercedes)"/>
-                            <TextField fx:id="txtVehModel" promptText="Mẫu xe (VD: S450)"/>
-                            <TextField fx:id="txtVehYear" promptText="Năm sản xuất (VD: 2022)"/>
-                            <TextField fx:id="txtVehMileage" promptText="Số KM đã đi (VD: 50000)"/>
-                            <TextField fx:id="txtVehFuel" promptText="Loại nhiên liệu (VD: Xăng)"/>
-                        </VBox>
+                        <TextField fx:id="txtInventorySearch"
+                                   promptText="Tìm kiếm theo tên, ID, mô tả..."
+                                   styleClass="inventory-search-field"/>
 
-                        <VBox fx:id="vboxElectronics" spacing="10" visible="false" managed="false">
-                            <TextField fx:id="txtElecBrand" promptText="Thương hiệu (VD: Sony)"/>
-                            <TextField fx:id="txtElecModel" promptText="Model (VD: PS5)"/>
-                            <TextField fx:id="txtElecWarranty" promptText="Bảo hành (tháng) (VD: 12)"/>
-                            <TextField fx:id="txtElecPower" promptText="Công suất (W) (VD: 350)"/>
-                        </VBox>
-                        <Separator/>
-                        <HBox spacing="10" alignment="CENTER_LEFT">
-                            <Label text="Hình ảnh:" style="-fx-font-weight: bold;"/>
-                            <Button text="📁 Chọn ảnh từ máy" onAction="#handleSelectImages" styleClass="secondary-button"/>
-                        </HBox>
-                        <ListView fx:id="listSelectedImages" prefHeight="80" style="-fx-font-size: 11px;"/>
-                        <Button text="➕ Thêm Vào Kho" onAction="#handleAddNewItem" styleClass="action-button" maxWidth="Infinity">
-                            <VBox.margin><Insets top="10"/></VBox.margin>
-                        </Button>
+                        <ScrollPane fx:id="inventoryScroll" fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" maxWidth="Infinity" VBox.vgrow="ALWAYS" styleClass="inventory-scroll">
+                            <GridPane fx:id="inventoryGrid" hgap="12" vgap="12" styleClass="inventory-grid">
+                                <columnConstraints>
+                                    <ColumnConstraints percentWidth="50" hgrow="ALWAYS"/>
+                                    <ColumnConstraints percentWidth="50" hgrow="ALWAYS"/>
+                                </columnConstraints>
+                            </GridPane>
+                        </ScrollPane>
                     </VBox>
-                </ScrollPane>
-            </Tab>
-            <Tab text="🏆 Chiến Lợi Phẩm">
-                <VBox spacing="10" style="-fx-padding: 15;">
-                    <Label text="Danh sách vật phẩm bạn đã đấu giá thắng:" style="-fx-font-weight: bold; -fx-text-fill:#d4af37;"/>
-                    <ListView fx:id="wonItemsListView" VBox.vgrow="ALWAYS" style="-fx-background-radius: 5;"/>
-                    <HBox spacing="10">
-                        <Button text="🔄 Làm mới" onAction="#handleRefreshWonItems" styleClass="secondary-button" HBox.hgrow="ALWAYS" maxWidth="Infinity" prefHeight="40"/>
-                        <Button text="🔍 Xem Chi Tiết" onAction="#handleViewWonItemDetails" styleClass="action-button" HBox.hgrow="ALWAYS" maxWidth="Infinity" prefHeight="40"/>
-                    </HBox>
-                </VBox>
-            </Tab>
 
-        </TabPane>
-    </VBox>
-</HBox>
+                    <VBox spacing="16" minWidth="560" prefWidth="620" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="inventory-action-panel">
+                        <VBox spacing="4">
+                            <Label text="Bảng Thao Tác" styleClass="inventory-title"/>
+                            <Label text="Mở phiên, hẹn giờ đấu hoặc nhập vật phẩm mới từ cùng một khu vực." styleClass="hint-label"/>
+                        </VBox>
+
+                        <TabPane fx:id="actionTabPane" tabClosingPolicy="UNAVAILABLE" styleClass="sub-tab-pane inventory-action-tabs" VBox.vgrow="ALWAYS">
+                            <Tab text="Mở Phiên Đấu Giá">
+                                <VBox spacing="16" styleClass="inventory-form-pane">
+                                    <VBox spacing="6">
+                                        <Label text="Vật phẩm đang chọn" styleClass="field-label"/>
+                                        <TextField fx:id="txtItemIdNow" promptText="Chọn vật phẩm từ kho..." editable="false" styleClass="input-field"/>
+                                        <TextField fx:id="txtItemIdSchedule" visible="false" managed="false"/>
+                                    </VBox>
+
+                                    <VBox spacing="6">
+                                        <Label text="Thời gian đấu giá (phút)" styleClass="field-label"/>
+                                        <TextField fx:id="txtDuration" promptText="VD: 60" styleClass="input-field"/>
+                                    </VBox>
+
+                                    <CheckBox fx:id="chkReverseNow" text="Kích hoạt đấu giá ngược" styleClass="inventory-check"/>
+
+                                    <VBox spacing="6">
+                                        <Label text="Bước giảm giá (VNĐ)" styleClass="field-label"/>
+                                        <TextField fx:id="txtDropStepNow" promptText="Chỉ dùng khi đấu giá ngược" disable="true" styleClass="input-field"/>
+                                    </VBox>
+
+                                    <Region VBox.vgrow="ALWAYS"/>
+                                    <Button text="Bắt Đầu Phiên Đấu Giá" onAction="#handleStartNow" maxWidth="Infinity" styleClass="primary-button"/>
+                                </VBox>
+                            </Tab>
+
+                            <Tab text="Hẹn Giờ Đấu">
+                                <VBox spacing="16" styleClass="inventory-form-pane">
+                                    <GridPane hgap="14" vgap="12">
+                                        <columnConstraints>
+                                            <ColumnConstraints percentWidth="50"/>
+                                            <ColumnConstraints percentWidth="50"/>
+                                        </columnConstraints>
+                                        <VBox spacing="6" GridPane.columnIndex="0">
+                                            <Label text="Thời gian bắt đầu" styleClass="field-label"/>
+                                            <TextField fx:id="txtStartTime" promptText="VD: 2026-05-01T08:00:00" styleClass="input-field"/>
+                                        </VBox>
+                                        <VBox spacing="6" GridPane.columnIndex="1">
+                                            <Label text="Thời gian kết thúc" styleClass="field-label"/>
+                                            <TextField fx:id="txtEndTime" promptText="VD: 2026-05-01T20:00:00" styleClass="input-field"/>
+                                        </VBox>
+                                    </GridPane>
+
+                                    <CheckBox fx:id="chkReverseSchedule" text="Kích hoạt đấu giá ngược" styleClass="inventory-check"/>
+
+                                    <VBox spacing="6">
+                                        <Label text="Bước giảm giá (VNĐ)" styleClass="field-label"/>
+                                        <TextField fx:id="txtDropStepSchedule" promptText="Chỉ dùng khi đấu giá ngược" disable="true" styleClass="input-field"/>
+                                    </VBox>
+
+                                    <Region VBox.vgrow="ALWAYS"/>
+                                    <Button text="Đặt Lịch Ngay" onAction="#handleSchedule" maxWidth="Infinity" styleClass="primary-button"/>
+                                </VBox>
+                            </Tab>
+
+                            <Tab fx:id="itemFormTab" text="Nhập Đồ Mới">
+                                <ScrollPane fitToWidth="true" hbarPolicy="NEVER" maxWidth="Infinity" styleClass="inventory-form-scroll">
+                                    <VBox spacing="16" styleClass="inventory-form-pane">
+                                        <GridPane hgap="14" vgap="12">
+                                            <columnConstraints>
+                                                <ColumnConstraints percentWidth="58"/>
+                                                <ColumnConstraints percentWidth="42"/>
+                                            </columnConstraints>
+                                            <VBox spacing="6" GridPane.columnIndex="0">
+                                                <Label text="Tên món đồ (*)" styleClass="field-label"/>
+                                                <TextField fx:id="txtNewName" promptText="VD: Bức tranh mùa thu" styleClass="input-field"/>
+                                            </VBox>
+                                            <VBox spacing="6" GridPane.columnIndex="1">
+                                                <Label text="Giá khởi điểm (*)" styleClass="field-label"/>
+                                                <TextField fx:id="txtNewPrice" promptText="VD: 1500000" styleClass="input-field"/>
+                                            </VBox>
+                                        </GridPane>
+
+                                        <VBox spacing="6">
+                                            <Label text="Bước giá (*)" styleClass="field-label"/>
+                                            <TextField fx:id="txtBidStep" promptText="VD: 100000" styleClass="input-field"/>
+                                        </VBox>
+
+                                        <VBox spacing="6">
+                                            <Label text="Mô tả" styleClass="field-label"/>
+                                            <TextField fx:id="txtNewDesc" promptText="Mô tả ngắn về tình trạng, nguồn gốc, điểm nổi bật..." styleClass="input-field"/>
+                                        </VBox>
+
+                                        <GridPane hgap="14" vgap="12">
+                                            <columnConstraints>
+                                                <ColumnConstraints percentWidth="50"/>
+                                                <ColumnConstraints percentWidth="50"/>
+                                            </columnConstraints>
+                                            <VBox spacing="6" GridPane.columnIndex="0">
+                                                <Label text="Danh mục (*)" styleClass="field-label"/>
+                                                <ComboBox fx:id="comboType" promptText="Chọn loại" maxWidth="Infinity" styleClass="combo-box"/>
+                                            </VBox>
+                                            <VBox spacing="6" GridPane.columnIndex="1">
+                                                <Label text="Tình trạng" styleClass="field-label"/>
+                                                <ComboBox fx:id="comboCondition" promptText="Chọn tình trạng" maxWidth="Infinity" styleClass="combo-box"/>
+                                            </VBox>
+                                        </GridPane>
+
+                                        <Label text="Thuộc tính riêng biệt:" styleClass="field-label"/>
+
+                                        <VBox fx:id="vboxArt" spacing="12">
+                                            <GridPane hgap="14" vgap="12">
+                                                <columnConstraints>
+                                                    <ColumnConstraints percentWidth="50"/>
+                                                    <ColumnConstraints percentWidth="50"/>
+                                                </columnConstraints>
+                                                <TextField fx:id="txtArtArtist" promptText="Tên tác giả" GridPane.columnIndex="0" styleClass="input-field"/>
+                                                <TextField fx:id="txtArtMedium" promptText="Chất liệu" GridPane.columnIndex="1" styleClass="input-field"/>
+                                                <TextField fx:id="txtArtYear" promptText="Năm sáng tác" GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="input-field"/>
+                                                <TextField fx:id="txtArtDimensions" promptText="Kích thước" GridPane.rowIndex="1" GridPane.columnIndex="1" styleClass="input-field"/>
+                                            </GridPane>
+                                        </VBox>
+
+                                        <VBox fx:id="vboxVehicle" spacing="12" visible="false" managed="false">
+                                            <GridPane hgap="14" vgap="12">
+                                                <columnConstraints>
+                                                    <ColumnConstraints percentWidth="50"/>
+                                                    <ColumnConstraints percentWidth="50"/>
+                                                </columnConstraints>
+                                                <TextField fx:id="txtVehMake" promptText="Hãng xe" GridPane.columnIndex="0" styleClass="input-field"/>
+                                                <TextField fx:id="txtVehModel" promptText="Mẫu xe" GridPane.columnIndex="1" styleClass="input-field"/>
+                                                <TextField fx:id="txtVehYear" promptText="Năm SX" GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="input-field"/>
+                                                <TextField fx:id="txtVehMileage" promptText="Số KM" GridPane.rowIndex="1" GridPane.columnIndex="1" styleClass="input-field"/>
+                                                <TextField fx:id="txtVehFuel" promptText="Nhiên liệu" GridPane.rowIndex="2" GridPane.columnIndex="0" GridPane.columnSpan="2" styleClass="input-field"/>
+                                            </GridPane>
+                                        </VBox>
+
+                                        <VBox fx:id="vboxElectronics" spacing="12" visible="false" managed="false">
+                                            <GridPane hgap="14" vgap="12">
+                                                <columnConstraints>
+                                                    <ColumnConstraints percentWidth="50"/>
+                                                    <ColumnConstraints percentWidth="50"/>
+                                                </columnConstraints>
+                                                <TextField fx:id="txtElecBrand" promptText="Thương hiệu" GridPane.columnIndex="0" styleClass="input-field"/>
+                                                <TextField fx:id="txtElecModel" promptText="Model" GridPane.columnIndex="1" styleClass="input-field"/>
+                                                <TextField fx:id="txtElecWarranty" promptText="Bảo hành (tháng)" GridPane.rowIndex="1" GridPane.columnIndex="0" styleClass="input-field"/>
+                                                <TextField fx:id="txtElecPower" promptText="Công suất (W)" GridPane.rowIndex="1" GridPane.columnIndex="1" styleClass="input-field"/>
+                                            </GridPane>
+                                        </VBox>
+
+                                        <VBox fx:id="imageDropZone"
+                                              alignment="CENTER"
+                                              spacing="6"
+                                              prefHeight="112"
+                                              onMouseClicked="#handleSelectImages"
+                                              styleClass="inventory-upload-zone">
+                                            <Label text="Chọn ảnh vật phẩm" styleClass="inventory-upload-title"/>
+                                            <Label text="PNG, JPG - Tối đa 5MB" styleClass="hint-label"/>
+                                        </VBox>
+
+                                        <ListView fx:id="listSelectedImages" prefHeight="82" styleClass="inventory-image-list"/>
+
+                                        <HBox spacing="10">
+                                            <Button fx:id="btnRemoveSelectedImage" text="Xóa ảnh đã chọn" onAction="#handleRemoveSelectedImage" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="secondary-button"/>
+                                            <Button fx:id="btnCancelEdit" text="Hủy chỉnh sửa" onAction="#handleCancelEdit" maxWidth="Infinity" HBox.hgrow="ALWAYS" visible="false" managed="false" styleClass="secondary-button"/>
+                                        </HBox>
+
+                                        <Button fx:id="btnSubmitItem" text="Nhập Đồ Mới" onAction="#handleAddNewItem" maxWidth="Infinity" styleClass="primary-button"/>
+                                    </VBox>
+                                </ScrollPane>
+                            </Tab>
+                        </TabPane>
+                    </VBox>
+                </HBox>
+            </center>
+        </BorderPane>
+    </Tab>
+
+    <Tab text="Chiến Lợi Phẩm" onSelectionChanged="#handleRefreshWonItems">
+        <VBox spacing="18" styleClass="inventory-page">
+            <VBox spacing="4">
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="Chiến Lợi Phẩm" styleClass="inventory-title"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="Tải lại" onAction="#handleRefreshWonItems" styleClass="reload-button" style="-fx-font-family: 'Segoe UI', 'Tahoma', 'Arial';"/>
+                </HBox>
+                <Label text="Tài sản bạn đã đấu giá thành công" styleClass="hint-label"/>
+            </VBox>
+            <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" maxWidth="Infinity" VBox.vgrow="ALWAYS" styleClass="inventory-scroll">
+                <GridPane fx:id="wonItemsGrid" hgap="12" vgap="12" styleClass="inventory-grid">
+                    <columnConstraints>
+                        <ColumnConstraints percentWidth="50" hgrow="ALWAYS"/>
+                        <ColumnConstraints percentWidth="50" hgrow="ALWAYS"/>
+                    </columnConstraints>
+                </GridPane>
+            </ScrollPane>
+        </VBox>
+    </Tab>
+</TabPane>

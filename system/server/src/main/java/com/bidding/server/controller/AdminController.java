@@ -1,17 +1,18 @@
 package com.bidding.server.controller;
 
 import com.bidding.server.model.item.Item;
+import com.bidding.server.model.transaction.BiddingTransactionEntity;
 import com.bidding.server.model.user.Admin;
 import com.bidding.server.model.user.User;
 import com.bidding.server.network.ClientHandler;
 import com.bidding.server.network.ClientManager;
 import com.bidding.server.service.AdminService;
 import com.bidding.server.service.AuctionService;
+import com.bidding.server.utils.ItemJsonMapper;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import java.util.List;
-import java.util.Map;
 
 public class AdminController {
     private final ClientHandler client;
@@ -113,7 +114,7 @@ public class AdminController {
         try {
             JsonArray data = new JsonArray();
             for (Item item : adminService.getPendingItems(client.getLoggedInUser())) {
-                data.add(toItemJson(item));
+                data.add(ItemJsonMapper.toJson(item));
             }
 
             JsonObject reply = new JsonObject();
@@ -137,7 +138,7 @@ public class AdminController {
             reply.addProperty("action", "APPROVE_ITEM_REPLY");
             reply.addProperty("status", "SUCCESS");
             reply.addProperty("message", "Da duyet san pham.");
-            reply.add("item", toItemJson(item));
+            reply.add("item", ItemJsonMapper.toJson(item));
             client.sendMessage(reply.toString());
         } catch (SecurityException se) {
             client.sendError(se.getMessage());
@@ -159,7 +160,7 @@ public class AdminController {
             reply.addProperty("action", "REJECT_ITEM_REPLY");
             reply.addProperty("status", "SUCCESS");
             reply.addProperty("message", "Da tu choi san pham.");
-            reply.add("item", toItemJson(item));
+            reply.add("item", ItemJsonMapper.toJson(item));
             client.sendMessage(reply.toString());
         } catch (SecurityException se) {
             client.sendError(se.getMessage());
@@ -169,7 +170,7 @@ public class AdminController {
     }
 
     public void handleCreateAdminLevel1(JsonObject request) {
-        if (!requireLogin("Admin chua dang nhap!")) return;
+        if (!requireLogin("Admin chưa đăng nhập!")) return;
         try {
             Admin admin = adminService.createAdminLevel1(
                     client.getLoggedInUser(),
@@ -182,7 +183,7 @@ public class AdminController {
             JsonObject reply = new JsonObject();
             reply.addProperty("action", "CREATE_ADMIN_LEVEL1_REPLY");
             reply.addProperty("status", "SUCCESS");
-            reply.addProperty("message", "Da tao admin level 1.");
+            reply.addProperty("message", "Đã tạo admin level 1.");
             reply.addProperty("id", admin.getId());
             reply.addProperty("username", admin.getUsername());
             reply.addProperty("adminLevel", admin.getAdminLevel());
@@ -190,7 +191,44 @@ public class AdminController {
         } catch (SecurityException se) {
             client.sendError(se.getMessage());
         } catch (Exception e) {
-            client.sendError("Loi khi tao admin level 1: " + e.getMessage());
+            client.sendError("Lỗi khi tạo admin level 1: " + e.getMessage());
+        }
+    }
+
+    public void handleGetAuctionBidHistory(JsonObject request) {
+        if (!requireLogin("Admin chua dang nhap!")) return;
+        try {
+            String auctionId = request.get("auctionId").getAsString();
+            List<BiddingTransactionEntity> history =
+                    adminService.getAuctionBidHistory(client.getLoggedInUser(), auctionId);
+
+            JsonArray data = new JsonArray();
+            for (BiddingTransactionEntity tx : history) {
+                JsonObject obj = new JsonObject();
+                obj.addProperty("id", tx.getId());
+                obj.addProperty("auctionId", tx.getAuction() != null ? tx.getAuction().getId() : auctionId);
+                obj.addProperty("amount", tx.getBidAmount());
+                obj.addProperty("timestamp", tx.getBidTime() != null ? tx.getBidTime().toString() : "");
+                obj.addProperty("isAuto", tx.isAutoBid());
+                obj.addProperty("status", tx.getStatus() != null ? tx.getStatus().name() : "UNKNOWN");
+
+                User bidder = tx.getBidder();
+                obj.addProperty("bidderId", bidder != null ? bidder.getId() : "");
+                obj.addProperty("bidderUsername", bidder != null ? bidder.getUsername() : "N/A");
+                obj.addProperty("bidderFullName", bidder != null ? bidder.getFullName() : "");
+                obj.addProperty("bidderEmail", bidder != null ? bidder.getEmail() : "");
+                data.add(obj);
+            }
+
+            JsonObject reply = new JsonObject();
+            reply.addProperty("action", "ADMIN_AUCTION_BID_HISTORY_REPLY");
+            reply.addProperty("auctionId", auctionId);
+            reply.add("data", data);
+            client.sendMessage(reply.toString());
+        } catch (SecurityException se) {
+            client.sendError(se.getMessage());
+        } catch (Exception e) {
+            client.sendError("Lỗi khi tải lịch sử đấu giá: " + e.getMessage());
         }
     }
 
@@ -215,41 +253,5 @@ public class AdminController {
         reply.addProperty("status", status);
         reply.addProperty("message", message);
         client.sendMessage(reply.toString());
-    }
-
-    private JsonObject toItemJson(Item item) {
-        JsonObject itemObj = new JsonObject();
-        itemObj.addProperty("id", item.getId());
-        itemObj.addProperty("name", item.getName());
-        itemObj.addProperty("startingPrice", item.getStartingPrice());
-        itemObj.addProperty("condition", item.getCondition() != null ? item.getCondition().toString() : "NEW");
-        itemObj.addProperty("type", item.getCategory());
-        itemObj.addProperty("description", item.getDescription());
-        itemObj.addProperty("sellerId", item.getSellerId());
-        itemObj.addProperty("sellerFullName", item.getSellerFullName());
-        itemObj.addProperty("approvalStatus", item.getEffectiveApprovalStatus().name());
-        itemObj.addProperty("reviewedByAdminId", item.getReviewedByAdminId());
-        itemObj.addProperty("reviewedAt", item.getReviewedAt() != null ? item.getReviewedAt().toString() : "");
-        itemObj.addProperty("rejectionReason", item.getRejectionReason());
-
-        if (item.getImages() != null && !item.getImages().isEmpty()) {
-            JsonArray imgArray = new JsonArray();
-            for (String img : item.getImages()) {
-                imgArray.add(img);
-            }
-            itemObj.add("images", imgArray);
-        }
-
-        JsonObject specsObj = new JsonObject();
-        Map<String, String> specs = item.getSpecifications();
-        if (specs != null) {
-            for (Map.Entry<String, String> entry : specs.entrySet()) {
-                if (entry.getValue() != null && !entry.getValue().isEmpty()) {
-                    specsObj.addProperty(entry.getKey(), entry.getValue());
-                }
-            }
-        }
-        itemObj.add("specifications", specsObj);
-        return itemObj;
     }
 }

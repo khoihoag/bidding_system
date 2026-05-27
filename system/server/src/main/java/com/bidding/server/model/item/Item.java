@@ -1,17 +1,12 @@
 package com.bidding.server.model.item;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.time.LocalDateTime;
 import com.bidding.server.enums.ItemApprovalStatus;
 import com.bidding.server.enums.ItemCondition;
 import com.bidding.server.model.core.Entity;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-
-@Getter
-@Setter
 @jakarta.persistence.Entity
 @Table(name = "items") // 1. ÉP CỨNG TÊN BẢNG LÀ CHỮ THƯỜNG (SỐ NHIỀU)
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE) // Ép chung 1 bảng
@@ -29,6 +24,9 @@ public abstract class Item extends Entity {
 
     @Column(name = "starting_price")
     private double startingPrice;
+
+    @Column(name = "bid_step", nullable = false)
+    private double bidStep;
 
     // 2. CẤU HÌNH RÕ RÀNG BẢNG CHỨA ẢNH ĐỂ KHÔNG BỊ LỖI KHÓA NGOẠI
     @ElementCollection(fetch = FetchType.EAGER)
@@ -72,6 +70,7 @@ public abstract class Item extends Entity {
         this.name = name;
         this.description = description;
         this.startingPrice = startingPrice;
+        this.bidStep = 0.0;
         this.images = images;
         this.sellerId = sellerId;
         this.sellerFullName = sellerFullName;
@@ -86,6 +85,31 @@ public abstract class Item extends Entity {
     public boolean isApprovedForAuction() {
         return getEffectiveApprovalStatus() == ItemApprovalStatus.APPROVED;
     }
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+    public double getStartingPrice() { return startingPrice; }
+    public void setStartingPrice(double startingPrice) { this.startingPrice = startingPrice; }
+    public double getBidStep() { return bidStep; }
+    public void setBidStep(double bidStep) { this.bidStep = bidStep; }
+    public List<String> getImages() { return images; }
+    public void setImages(List<String> images) { this.images = images; }
+    public String getSellerId() { return sellerId; }
+    public void setSellerId(String sellerId) { this.sellerId = sellerId; }
+    public String getSellerFullName() { return sellerFullName; }
+    public void setSellerFullName(String sellerFullName) { this.sellerFullName = sellerFullName; }
+    public ItemCondition getCondition() { return condition; }
+    public void setCondition(ItemCondition condition) { this.condition = condition; }
+    public ItemApprovalStatus getApprovalStatus() { return approvalStatus; }
+    public void setApprovalStatus(ItemApprovalStatus approvalStatus) { this.approvalStatus = approvalStatus; }
+    public String getReviewedByAdminId() { return reviewedByAdminId; }
+    public void setReviewedByAdminId(String reviewedByAdminId) { this.reviewedByAdminId = reviewedByAdminId; }
+    public LocalDateTime getReviewedAt() { return reviewedAt; }
+    public void setReviewedAt(LocalDateTime reviewedAt) { this.reviewedAt = reviewedAt; }
+    public String getRejectionReason() { return rejectionReason; }
+    public void setRejectionReason(String rejectionReason) { this.rejectionReason = rejectionReason; }
 
     public abstract String getCategory();
 

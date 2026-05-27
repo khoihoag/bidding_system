@@ -3,11 +3,6 @@ package com.bidding.server.model.user;
 import com.bidding.server.model.core.Entity;
 import com.bidding.server.enums.UserRole;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-
-@Getter
-@Setter
 @jakarta.persistence.Entity
 @Table(name = "users")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE) // Vẫn dùng Single Table
@@ -57,4 +52,21 @@ public class User extends Entity {
     public boolean hasRole(UserRole targetRole) {
         return this.role != null && this.role == targetRole;
     }
+
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+    public String getPasswordHash() { return passwordHash; }
+    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
+    public String getFullName() { return fullName; }
+    public void setFullName(String fullName) { this.fullName = fullName; }
+    public UserRole getRole() { return role; }
+    public void setRole(UserRole role) { this.role = role; }
+    public boolean isActive() { return isActive; }
+    public void setActive(boolean active) { isActive = active; }
+    public double getBalance() { return balance; }
+    public void setBalance(double balance) { this.balance = balance; }
+    public double getTotalRevenue() { return totalRevenue; }
+    public void setTotalRevenue(double totalRevenue) { this.totalRevenue = totalRevenue; }
 }

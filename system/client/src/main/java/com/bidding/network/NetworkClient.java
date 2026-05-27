@@ -54,11 +54,11 @@ public class NetworkClient {
                 out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
 
-                System.out.println("Da ket noi toi server.");
+                System.out.println("Đã kết nối tới server.");
                 flushPendingMessages();
                 startListening();
             } catch (IOException e) {
-                System.err.println("Khong the ket noi server: " + e.getMessage());
+                System.err.println("Không thể kết nối server: " + e.getMessage());
             } finally {
                 isConnecting = false;
             }
@@ -71,12 +71,12 @@ public class NetworkClient {
             if (in != null) in.close();
             if (socket != null) socket.close();
         } catch (IOException e) {
-            System.err.println("Loi khi ngat ket noi: " + e.getMessage());
+            System.err.println("Lỗi khi ngắt kết nối: " + e.getMessage());
         } finally {
             out = null;
             in = null;
             socket = null;
-            System.out.println("Da ngat ket noi server.");
+            System.out.println("Đã ngắt kết nối server.");
         }
     }
 
@@ -89,18 +89,22 @@ public class NetworkClient {
             try {
                 String line;
                 while (in != null && (line = in.readLine()) != null) {
-                    System.out.println("<<< NHAN TU SERVER: " + line);
-                    JsonObject json = JsonParser.parseString(line).getAsJsonObject();
-                    for (Consumer<JsonObject> listener : globalMessageListeners) {
-                        listener.accept(json);
-                    }
-                    Consumer<JsonObject> handler = messageHandler;
-                    if (handler != null) {
-                        handler.accept(json);
+                    System.out.println("<<< NHẬN TỪ SERVER: " + line);
+                    try {
+                        JsonObject json = JsonParser.parseString(line).getAsJsonObject();
+                        for (Consumer<JsonObject> listener : globalMessageListeners) {
+                            listener.accept(json);
+                        }
+                        Consumer<JsonObject> handler = messageHandler;
+                        if (handler != null) {
+                            handler.accept(json);
+                        }
+                    } catch (Exception parseError) {
+                        System.err.println("Không parse được JSON từ server: " + parseError.getMessage());
                     }
                 }
             } catch (IOException e) {
-                System.err.println("Mat ket noi voi server: " + e.getMessage());
+                System.err.println("Mất kết nối với server: " + e.getMessage());
             } finally {
                 disconnect();
             }

@@ -4,10 +4,6 @@ import com.bidding.server.model.auction.Auction;
 import com.bidding.server.enums.EventType;
 import com.bidding.server.model.transaction.BiddingTransaction;
 import java.time.LocalDateTime;
-import lombok.Setter;
-import lombok.Getter;
-@Getter
-@Setter
 public class AuctionEvent {
     private EventType eventType;
     private Auction auction;
@@ -25,6 +21,17 @@ public class AuctionEvent {
         this.timestamp = timestamp;
         this.message = message;
     }
+
+    public EventType getEventType() { return eventType; }
+    public void setEventType(EventType eventType) { this.eventType = eventType; }
+    public Auction getAuction() { return auction; }
+    public void setAuction(Auction auction) { this.auction = auction; }
+    public BiddingTransaction getBiddingTransaction() { return biddingTransaction; }
+    public void setBiddingTransaction(BiddingTransaction biddingTransaction) { this.biddingTransaction = biddingTransaction; }
+    public LocalDateTime getTimestamp() { return timestamp; }
+    public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
 
     // =========================================================
     // CÁC HÀM TIỆN ÍCH (CONVENIENCE GETTERS) CHO WEBSOCKET/JSON

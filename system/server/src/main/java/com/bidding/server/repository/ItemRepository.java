@@ -5,14 +5,11 @@ import com.bidding.server.model.item.Item;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
-import org.hibernate.cfg.Configuration;
+import com.bidding.server.config.HibernateSessionFactory;
 import java.util.List;
 
 public class ItemRepository {
-    // Vẫn xài chung cái máy sản xuất Session
-    private static final SessionFactory factory = new Configuration()
-            .configure("hibernate.cfg.xml")
-            .buildSessionFactory();
+    private static final SessionFactory factory = HibernateSessionFactory.getSessionFactory();
 
     // ========================================================
     // VŨ KHÍ CHO KHÔI: TÌM ITEM THEO ID (LÔI TỪ DB LÊN RAM)
@@ -36,7 +33,7 @@ public class ItemRepository {
             transaction.commit();
         } catch (Exception e) {
             if (transaction != null) transaction.rollback();
-            e.printStackTrace();
+            throw new RuntimeException("Failed to save item: " + item.getId(), e);
         }
     }
     public List<Item> findBySellerId(String sellerId) {
@@ -49,6 +46,17 @@ public class ItemRepository {
         }
     }
     // Hàm lấy tất cả vật phẩm (Ví dụ để hiển thị lên trang chủ)
+    public long countBySellerId(String sellerId) {
+        try (Session session = factory.openSession()) {
+            Long count = session.createQuery(
+                            "SELECT COUNT(i) FROM Item i WHERE i.sellerId = :sid",
+                            Long.class)
+                    .setParameter("sid", sellerId)
+                    .uniqueResult();
+            return count != null ? count : 0;
+        }
+    }
+
     public List<Item> findByApprovalStatus(ItemApprovalStatus status) {
         try (Session session = factory.openSession()) {
             String hql = "FROM Item i WHERE i.approvalStatus = :status";
@@ -67,12 +75,16 @@ public class ItemRepository {
         Transaction transaction = null;
         try (Session session = factory.openSession()) {
             transaction = session.beginTransaction();
-            // Xóa món đồ khỏi Database
-            session.remove(session.contains(item) ? item : session.merge(item));
+            Item managedItem = session.contains(item) ? item : session.merge(item);
+            if (managedItem.getImages() != null) {
+                managedItem.getImages().clear();
+            }
+            session.flush();
+            session.remove(managedItem);
             transaction.commit();
         } catch (Exception e) {
             if (transaction != null) transaction.rollback();
-            e.printStackTrace();
+            throw new RuntimeException("Failed to delete item: " + item.getId(), e);
         }
     }
     /**
@@ -85,7 +97,7 @@ public class ItemRepository {
             // SỬA: Dùng AuctionEntity (là Entity thực sự) thay vì Auction (Model)
             String hql = "SELECT a.item FROM AuctionEntity a " +
                     "WHERE a.currentWinner.id = :uid " +
-                    "AND a.status = 'FINISHED'";
+                    "AND a.status IN ('FINISHED', 'PAID')";
 
             return session.createQuery(hql, Item.class)
                     .setParameter("uid", userId)

@@ -3,16 +3,8 @@ package com.bidding.server.model.transaction;
 import com.bidding.server.model.auction.Auction;
 import com.bidding.server.model.user.User;
 import com.bidding.server.enums.BidStatus;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 import java.time.LocalDateTime;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 public class BiddingTransaction {
 
     private Long id;
@@ -27,6 +19,20 @@ public class BiddingTransaction {
     private boolean isExtended; // Cú bid này có làm gia hạn (Anti-snipe) không?
 
     // Cập nhật lại Constructor
+    public BiddingTransaction() {
+    }
+
+    public BiddingTransaction(Long id, User bidder, Auction auction, Double bidAmount, LocalDateTime bidTime, BidStatus status, boolean isAutoBid, boolean isExtended) {
+        this.id = id;
+        this.bidder = bidder;
+        this.auction = auction;
+        this.bidAmount = bidAmount;
+        this.bidTime = bidTime;
+        this.status = status;
+        this.isAutoBid = isAutoBid;
+        this.isExtended = isExtended;
+    }
+
     public BiddingTransaction(User bidder, Auction auction, Double bidAmount, LocalDateTime bidTime, BidStatus status, boolean isAutoBid, boolean isExtended) {
         this.bidder = bidder;
         this.auction = auction;
@@ -36,4 +42,21 @@ public class BiddingTransaction {
         this.isAutoBid = isAutoBid;
         this.isExtended = isExtended; // Gán thêm biến này
     }
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public User getBidder() { return bidder; }
+    public void setBidder(User bidder) { this.bidder = bidder; }
+    public Auction getAuction() { return auction; }
+    public void setAuction(Auction auction) { this.auction = auction; }
+    public Double getBidAmount() { return bidAmount; }
+    public void setBidAmount(Double bidAmount) { this.bidAmount = bidAmount; }
+    public LocalDateTime getBidTime() { return bidTime; }
+    public void setBidTime(LocalDateTime bidTime) { this.bidTime = bidTime; }
+    public BidStatus getStatus() { return status; }
+    public void setStatus(BidStatus status) { this.status = status; }
+    public boolean isAutoBid() { return isAutoBid; }
+    public void setAutoBid(boolean autoBid) { isAutoBid = autoBid; }
+    public boolean isExtended() { return isExtended; }
+    public void setExtended(boolean extended) { isExtended = extended; }
 }

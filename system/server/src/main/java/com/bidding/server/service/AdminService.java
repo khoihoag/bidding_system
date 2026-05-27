@@ -3,8 +3,10 @@ package com.bidding.server.service;
 import com.bidding.server.enums.ItemApprovalStatus;
 import com.bidding.server.enums.UserRole;
 import com.bidding.server.model.item.Item;
+import com.bidding.server.model.transaction.BiddingTransactionEntity;
 import com.bidding.server.model.user.Admin;
 import com.bidding.server.model.user.User;
+import com.bidding.server.repository.AuctionRepository;
 import com.bidding.server.repository.ItemRepository;
 import com.bidding.server.repository.UserRepository;
 
@@ -15,17 +17,26 @@ import java.util.regex.Pattern;
 public class AdminService {
     private final AuctionService auctionService;
     private final UserRepository userRepository;
+    private final AuctionRepository auctionRepository;
     private final ItemRepository itemRepository;
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
     private static final Pattern PASSWORD_PATTERN = Pattern.compile("^(?=.*[A-Za-z])(?=.*\\d).{6,}$");
 
     public AdminService(UserRepository userRepository, AuctionService auctionService) {
-        this(userRepository, auctionService, new ItemRepository());
+        this(userRepository, auctionService, auctionService.getAuctionRepository(), new ItemRepository());
     }
 
     public AdminService(UserRepository userRepository, AuctionService auctionService, ItemRepository itemRepository) {
+        this(userRepository, auctionService, auctionService.getAuctionRepository(), itemRepository);
+    }
+
+    public AdminService(UserRepository userRepository,
+                        AuctionService auctionService,
+                        AuctionRepository auctionRepository,
+                        ItemRepository itemRepository) {
         this.userRepository = userRepository;
         this.auctionService = auctionService;
+        this.auctionRepository = auctionRepository;
         this.itemRepository = itemRepository;
     }
 
@@ -47,7 +58,7 @@ public class AdminService {
 
     private void requireAdminLevel2(User actor) {
         if (getAdminLevel(actor) < 2) {
-            throw new SecurityException("Chi Admin level 2 moi duoc thuc hien thao tac nay.");
+            throw new SecurityException("Chỉ Admin level 2 mới được thực hiện thao tác này.");
         }
     }
 
@@ -117,6 +128,14 @@ public class AdminService {
         return userRepository.findAll();
     }
 
+    public List<BiddingTransactionEntity> getAuctionBidHistory(User actor, String auctionId) {
+        requireAdminLevel1(actor);
+        if (auctionId == null || auctionId.isBlank()) {
+            throw new IllegalArgumentException("Thiếu ID phiên đấu giá.");
+        }
+        return auctionRepository.findBidHistoryByAuctionId(auctionId);
+    }
+
     public List<Item> getPendingItems(User actor) {
         requireAdminLevel1(actor);
         return itemRepository.findByApprovalStatus(ItemApprovalStatus.PENDING);
@@ -166,17 +185,17 @@ public class AdminService {
         String normalizedPassword = password.trim();
 
         if (!EMAIL_PATTERN.matcher(normalizedEmail).matches()) {
-            throw new RuntimeException("Email khong dung dinh dang.");
+            throw new RuntimeException("Email không đúng định dạng.");
         }
         if (!PASSWORD_PATTERN.matcher(normalizedPassword).matches()) {
-            throw new RuntimeException("Mat khau phai co it nhat 6 ky tu, gom ca chu va so.");
+            throw new RuntimeException("Mật khẩu phải có ít nhất 6 ký tự, gồm cả chữ và số.");
         }
 
         if (userRepository.findByUsername(normalizedUsername) != null) {
-            throw new RuntimeException("Username da ton tai.");
+            throw new RuntimeException("Username đã tồn tại.");
         }
         if (userRepository.findByEmail(normalizedEmail) != null) {
-            throw new RuntimeException("Email da ton tai.");
+            throw new RuntimeException("Email đã tồn tại.");
         }
 
         Admin newAdmin = new Admin(null, normalizedUsername, normalizedEmail, normalizedPassword, fullName.trim(), 1);
@@ -186,7 +205,17 @@ public class AdminService {
 
     private void validateRequired(String value, String fieldName) {
         if (value == null || value.trim().isEmpty()) {
-            throw new RuntimeException(fieldName + " khong duoc de trong.");
+            throw new RuntimeException(fieldDisplayName(fieldName) + " không được để trống.");
         }
+    }
+
+    private String fieldDisplayName(String fieldName) {
+        return switch (fieldName) {
+            case "username" -> "Username";
+            case "password" -> "Mật khẩu";
+            case "email" -> "Email";
+            case "fullName" -> "Họ và tên";
+            default -> fieldName;
+        };
     }
 }

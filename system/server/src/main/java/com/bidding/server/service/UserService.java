@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 public class UserService {
     private final UserRepository repository = new UserRepository();
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    private static final Pattern PASSWORD_PATTERN = Pattern.compile("^\\S{6,32}$");
 
     // ================= XỬ LÝ LOGIN =================
     public User login(String username, String password) {
@@ -94,6 +95,45 @@ public class UserService {
             return null;
         }
         return repository.findById(userId);
+    }
+
+    public User updateProfile(String userId, String fullName, String email, String currentPassword, String newPassword) {
+        User user = findById(userId);
+        if (user == null) {
+            throw new RuntimeException("Không tìm thấy tài khoản.");
+        }
+
+        String normalizedFullName = fullName != null ? fullName.trim() : "";
+        String normalizedEmail = email != null ? email.trim() : "";
+        String requestedPassword = newPassword != null ? newPassword.trim() : "";
+
+        if (normalizedFullName.isEmpty()) {
+            throw new RuntimeException("Họ và tên không được để trống.");
+        }
+        if (!EMAIL_PATTERN.matcher(normalizedEmail).matches()) {
+            throw new RuntimeException("Email không đúng định dạng.");
+        }
+
+        User emailOwner = repository.findByEmail(normalizedEmail);
+        if (emailOwner != null && !emailOwner.getId().equals(user.getId())) {
+            throw new RuntimeException("Email này đã được sử dụng bởi tài khoản khác.");
+        }
+
+        if (!requestedPassword.isEmpty()) {
+            String oldPassword = currentPassword != null ? currentPassword : "";
+            if (!oldPassword.equals(user.getPasswordHash())) {
+                throw new RuntimeException("Mật khẩu cũ không khớp với mật khẩu hiện tại.");
+            }
+            if (!PASSWORD_PATTERN.matcher(requestedPassword).matches()) {
+                throw new RuntimeException("Mật khẩu mới phải dài 6-32 ký tự và không chứa khoảng trắng.");
+            }
+            user.setPasswordHash(requestedPassword);
+        }
+
+        user.setFullName(normalizedFullName);
+        user.setEmail(normalizedEmail);
+        repository.saveOrUpdate(user);
+        return repository.findById(user.getId());
     }
 
     // Sau này ông có thể thêm các hàm như: register(User user), changePassword()... vào đây

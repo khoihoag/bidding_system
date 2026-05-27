@@ -1,28 +1,23 @@
 package com.bidding.server.controller;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializer;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import com.bidding.server.network.ClientHandler;
 import com.bidding.server.model.item.Item;
+import com.bidding.server.model.auction.Auction;
+import com.bidding.server.model.auction.AuctionEntity;
 import com.bidding.server.service.ItemService;
 import com.bidding.server.service.AuctionService;
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.bidding.server.utils.ItemJsonMapper;
 import java.util.List;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import com.bidding.server.utils.GsonUtil;
-import java.util.Map;
-import java.util.HashMap;
-import com.bidding.server.model.item.Item;
 import com.bidding.server.model.item.Art;
 import com.bidding.server.model.item.Vehicle;
 import com.bidding.server.model.item.Electronics;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 public class ItemController {
     private final ClientHandler client;
     private final ItemService quanLyKho;
@@ -45,41 +40,9 @@ public class ItemController {
             com.google.gson.JsonArray itemsArray = new com.google.gson.JsonArray();
 
             for (Item item : myItems) {
-                JsonObject itemObj = new JsonObject();
-                itemObj.addProperty("id", item.getId());
-                itemObj.addProperty("name", item.getName());
-                itemObj.addProperty("startingPrice", item.getStartingPrice());
-                itemObj.addProperty("condition", item.getCondition() != null ? item.getCondition().toString() : "NEW");
-                itemObj.addProperty("type", item.getCategory());
-                itemObj.addProperty("description", item.getDescription());
-                itemObj.addProperty("sellerId", item.getSellerId());
-                itemObj.addProperty("sellerFullName", item.getSellerFullName());
-                itemObj.addProperty("approvalStatus", item.getEffectiveApprovalStatus().name());
-                itemObj.addProperty("rejectionReason", item.getRejectionReason());
-
-                if (item.getImages() != null && !item.getImages().isEmpty()) {
-                    com.google.gson.JsonArray imgArray = new com.google.gson.JsonArray();
-                    for(String img : item.getImages()){
-                        imgArray.add(img);
-                    }
-                    itemObj.add("images", imgArray);
-                }
-
-                // ================= VŨ KHÍ TỐI THƯỢNG CỦA SẾP =================
-                // Lấy toàn bộ Map thông số và đóng gói thành JSON tự động
-                JsonObject specsObj = new JsonObject();
-                Map<String, String> specs = item.getSpecifications();
-                if (specs != null) {
-                    for (Map.Entry<String, String> entry : specs.entrySet()) {
-                        if (entry.getValue() != null && !entry.getValue().isEmpty()) {
-                            specsObj.addProperty(entry.getKey(), entry.getValue());
-                        }
-                    }
-                }
-                itemObj.add("specifications", specsObj);
-                // =============================================================
-
-                itemsArray.add(itemObj);
+                JsonObject itemJson = ItemJsonMapper.toJson(item);
+                enrichAuctionStatus(itemJson, item.getId());
+                itemsArray.add(itemJson);
             }
 
             JsonObject reply = new JsonObject();
@@ -105,8 +68,10 @@ public class ItemController {
             String desc = request.get("description").getAsString();
             double price = requireDouble(request, "startingPrice");
             if (price < 0) {
-                throw new IllegalArgumentException("startingPrice phải lớn hơn hoặc bằng 0.");
+                throw new IllegalArgumentException("Giá khởi điểm phải lớn hơn hoặc bằng 0.");
             }
+            double bidStep = requireDouble(request, "bidStep");
+            validateBidStep(price, bidStep);
             String type = request.get("type").getAsString();
 
             com.bidding.server.enums.ItemCondition condition = null;
@@ -142,6 +107,7 @@ public class ItemController {
                     return;
             }
 
+            newItem.setBidStep(bidStep);
             quanLyKho.createItem(client.getLoggedInUser(), newItem);
             client.sendMessage("{\"action\": \"ADD_ITEM_REPLY\", \"status\": \"SUCCESS\", \"message\": \"San pham da duoc gui va dang cho admin duyet.\"}");
 
@@ -161,6 +127,15 @@ public class ItemController {
             throw new IllegalArgumentException(fieldName + " không hợp lệ.");
         }
         return result;
+    }
+
+    private void validateBidStep(double price, double bidStep) {
+        if (bidStep <= 0) {
+            throw new IllegalArgumentException("Bước giá phải lớn hơn 0.");
+        }
+        if (bidStep > price) {
+            throw new IllegalArgumentException("Bước giá không được lớn hơn giá trị sản phẩm.");
+        }
     }
 
     private int requireInt(JsonObject request, String fieldName) {
@@ -189,15 +164,51 @@ public class ItemController {
 
         try {
             String itemId = request.get("itemId").getAsString();
-            if (tongQuan.isItemInActiveAuction(itemId)) {
+            if (tongQuan.isItemInAnyAuction(itemId)) {
                 client.sendError("Món hàng này đang được đấu giá, không được phép sửa đổi thông tin!");
                 return;
             }
 
-            Item updateData = new com.bidding.server.model.item.Art();
-            updateData.setName(request.get("name").getAsString());
-            updateData.setDescription(request.get("description").getAsString());
+            String type = request.get("type").getAsString();
+            String name = request.get("name").getAsString();
+            String desc = request.get("description").getAsString();
+            double price = requireDouble(request, "startingPrice");
+            if (price < 0) {
+                throw new IllegalArgumentException("Giá khởi điểm phải lớn hơn hoặc bằng 0.");
+            }
+            double bidStep = requireDouble(request, "bidStep");
+            validateBidStep(price, bidStep);
 
+            com.bidding.server.enums.ItemCondition condition = null;
+            if (request.has("condition") && !request.get("condition").isJsonNull()) {
+                condition = com.bidding.server.enums.ItemCondition.valueOf(request.get("condition").getAsString());
+            }
+
+            List<String> imageList = new java.util.ArrayList<>();
+            if (request.has("images") && !request.get("images").isJsonNull()) {
+                com.google.gson.JsonArray imagesArray = request.getAsJsonArray("images");
+                for (com.google.gson.JsonElement imgElem : imagesArray) {
+                    imageList.add(imgElem.getAsString());
+                }
+            }
+
+            Item updateData;
+            switch (type) {
+                case "Art":
+                    updateData = new Art(null, name, desc, price, imageList, client.getLoggedInUser().getId(), client.getLoggedInUser().getFullName(), condition, request.get("artist").getAsString(), request.get("medium").getAsString(), requireInt(request, "yearCreated"), request.get("dimensions").getAsString());
+                    break;
+                case "Electronics":
+                    updateData = new Electronics(null, name, desc, price, imageList, client.getLoggedInUser().getId(), client.getLoggedInUser().getFullName(), condition, request.get("brand").getAsString(), request.get("model").getAsString(), requireInt(request, "warrantyMonths"), requireInt(request, "powerWatts"));
+                    break;
+                case "Vehicle":
+                    updateData = new Vehicle(null, name, desc, price, imageList, client.getLoggedInUser().getId(), client.getLoggedInUser().getFullName(), condition, request.get("make").getAsString(), request.get("model").getAsString(), requireInt(request, "year"), requireInt(request, "mileage"), request.get("fuelType").getAsString());
+                    break;
+                default:
+                    client.sendError("Loại mặt hàng không hợp lệ!");
+                    return;
+            }
+
+            updateData.setBidStep(bidStep);
             quanLyKho.updateItem(client.getLoggedInUser(), itemId, updateData);
             client.sendMessage("{\"action\": \"UPDATE_ITEM_REPLY\", \"status\": \"SUCCESS\"}");
 
@@ -216,8 +227,8 @@ public class ItemController {
 
         try {
             String itemId = request.get("itemId").getAsString();
-            if (tongQuan.isItemInActiveAuction(itemId)) {
-                client.sendError("Đồ đang đấu giá, xóa là ăn phạt đấy! Không cho xóa.");
+            if (tongQuan.isItemInAnyAuction(itemId)) {
+                client.sendError("Đồ đang hoặc đã được đấu giá rồi thì không xóa được đâu bạn yêu ơi!");
                 return;
             }
 
@@ -270,8 +281,10 @@ public class ItemController {
         String aiResult = callAIPricePredictor(request);
 
         if (aiResult != null) {
-            // Bắn kết quả về cho UI của Khôi
-            client.sendMessage("{\"action\": \"AI_PRICE_REPLY\", \"data\": " + aiResult + "}");
+            JsonObject reply = new JsonObject();
+            reply.addProperty("action", "AI_PRICE_REPLY");
+            reply.add("data", com.google.gson.JsonParser.parseString(aiResult));
+            client.sendMessage(reply.toString());
         } else {
             client.sendError("Hệ thống AI hiện đang bảo trì, vui lòng thử lại sau!");
         }
@@ -288,35 +301,9 @@ public class ItemController {
             com.google.gson.JsonArray itemsArray = new com.google.gson.JsonArray();
 
             for (Item item : wonItems) {
-                JsonObject itemObj = new JsonObject();
-                itemObj.addProperty("id", item.getId());
-                itemObj.addProperty("name", item.getName());
-                itemObj.addProperty("startingPrice", item.getStartingPrice());
-                itemObj.addProperty("condition", item.getCondition() != null ? item.getCondition().toString() : "NEW");
-                itemObj.addProperty("type", item.getCategory());
-                itemObj.addProperty("description", item.getDescription());
-                itemObj.addProperty("sellerId", item.getSellerId());
-                itemObj.addProperty("sellerFullName", item.getSellerFullName());
-                itemObj.addProperty("approvalStatus", item.getEffectiveApprovalStatus().name());
-                itemObj.addProperty("rejectionReason", item.getRejectionReason());
-
-                if (item.getImages() != null && !item.getImages().isEmpty()) {
-                    com.google.gson.JsonArray imgArray = new com.google.gson.JsonArray();
-                    for(String img : item.getImages()) { imgArray.add(img); }
-                    itemObj.add("images", imgArray);
-                }
-
-                // Gói full thông số đặc biệt để Popup hiện đủ chữ
-                JsonObject specsObj = new JsonObject();
-                java.util.Map<String, String> specs = item.getSpecifications();
-                if (specs != null) {
-                    for (java.util.Map.Entry<String, String> entry : specs.entrySet()) {
-                        specsObj.addProperty(entry.getKey(), entry.getValue());
-                    }
-                }
-                itemObj.add("specifications", specsObj);
-
-                itemsArray.add(itemObj);
+                JsonObject itemJson = ItemJsonMapper.toJson(item);
+                enrichAuctionStatus(itemJson, item.getId());
+                itemsArray.add(itemJson);
             }
 
             JsonObject reply = new JsonObject();
@@ -330,5 +317,58 @@ public class ItemController {
             System.err.println("Lỗi đóng gói JSON chiến lợi phẩm: " + e.getMessage());
             client.sendError("Lỗi hệ thống khi tải chiến lợi phẩm!");
         }
+    }
+
+    private void enrichAuctionStatus(JsonObject itemJson, String itemId) {
+        Auction activeAuction = tongQuan.findActiveAuctionByItemId(itemId);
+        if (activeAuction != null) {
+            String activeStatus = activeAuction.getStatus() != null ? activeAuction.getStatus().name() : "UNKNOWN";
+            itemJson.addProperty("auctionId", activeAuction.getId());
+            itemJson.addProperty("auctionPrice", activeAuction.getCurrentPrice() != null ? activeAuction.getCurrentPrice().get() : 0.0);
+            if (activeAuction.getEndTime() != null) {
+                itemJson.addProperty("paymentDeadline", activeAuction.getEndTime().plusMinutes(10).toString());
+            }
+            itemJson.addProperty("auctionStatus", activeStatus);
+            itemJson.addProperty("auctionLabel", toAuctionLabel(activeStatus, activeAuction.getCurrentWinner() != null));
+            return;
+        }
+
+        AuctionEntity auction = tongQuan.getAuctionRepository().findByItemId(itemId);
+        if (auction == null) {
+            itemJson.addProperty("auctionStatus", "NONE");
+            itemJson.addProperty("auctionLabel", "Chưa đấu giá");
+            return;
+        }
+
+        String status = auction.getStatus() != null ? auction.getStatus().name() : "UNKNOWN";
+        itemJson.addProperty("auctionId", auction.getId());
+        itemJson.addProperty("auctionPrice", auction.getCurrentPrice() != null ? auction.getCurrentPrice() : 0.0);
+        if (auction.getEndTime() != null) {
+            itemJson.addProperty("paymentDeadline", auction.getEndTime().plusMinutes(10).toString());
+        }
+        itemJson.addProperty("auctionStatus", status);
+        itemJson.addProperty("auctionLabel", toAuctionLabel(status, auction.getCurrentWinner() != null));
+    }
+
+    private String toAuctionLabel(String status, boolean hasWinner) {
+        if ("PAID".equals(status)) {
+            return "Đã thanh toán";
+        }
+        if ("FINISHED".equals(status)) {
+            return hasWinner ? "Thành công" : "Đã kết thúc";
+        }
+        if ("FAILED".equals(status)) {
+            return "Failed";
+        }
+        if ("RUNNING".equals(status)) {
+            return "Đang đấu giá";
+        }
+        if ("OPEN".equals(status)) {
+            return "Đã đặt lịch";
+        }
+        if ("NONE".equals(status)) {
+            return "Chưa đấu giá";
+        }
+        return status;
     }
 }
