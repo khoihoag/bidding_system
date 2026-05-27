@@ -1,0 +1,44 @@
+Nhóm Auth:
+
+-case "LOGIN":
+
+    +Json nhận về :{
+                     "action": "LOGIN",
+                     "username": "tendangnhap_cua_nguoidung",
+                     "password": "mat_khau_bi_mat"
+                   }
+    +Json trả đi: {
+                    "action": "LOGIN_REPLY",
+                    "status": "SUCCESS",
+                    "myId": "1a2b3c4d-5e6f-7g8h-9i0j",
+                    "role": "USER"
+                  }
+    +Trường hợp sai tk,mk : {
+                              "action": "ERROR",
+                              "message": "Sai tài khoản hoặc mật khẩu!"
+                            }
+    + Luồng xử lí : CLientHandler -----> AuthController------>UserService------>Userrepository------->CLientHandler
+
+
+
+
+-case "REGISTER":
+    +Json nhận về :{
+                     "action": "REGISTER",
+                     "username": "tendangnhap_moi",
+                     "password": "mat_khau_bi_mat",
+                     "email": "diachi@gmail.com",
+                     "fullName": "Tang Xuan Loi"
+                   }
+
+    +Json trả đi :{
+                    "action": "REGISTER_REPLY",
+                    "status": "SUCCESS"
+                  }
+
+    +TR hợp thâ bại :{
+                       "action": "ERROR",
+                       "message": "Lỗi khi tạo tài khoản: [Chi tiết lỗi từ hệ thống, ví dụ: Username đã tồn tại]"
+                     }
+
+    + Luồng xử lí : CLientHandler -----> AuthController------>UserService------>Userrepository------->ClientHandler
