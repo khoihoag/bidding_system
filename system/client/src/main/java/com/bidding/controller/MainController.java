@@ -56,6 +56,7 @@ public class MainController {
     @FXML private Label lblUsername;
     @FXML private Button btnDashboard;
     @FXML private Button btnInventory;
+    @FXML private Button btnWatchlist;
     @FXML private Button btnHistory;
     @FXML private Button btnSettings;
     @FXML private Button btnLogout;
@@ -135,6 +136,12 @@ public class MainController {
         setActiveMenu(btnInventory);
         // Nhúng nguyên cái màn Kho Đồ (chia 2 nửa) vào khung bên phải
         loadSubView("/fxml/Inventory.fxml");
+    }
+
+    @FXML
+    private void handleWatchlist() {
+        setActiveMenu(btnWatchlist);
+        loadSubView("/fxml/Watchlist.fxml");
     }
 
     @FXML
@@ -398,6 +405,9 @@ public class MainController {
     private void setActiveMenu(Button activeBtn) {
         btnDashboard.getStyleClass().remove("menu-btn-active");
         btnInventory.getStyleClass().remove("menu-btn-active");
+        if (btnWatchlist != null) {
+            btnWatchlist.getStyleClass().remove("menu-btn-active");
+        }
         btnHistory.getStyleClass().remove("menu-btn-active");
         if (btnSettings != null) {
             btnSettings.getStyleClass().remove("menu-btn-active");

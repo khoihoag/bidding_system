@@ -29,6 +29,8 @@ public final class ItemJsonMapper {
         itemObj.addProperty("reviewedByAdminId", item.getReviewedByAdminId());
         itemObj.addProperty("reviewedAt", item.getReviewedAt() != null ? item.getReviewedAt().toString() : "");
         itemObj.addProperty("rejectionReason", item.getRejectionReason());
+        itemObj.addProperty("createdAt", item.getCreatedAt() != null ? item.getCreatedAt().toString() : "");
+        itemObj.addProperty("updatedAt", item.getUpdatedAt() != null ? item.getUpdatedAt().toString() : "");
 
         if (item.getImages() != null && !item.getImages().isEmpty()) {
             JsonArray imgArray = new JsonArray();

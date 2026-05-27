@@ -222,7 +222,7 @@
                 <Label text="Tài sản bạn đã đấu giá thành công" styleClass="hint-label"/>
             </VBox>
             <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" maxWidth="Infinity" VBox.vgrow="ALWAYS" styleClass="inventory-scroll">
-                <GridPane fx:id="wonItemsGrid" hgap="10" vgap="10" styleClass="inventory-grid won-items-grid">
+                <GridPane fx:id="wonItemsGrid" hgap="16" vgap="16" styleClass="inventory-grid won-items-grid">
                     <columnConstraints>
                         <ColumnConstraints percentWidth="25" hgrow="ALWAYS"/>
                         <ColumnConstraints percentWidth="25" hgrow="ALWAYS"/>
