@@ -9,7 +9,15 @@ import com.bidding.server.config.HibernateSessionFactory;
 import java.util.List;
 
 public class ItemRepository {
-    private static final SessionFactory factory = HibernateSessionFactory.getSessionFactory();
+    private final SessionFactory factory;
+
+    public ItemRepository() {
+        this(HibernateSessionFactory.getSessionFactory());
+    }
+
+    ItemRepository(SessionFactory factory) {
+        this.factory = factory;
+    }
 
     // ========================================================
     // VŨ KHÍ CHO KHÔI: TÌM ITEM THEO ID (LÔI TỪ DB LÊN RAM)

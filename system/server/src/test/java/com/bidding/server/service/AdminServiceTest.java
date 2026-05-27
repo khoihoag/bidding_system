@@ -82,9 +82,11 @@ class AdminServiceTest {
     @DisplayName("Test 3.1 (Mở khóa User): Admin thực hiện mở khóa tài khoản")
     void testUnbanUserSuccess() {
         when(mockAdmin.getRole()).thenReturn(UserRole.ADMIN);
+        when(mockAdmin.getId()).thenReturn("admin-01");
 
         String targetId = "user-99";
         when(userRepository.findById(targetId)).thenReturn(mockTargetUser);
+        when(mockTargetUser.getId()).thenReturn(targetId);
 
         boolean result = adminService.unbanUser(mockAdmin, targetId);
 

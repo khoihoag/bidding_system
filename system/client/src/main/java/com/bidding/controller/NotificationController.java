@@ -13,6 +13,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.application.Platform;
 import com.bidding.network.NetworkClient;
+import com.bidding.util.JsonUtil;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -127,15 +128,11 @@ public class NotificationController implements Initializable {
     }
 
     private String getStringSafe(JsonObject object, String key, String fallback) {
-        return object.has(key) && !object.get(key).isJsonNull()
-                ? object.get(key).getAsString()
-                : fallback;
+        return JsonUtil.getString(object, key, fallback);
     }
 
     private boolean getBooleanSafe(JsonObject object, String key, boolean fallback) {
-        return object.has(key) && !object.get(key).isJsonNull()
-                ? object.get(key).getAsBoolean()
-                : fallback;
+        return JsonUtil.getBoolean(object, key, fallback);
     }
 
     private String inferTitle(String message) {

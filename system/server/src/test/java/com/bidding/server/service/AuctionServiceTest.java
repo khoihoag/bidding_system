@@ -30,6 +30,9 @@ class AuctionServiceTest {
     @Mock
     private AuctionObserver observer;
 
+    @Mock
+    private UserService userService;
+
     @InjectMocks
     private AuctionService auctionService;
 
@@ -46,6 +49,7 @@ class AuctionServiceTest {
         testItem.setSellerFullName(seller.getFullName());
         testItem.setStartingPrice(1000.0);
         testItem.setBidStep(100.0);
+        auctionService.setUserService(userService);
     }
 
     @Test
@@ -98,6 +102,8 @@ class AuctionServiceTest {
 
         // Kiểm tra: Observer phải nhận được sự kiện BID_PLACED
         verify(observer, times(1)).onBidPlaced(any());
+        verify(userService, never()).deductBalance(any(), anyDouble());
+        verify(userService, never()).addBalance(any(), anyDouble());
     }
 
     @Test

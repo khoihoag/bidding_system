@@ -24,8 +24,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class AuctionService {
-    private final ItemService quanLyKho = new ItemService(new com.bidding.server.repository.ItemRepository());
-    private final AuctionRepository repository = new AuctionRepository();
+    private final ItemService quanLyKho;
+    private final AuctionRepository repository;
     private final AuctionMapper mapper = AuctionMapper.INSTANCE;
     private final List<AuctionObserver> observers = new CopyOnWriteArrayList<>();
     private final ConcurrentHashMap<String, Auction> activeAuctions = new ConcurrentHashMap<>();
@@ -37,6 +37,15 @@ public class AuctionService {
 
     // BỘ ĐẾM THỜI GIAN
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
+
+    public AuctionService() {
+        this(new ItemService(new com.bidding.server.repository.ItemRepository()), new AuctionRepository());
+    }
+
+    public AuctionService(ItemService itemService, AuctionRepository repository) {
+        this.quanLyKho = itemService;
+        this.repository = repository;
+    }
 
     public void setUserService(UserService userService) {
         this.baoVe = userService;
@@ -299,15 +308,11 @@ public class AuctionService {
             paymentTimers.remove(auctionId);
             return;
         }
-        if (isItemAlreadyTransferredToWinner(entity)) {
+        if (false && isItemAlreadyTransferredToWinner(entity)) {
             repository.finalizeAuction(auctionId, AuctionStatus.PAID, entity.getCurrentWinner());
             activeAuctions.remove(auctionId);
             paymentTimers.remove(auctionId);
             return;
-        }
-
-        if (baoVe != null) {
-            baoVe.addBalance(entity.getCurrentWinner(), entity.getCurrentPrice());
         }
 
         Auction active = activeAuctions.get(auctionId);
@@ -318,7 +323,7 @@ public class AuctionService {
         repository.finalizeAuction(auctionId, AuctionStatus.FAILED, null);
         activeAuctions.remove(auctionId);
         paymentTimers.remove(auctionId);
-        System.out.println("[Service] Qua han thanh toan phien " + auctionId + ", da hoan tien va cho phep dau gia lai.");
+        System.out.println("[Service] Qua han thanh toan phien " + auctionId + ", da cho phep dau gia lai.");
     }
 
     public void payWonAuction(String auctionId, User payer) {
@@ -342,29 +347,42 @@ public class AuctionService {
             throw new RuntimeException("Đã quá hạn thanh toán 10 phút. Sản phẩm được trả lại cho người bán.");
         }
 
-        if (isItemAlreadyTransferredToWinner(entity)) {
+        User seller;
+        if (baoVe == null) {
+            throw new RuntimeException("Lỗi hệ thống: chưa kết nối hệ thống ví.");
+        }
+        User freshPayer = baoVe.findById(payer.getId());
+        if (freshPayer == null) {
+            throw new RuntimeException("Khong tim thay tai khoan thanh toan.");
+        }
+        seller = baoVe.findById(entity.getItem().getSellerId());
+        if (seller == null) {
+            throw new RuntimeException("Không tìm thấy người bán để thanh toán.");
+        }
+
+        double paymentAmount = entity.getCurrentPrice();
+        baoVe.deductBalance(freshPayer, paymentAmount);
+        payer.setBalance(freshPayer.getBalance());
+
+        try {
+            baoVe.addBalance(seller, entity.getCurrentPrice());
+
+            quanLyKho.changeItemOwner(entity.getItem().getId(), entity.getCurrentWinner());
             repository.finalizeAuction(auctionId, AuctionStatus.PAID, entity.getCurrentWinner());
+
+            Auction active = activeAuctions.get(auctionId);
+            if (active != null) {
+                active.getItem().setSellerId(entity.getCurrentWinner().getId());
+                active.getItem().setSellerFullName(entity.getCurrentWinner().getFullName());
+                active.setStatus(AuctionStatus.PAID);
+            }
             activeAuctions.remove(auctionId);
             cancelPaymentTimer(auctionId);
-            return;
+        } catch (RuntimeException e) {
+            baoVe.addBalance(freshPayer, paymentAmount);
+            payer.setBalance(freshPayer.getBalance());
+            throw e;
         }
-
-        User seller = baoVe != null ? baoVe.findById(entity.getItem().getSellerId()) : null;
-        if (baoVe != null && seller != null) {
-            baoVe.addBalance(seller, entity.getCurrentPrice());
-        }
-
-        quanLyKho.changeItemOwner(entity.getItem().getId(), entity.getCurrentWinner());
-        repository.finalizeAuction(auctionId, AuctionStatus.PAID, entity.getCurrentWinner());
-
-        Auction active = activeAuctions.get(auctionId);
-        if (active != null) {
-            active.getItem().setSellerId(entity.getCurrentWinner().getId());
-            active.getItem().setSellerFullName(entity.getCurrentWinner().getFullName());
-            active.setStatus(AuctionStatus.PAID);
-        }
-        activeAuctions.remove(auctionId);
-        cancelPaymentTimer(auctionId);
     }
 
     public long countAuctionsCreatedBySeller(String sellerId) {
@@ -406,11 +424,6 @@ public class AuctionService {
     private void cancelAuctionByAdmin(Auction auction) {
         cancelAuctionTimers(auction.getId());
 
-        User currentWinner = auction.getCurrentWinner();
-        if (currentWinner != null && baoVe != null) {
-            baoVe.addBalance(currentWinner, auction.getCurrentPrice().get());
-        }
-
         auction.setCurrentWinner(null);
         auction.setStatus(AuctionStatus.CANCELED);
         repository.finalizeAuction(auction.getId(), AuctionStatus.CANCELED, null);
@@ -439,18 +452,11 @@ public class AuctionService {
         // ================= LOGIC ĐẤU GIÁ NGƯỢC (INSTANT WIN) =================
         if (auction.isReverse()) {
             double finalPrice = auction.getCurrentPrice().get();
-            baoVe.deductBalance(bidder, finalPrice);
 
             try {
                 auction.setCurrentWinner(bidder);
 
-                BiddingTransactionEntity txEntity = new BiddingTransactionEntity();
-                txEntity.setId(System.currentTimeMillis());
-                txEntity.setBidAmount(finalPrice);
-                txEntity.setBidTime(LocalDateTime.now());
-                txEntity.setAutoBid(false);
-                txEntity.setExtended(false);
-                txEntity.setBidder(bidder);
+                BiddingTransactionEntity txEntity = createBidEntity(finalPrice, bidder);
                 txEntity.setStatus(com.bidding.server.enums.BidStatus.ACCEPTED); // Đủ trạng thái
 
                 // 1. Lưu lịch sử đặt giá (Bây giờ đã dùng merge() nên cực mượt, không sập nữa)
@@ -464,7 +470,6 @@ public class AuctionService {
                 return;
 
             } catch (Exception e) {
-                baoVe.addBalance(bidder, finalPrice);
                 System.err.println("❌ LỖI CHỐT ĐƠN NGƯỢC: " + e.getMessage());
                 e.printStackTrace();
                 throw new RuntimeException("Lỗi chốt đơn: " + e.getMessage());
@@ -477,12 +482,9 @@ public class AuctionService {
         // =====================================================================
 
         // ------------------ LUỒNG ĐẤU GIÁ THÔNG THƯỜNG -----------------------
-        User oldWinner = auction.getCurrentWinner();
-        Double oldPrice = auction.getCurrentPrice().get();
         LocalDateTime oldEndTime = auction.getEndTime();
 
         validateBidAmount(auction, amount);
-        baoVe.deductBalance(bidder, amount);
 
         try {
             BiddingTransaction tx = auction.placeBid(bidder, amount, false);
@@ -493,18 +495,7 @@ public class AuctionService {
                 scheduleAuctionEnd(auction);
             }
 
-            if (oldWinner != null && !oldWinner.getId().equals(bidder.getId())) {
-                baoVe.addBalance(oldWinner, oldPrice);
-            }
-
-            BiddingTransactionEntity txEntity = new BiddingTransactionEntity();
-            txEntity.setId(tx.getId());
-            txEntity.setBidAmount(tx.getBidAmount());
-            txEntity.setBidTime(tx.getBidTime());
-            txEntity.setAutoBid(tx.isAutoBid());
-            txEntity.setExtended(tx.isExtended());
-            txEntity.setStatus(tx.getStatus());
-            txEntity.setBidder(bidder);
+            BiddingTransactionEntity txEntity = createBidEntity(tx, bidder);
 
             repository.saveNewBid(auction.getId(), auction.getCurrentPrice().get(), bidder, auction.getEndTime(), txEntity);
 
@@ -513,7 +504,6 @@ public class AuctionService {
 
             triggerAutoBids(auction);
         } catch (Exception e) {
-            baoVe.addBalance(bidder, amount);
             throw e;
         }
     }
@@ -582,11 +572,7 @@ public class AuctionService {
     }
 
     private void executeInternalBid(Auction auction, double amount, User bidder) {
-        User oldWinner = auction.getCurrentWinner();
-        Double oldPrice = auction.getCurrentPrice().get();
-
         validateBidAmount(auction, amount);
-        baoVe.deductBalance(bidder, amount);
 
         try {
             BiddingTransaction tx = auction.placeBid(bidder, amount, true);
@@ -597,18 +583,7 @@ public class AuctionService {
                 scheduleAuctionEnd(auction);
             }
 
-            if (oldWinner != null && !oldWinner.getId().equals(bidder.getId())) {
-                baoVe.addBalance(oldWinner, oldPrice);
-            }
-
-            BiddingTransactionEntity txEntity = new BiddingTransactionEntity();
-            txEntity.setId(tx.getId());
-            txEntity.setBidAmount(tx.getBidAmount());
-            txEntity.setBidTime(tx.getBidTime());
-            txEntity.setAutoBid(tx.isAutoBid());
-            txEntity.setExtended(tx.isExtended());
-            txEntity.setStatus(tx.getStatus());
-            txEntity.setBidder(bidder);
+            BiddingTransactionEntity txEntity = createBidEntity(tx, bidder);
 
             repository.saveNewBid(auction.getId(), auction.getCurrentPrice().get(), bidder, auction.getEndTime(), txEntity);
 
@@ -616,9 +591,32 @@ public class AuctionService {
             notifyObservers(event);
 
         } catch (Exception e) {
-            baoVe.addBalance(bidder, amount);
             throw e;
         }
+    }
+
+    private BiddingTransactionEntity createBidEntity(BiddingTransaction tx, User bidder) {
+        BiddingTransactionEntity txEntity = new BiddingTransactionEntity();
+        txEntity.setId(tx.getId());
+        txEntity.setBidAmount(tx.getBidAmount());
+        txEntity.setBidTime(tx.getBidTime());
+        txEntity.setAutoBid(tx.isAutoBid());
+        txEntity.setExtended(tx.isExtended());
+        txEntity.setStatus(tx.getStatus());
+        txEntity.setBidder(bidder);
+        return txEntity;
+    }
+
+    private BiddingTransactionEntity createBidEntity(double amount, User bidder) {
+        BiddingTransactionEntity txEntity = new BiddingTransactionEntity();
+        txEntity.setId(System.currentTimeMillis());
+        txEntity.setBidAmount(amount);
+        txEntity.setBidTime(LocalDateTime.now());
+        txEntity.setAutoBid(false);
+        txEntity.setExtended(false);
+        txEntity.setBidder(bidder);
+        txEntity.setStatus(BidStatus.ACCEPTED);
+        return txEntity;
     }
 
     public boolean isItemInActiveAuction(String itemId) {

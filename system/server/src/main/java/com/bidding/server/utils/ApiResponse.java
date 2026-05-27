@@ -23,6 +23,18 @@ public final class ApiResponse {
         return reply;
     }
 
+    public static JsonObject success(String action, String key, Number value) {
+        JsonObject reply = success(action);
+        reply.addProperty(key, value);
+        return reply;
+    }
+
+    public static JsonObject successMessage(String action, String message) {
+        JsonObject reply = success(action);
+        reply.addProperty("message", message);
+        return reply;
+    }
+
     public static JsonObject loginSuccess(String userId, String role, double balance) {
         return loginSuccess(userId, role, 0, balance);
     }

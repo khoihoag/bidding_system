@@ -2682,6 +2682,10 @@
     -fx-padding: 2 8 16 0;
 }
 
+.won-items-grid {
+    -fx-padding: 2 8 14 0;
+}
+
 .inventory-action-tabs {
     -fx-background-color: transparent;
 }
@@ -2924,6 +2928,42 @@
 .inventory-card-actions .inventory-card-detail-btn {
     -fx-font-size: 11px;
     -fx-padding: 7 10;
+}
+
+.won-item-card {
+    -fx-padding: 6;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-effect: dropshadow(gaussian, rgba(16, 24, 40, 0.06), 12, 0.10, 0, 2);
+}
+
+.won-item-card:hover,
+.won-item-card.inventory-item-card-selected {
+    -fx-effect: dropshadow(gaussian, rgba(184, 134, 11, 0.14), 14, 0.14, 0, 3);
+}
+
+.won-item-card .inventory-card-badge,
+.won-item-card .inventory-status-badge {
+    -fx-font-size: 8px;
+    -fx-padding: 2 5;
+}
+
+.won-item-card .card-name {
+    -fx-font-size: 12px;
+    -fx-font-weight: 800;
+}
+
+.won-item-card-body {
+    -fx-padding: 6 6 0 6;
+}
+
+.won-item-card-actions {
+    -fx-padding: 0 6 6 6;
+}
+
+.won-item-card-actions .inventory-card-detail-btn {
+    -fx-font-size: 10px;
+    -fx-padding: 5 7;
 }
 
 /* --- Nạp tiền: project template dialog --- */

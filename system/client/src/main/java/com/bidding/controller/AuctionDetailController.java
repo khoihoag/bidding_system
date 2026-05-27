@@ -1,6 +1,7 @@
 package com.bidding.controller;
 
 import com.bidding.controller.auctiondetail.*;
+import com.bidding.util.JsonUtil;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import javafx.fxml.FXML;
@@ -618,9 +619,7 @@ public class AuctionDetailController {
     }
 
     private String getIntString(JsonObject json, String key) {
-        return json != null && json.has(key) && !json.get(key).isJsonNull()
-                ? String.valueOf(json.get(key).getAsInt())
-                : "0";
+        return String.valueOf(JsonUtil.getInt(json, key, 0));
     }
 
     private String getStringOrFallback(JsonObject json, String key, String fallback) {
@@ -629,9 +628,7 @@ public class AuctionDetailController {
     }
 
     private String getStringSafe(JsonObject json, String key) {
-        return json != null && json.has(key) && !json.get(key).isJsonNull()
-                ? json.get(key).getAsString()
-                : "";
+        return JsonUtil.getString(json, key);
     }
 
     private String buildInitials(String name) {

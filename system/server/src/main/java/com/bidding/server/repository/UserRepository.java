@@ -10,7 +10,15 @@ import org.hibernate.query.Query;
 import java.util.List;
 
 public class UserRepository {
-    private static final SessionFactory factory = HibernateSessionFactory.getSessionFactory();
+    private final SessionFactory factory;
+
+    public UserRepository() {
+        this(HibernateSessionFactory.getSessionFactory());
+    }
+
+    UserRepository(SessionFactory factory) {
+        this.factory = factory;
+    }
 
     // Lưu hoặc cập nhật User
     public void saveOrUpdate(User user) {

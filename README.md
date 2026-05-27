@@ -27,6 +27,21 @@ Start the server:
 mvn exec:java -Dexec.mainClass="com.bidding.server.network.ServerMain"
 ```
 
+The server reads MySQL defaults from `system/server/src/main/resources/hibernate.cfg.xml`
+(`jdbc:mysql://localhost:3306/bidding_system`, user `root`, password `123456`).
+Override them when your local MySQL account is different:
+
+```powershell
+$env:DB_PASSWORD = "your_mysql_password"
+mvn exec:java -Dexec.mainClass="com.bidding.server.network.ServerMain"
+```
+
+You can also use JVM properties:
+
+```powershell
+mvn exec:java -Dexec.mainClass="com.bidding.server.network.ServerMain" -Ddb.username=root -Ddb.password=your_mysql_password
+```
+
 Start the client:
 
 ```bash
