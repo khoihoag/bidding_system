@@ -37,6 +37,7 @@ public class ItemController {
 
         try {
             List<Item> myItems = quanLyKho.getMyItems(client.getLoggedInUser());
+            sortNewestFirst(myItems);
             com.google.gson.JsonArray itemsArray = new com.google.gson.JsonArray();
 
             for (Item item : myItems) {
@@ -298,6 +299,7 @@ public class ItemController {
         try {
             // Gọi Service để lôi đồ từ Repo (cái hàm sếp vừa thêm vào ItemRepository)
             List<Item> wonItems = quanLyKho.getWonItems(client.getLoggedInUser());
+            sortNewestFirst(wonItems);
             com.google.gson.JsonArray itemsArray = new com.google.gson.JsonArray();
 
             for (Item item : wonItems) {
@@ -317,6 +319,14 @@ public class ItemController {
             System.err.println("Lỗi đóng gói JSON chiến lợi phẩm: " + e.getMessage());
             client.sendError("Lỗi hệ thống khi tải chiến lợi phẩm!");
         }
+    }
+
+    private void sortNewestFirst(List<Item> items) {
+        items.sort(java.util.Comparator
+                .comparing(Item::getCreatedAt, java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()))
+                .thenComparing(Item::getUpdatedAt, java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()))
+                .thenComparing(Item::getId, java.util.Comparator.nullsLast(String::compareTo))
+                .reversed());
     }
 
     private void enrichAuctionStatus(JsonObject itemJson, String itemId) {

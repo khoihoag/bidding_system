@@ -2,8 +2,12 @@ package com.bidding.controller;
 import javafx.stage.FileChooser;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import com.bidding.model.UserSession;
 import com.bidding.network.NetworkClient;
+import com.bidding.util.JsonUtil;
+import com.bidding.util.TextUtil;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -23,6 +27,8 @@ import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
 
 import java.net.URL;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ResourceBundle;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
@@ -30,8 +36,11 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 public class InventoryController implements Initializable {
     private static final int INVENTORY_GRID_COLUMNS = 2;
+    private static final int WON_ITEMS_GRID_COLUMNS = 4;
     private static final double INVENTORY_GRID_GAP = 12;
+    private static final double WON_ITEMS_GRID_GAP = 16;
     private static final double INVENTORY_CARD_INSET = 8;
+    private static final double WON_ITEM_CARD_INSET = 10;
     @FXML private javafx.scene.control.CheckBox chkReverseNow, chkReverseSchedule;
     @FXML private javafx.scene.control.TextField txtDropStepNow, txtDropStepSchedule;
     @FXML private GridPane wonItemsGrid;
@@ -366,6 +375,7 @@ public class InventoryController implements Initializable {
                             itemDatabase.put(id, item);
                             inventoryItems.add(item);
                         }
+                        sortItemsNewestFirst(inventoryItems);
                         renderInventoryGrid();
                     } else {
                         addGridMessage(inventoryGrid, "Kho đồ trống. Hãy nhập thêm vật phẩm!");
@@ -464,6 +474,13 @@ public class InventoryController implements Initializable {
                     }
                 }
                 else if ("PAY_AUCTION_REPLY".equals(action)) {
+                    if (response.has("balance")) {
+                        UserSession.getInstance().setBalance(response.get("balance").getAsDouble());
+                        MainController mainController = MainController.getInstance();
+                        if (mainController != null) {
+                            mainController.updateBalanceDisplay();
+                        }
+                    }
                     showAlert(AlertType.INFORMATION, "Thành công", "Thanh toán thành công. Sản phẩm đã được chuyển vào kho của bạn.");
                     handleRefreshWonItems();
                     handleRefreshInventory();
@@ -476,6 +493,36 @@ public class InventoryController implements Initializable {
                 System.err.println("Lỗi parse JSON Inventory: " + e.getMessage());
             }
         });
+    }
+
+    private void sortItemsNewestFirst(List<JsonObject> items) {
+        items.sort(Comparator
+                .comparingLong(this::getItemSortTime)
+                .thenComparing(item -> getString(item, "id"), Comparator.nullsLast(String::compareTo))
+                .reversed());
+    }
+
+    private long getItemSortTime(JsonObject item) {
+        long createdAt = parseDateTimeMillis(getString(item, "createdAt"));
+        if (createdAt > 0) {
+            return createdAt;
+        }
+        long updatedAt = parseDateTimeMillis(getString(item, "updatedAt"));
+        if (updatedAt > 0) {
+            return updatedAt;
+        }
+        return parseDateTimeMillis(getString(item, "reviewedAt"));
+    }
+
+    private long parseDateTimeMillis(String value) {
+        if (value == null || value.isBlank()) {
+            return 0;
+        }
+        try {
+            return LocalDateTime.parse(value).toInstant(ZoneOffset.UTC).toEpochMilli();
+        } catch (Exception ignored) {
+            return 0;
+        }
     }
 
     private String approvalStatusLabel(String status) {
@@ -663,8 +710,9 @@ public class InventoryController implements Initializable {
     }
 
     private void addCardToGrid(GridPane grid, javafx.scene.Node node, int index) {
-        int col = index % INVENTORY_GRID_COLUMNS;
-        int row = index / INVENTORY_GRID_COLUMNS;
+        int columns = getGridColumnCount(grid);
+        int col = index % columns;
+        int row = index / columns;
         GridPane.setColumnIndex(node, col);
         GridPane.setRowIndex(node, row);
         if (node instanceof Region region) {
@@ -677,7 +725,7 @@ public class InventoryController implements Initializable {
     private void addGridMessage(GridPane grid, String message) {
         Label label = new Label(message);
         label.setWrapText(true);
-        GridPane.setColumnSpan(label, INVENTORY_GRID_COLUMNS);
+        GridPane.setColumnSpan(label, getGridColumnCount(grid));
         grid.getChildren().add(label);
     }
 
@@ -689,12 +737,18 @@ public class InventoryController implements Initializable {
         if (gridWidth <= 1) {
             return 197;
         }
-        return Math.max(150, Math.floor((gridWidth - INVENTORY_GRID_GAP) / INVENTORY_GRID_COLUMNS));
+        int columns = getGridColumnCount(grid);
+        double gap = grid == wonItemsGrid ? WON_ITEMS_GRID_GAP : INVENTORY_GRID_GAP;
+        return Math.max(grid == wonItemsGrid ? 128 : 150, Math.floor((gridWidth - (gap * (columns - 1))) / columns));
+    }
+
+    private int getGridColumnCount(GridPane grid) {
+        return grid == wonItemsGrid ? WON_ITEMS_GRID_COLUMNS : INVENTORY_GRID_COLUMNS;
     }
 
     private boolean matchesInventorySearch(JsonObject item) {
         String query = txtInventorySearch != null && txtInventorySearch.getText() != null
-                ? normalizeSearchText(txtInventorySearch.getText())
+                ? TextUtil.normalizeSearchText(txtInventorySearch.getText())
                 : "";
         if (query.isEmpty()) {
             return true;
@@ -705,19 +759,7 @@ public class InventoryController implements Initializable {
                 getString(item, "description") + " " +
                 getString(item, "type") + " " +
                 (item.has("startingPrice") ? item.get("startingPrice").getAsString() : "");
-        return normalizeSearchText(searchable).contains(query);
-    }
-
-    private String normalizeSearchText(String text) {
-        if (text == null) return "";
-        String normalized = java.text.Normalizer.normalize(text, java.text.Normalizer.Form.NFD)
-                .replaceAll("\\p{M}", "")
-                .toLowerCase();
-        return normalized
-                .replace('đ', 'd')
-                .replace('Đ', 'd')
-                .replaceAll("\\s+", " ")
-                .trim();
+        return TextUtil.normalizeSearchText(searchable).contains(query);
     }
 
     private VBox createItemCard(JsonObject item, boolean editable) {
@@ -727,17 +769,28 @@ public class InventoryController implements Initializable {
 
         GridPane sizeGrid = editable ? inventoryGrid : wonItemsGrid;
         final double cardWidth = getGridCardWidth(sizeGrid);
-        final double imageWidth = Math.max(120, cardWidth - (INVENTORY_CARD_INSET * 2));
-        final double imageHeight = 132;
-        final double contentWidth = Math.max(120, cardWidth - (INVENTORY_CARD_INSET * 2) - 20);
+        final boolean compact = !editable;
+        final double cardInset = compact ? WON_ITEM_CARD_INSET : INVENTORY_CARD_INSET;
+        final double imageWidth = Math.max(compact ? 160 : 120, cardWidth - (cardInset * 2));
+        final double imageHeight = compact
+                ? Math.max(150, Math.min(190, imageWidth * 0.48))
+                : 132;
+        final double contentWidth = Math.max(compact ? 160 : 120, cardWidth - (cardInset * 2) - (compact ? 0 : 20));
 
-        VBox card = new VBox(8);
+        VBox card = new VBox(compact ? 5 : 8);
         card.getStyleClass().add("inventory-item-card");
+        if (compact) {
+            card.getStyleClass().add("won-item-card");
+        }
         card.setPrefWidth(cardWidth);
         card.setMinWidth(10);
         card.setMaxWidth(Double.MAX_VALUE);
+        if (compact) {
+            card.setMinHeight(286);
+            card.setPrefHeight(286);
+        }
         card.setAlignment(Pos.TOP_CENTER);
-        card.setPadding(new javafx.geometry.Insets(INVENTORY_CARD_INSET));
+        card.setPadding(new javafx.geometry.Insets(cardInset));
 
         StackPane imageBox = new StackPane();
         imageBox.getStyleClass().add("inventory-card-image-box");
@@ -798,11 +851,21 @@ public class InventoryController implements Initializable {
 
         VBox body = new VBox(6, lblName);
         body.getStyleClass().add("inventory-card-body");
+        if (compact) {
+            body.getStyleClass().add("won-item-card-body");
+        }
         body.setAlignment(Pos.TOP_LEFT);
         body.setMaxWidth(contentWidth);
+        if (compact) {
+            body.setMinHeight(38);
+            body.setPrefHeight(38);
+        }
 
-        HBox actions = new HBox(8);
+        HBox actions = new HBox(compact ? 6 : 8);
         actions.getStyleClass().add("inventory-card-actions");
+        if (compact) {
+            actions.getStyleClass().add("won-item-card-actions");
+        }
         HBox.setHgrow(btnDetails, javafx.scene.layout.Priority.ALWAYS);
         actions.getChildren().add(btnDetails);
         String auctionStatus = item.has("auctionStatus") ? item.get("auctionStatus").getAsString() : "";
@@ -971,7 +1034,7 @@ public class InventoryController implements Initializable {
     }
 
     private String getString(JsonObject object, String key) {
-        return object != null && object.has(key) && !object.get(key).isJsonNull() ? object.get(key).getAsString() : "";
+        return JsonUtil.getString(object, key);
     }
 
     private String formatPrice(double value) {
