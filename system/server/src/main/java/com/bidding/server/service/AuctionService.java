@@ -27,8 +27,8 @@ public class AuctionService {
     public static final int DEFAULT_ANTI_SNIPING_SECONDS = 30;
     public static final int DEFAULT_EXTENSION_SECONDS = 60;
 
-    private final ItemService quanLyKho = new ItemService(new com.bidding.server.repository.ItemRepository());
-    private final AuctionRepository repository = new AuctionRepository();
+    private final ItemService quanLyKho;
+    private final AuctionRepository repository;
     private final AuctionMapper mapper = AuctionMapper.INSTANCE;
     private final List<AuctionObserver> observers = new CopyOnWriteArrayList<>();
     private final ConcurrentHashMap<String, Auction> activeAuctions = new ConcurrentHashMap<>();
@@ -40,6 +40,20 @@ public class AuctionService {
 
     // BỘ ĐẾM THỜI GIAN
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
+
+    public AuctionService() {
+        this(
+                new AuctionRepository(),
+                new ItemService(new com.bidding.server.repository.ItemRepository()),
+                null
+        );
+    }
+
+    public AuctionService(AuctionRepository repository, ItemService itemService, UserService userService) {
+        this.repository = repository;
+        this.quanLyKho = itemService;
+        this.baoVe = userService;
+    }
 
     public void setUserService(UserService userService) {
         this.baoVe = userService;
