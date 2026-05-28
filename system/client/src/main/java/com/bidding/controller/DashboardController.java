@@ -266,7 +266,7 @@ public class DashboardController {
             case "REALTIME_BID_UPDATE", "NEW_BID" -> handleRealtimeBidUpdate(json);
 
             // QUAN TRỌNG: Nghe loa phát thanh để tự refresh khi có hàng mới!
-            case "GLOBAL_NOTIFY" -> {
+            case "GLOBAL_NOTIFY", "NEW_NOTIFICATION", "AUCTION_STATUS_CHANGED" -> {
                 System.out.println("[Dashboard] Có hàng mới lên sàn! Đang tải lại...");
                 requestAuctions();
             }

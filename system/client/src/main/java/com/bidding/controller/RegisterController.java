@@ -19,6 +19,7 @@ public class RegisterController {
 
     private final NetworkClient networkClient = NetworkClient.getInstance();
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    private static final Pattern PASSWORD_PATTERN = Pattern.compile("^\\S{6,32}$");
 
     @FXML
     public void initialize() {
@@ -45,6 +46,11 @@ public class RegisterController {
 
         if (!password.equals(confirmPassword)) {
             showError("Mật khẩu xác nhận không khớp!");
+            return;
+        }
+
+        if (!PASSWORD_PATTERN.matcher(password).matches()) {
+            showError("M\u1eadt kh\u1ea9u ph\u1ea3i d\u00e0i 6-32 k\u00fd t\u1ef1 v\u00e0 kh\u00f4ng ch\u1ee9a kho\u1ea3ng tr\u1eafng.");
             return;
         }
 

@@ -102,6 +102,9 @@ public class Auction extends Entity {
     }
 
     public BiddingTransaction placeBid(User bidder, double amount,boolean isAutoBid) {
+        if (isSeller(bidder)) {
+            throw new RuntimeException("Nguoi dang san pham khong duoc phep dau gia phien cua chinh minh.");
+        }
         // 1. Kiểm tra trạng thái phiên (Fail-fast validation)
         if (this.status != AuctionStatus.RUNNING) {
             throw new AuctionClosedException("Phiên đấu giá đã đóng hoặc chưa bắt đầu.");
@@ -232,6 +235,9 @@ public class Auction extends Entity {
         return false;
     }
     public void registerAutoBid(User user, double maxBid, double increment) {
+        if (isSeller(user)) {
+            throw new RuntimeException("Nguoi dang san pham khong duoc phep dau gia phien cua chinh minh.");
+        }
         if (this.status != AuctionStatus.RUNNING && this.status != AuctionStatus.OPEN) {
             throw new RuntimeException("Chỉ được cài Auto-Bid khi phiên chưa kết thúc!");
         }
@@ -246,6 +252,13 @@ public class Auction extends Entity {
     }
 
     // Getter để Service có thể lôi đống Bot ra xử lý
+    private boolean isSeller(User user) {
+        return user != null
+                && this.item != null
+                && this.item.getSellerId() != null
+                && this.item.getSellerId().equals(user.getId());
+    }
+
     public PriorityBlockingQueue<AutoBidConfig> getAutoBidQueue() {
         return autoBidQueue;
     }

@@ -50,6 +50,7 @@ public final class AdminDialogs {
                     .add(resourceClass.getResource("/css/style.css").toExternalForm());
         } catch (Exception ignored) {
         }
+        AdminUiHelper.styleAdminDialog(dialog);
 
         HBox content = new HBox(34);
         content.setPrefWidth(900);
@@ -82,6 +83,7 @@ public final class AdminDialogs {
                     .add(resourceClass.getResource("/css/style.css").toExternalForm());
         } catch (Exception ignored) {
         }
+        AdminUiHelper.styleAdminDialog(dialog);
 
         HBox detailsContent = new HBox(34);
         detailsContent.setStyle("-fx-padding: 10 12 14 12; -fx-background-color: #f8fafc; -fx-font-size: 13px;");
@@ -132,6 +134,7 @@ public final class AdminDialogs {
         confirm.setContentText("Bạn có chắc chắn muốn duyệt sản phẩm này không?"
                 + "\n\nID: " + row.getId()
                 + "\nNgười bán: " + row.getSeller());
+        AdminUiHelper.styleAdminDialog(confirm);
         return confirm.showAndWait()
                 .filter(button -> button == ButtonType.OK)
                 .isPresent();
@@ -142,6 +145,7 @@ public final class AdminDialogs {
         dialog.setTitle("Từ chối sản phẩm");
         dialog.setHeaderText("Từ chối: " + row.getName());
         dialog.setContentText("Lý do:");
+        AdminUiHelper.styleAdminDialog(dialog);
         return dialog.showAndWait()
                 .map(String::trim)
                 .filter(reason -> !reason.isEmpty());
@@ -373,6 +377,7 @@ public final class AdminDialogs {
                     .add(resourceClass.getResource("/css/admin.css").toExternalForm());
         } catch (Exception ignored) {
         }
+        AdminUiHelper.styleAdminDialog(dialog);
 
         VBox content = new VBox(12);
         content.setPrefWidth(1120);

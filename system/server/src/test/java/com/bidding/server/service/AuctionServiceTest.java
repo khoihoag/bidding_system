@@ -105,8 +105,7 @@ class AuctionServiceTest {
 
         // Kiểm tra: Observer phải nhận được sự kiện BID_PLACED
         verify(observer, times(1)).onBidPlaced(any());
-        verify(userService, times(1)).deductBalance(bidder, 1500.0);
-        verify(userService, never()).addBalance(any(), anyDouble());
+        verifyNoInteractions(userService);
     }
 
     @Test

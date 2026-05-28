@@ -76,7 +76,7 @@ class UserServiceTest {
     @Test
     @DisplayName("register: Tạo User mới và lưu xuống DB với quyền USER mặc định")
     void testRegister() {
-        userService.register("newbie", "pass", "new@gmail.com", "New Member");
+        userService.register("newbie", "pass123", "new@gmail.com", "New Member");
 
         // Kiểm tra xem lệnh saveOrUpdate có được gọi với một User có role USER không
         verify(userRepository, times(1)).saveOrUpdate(argThat(user ->
@@ -85,7 +85,17 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("getBidHistory: Trả về danh sách lịch sử khi ID hợp lệ")
+    @DisplayName("register: Chan mat khau duoi 6 ky tu")
+    void testRegisterRejectsShortPassword() {
+        RuntimeException ex = assertThrows(RuntimeException.class, () ->
+                userService.register("newbie", "pass", "new@gmail.com", "New Member"));
+
+        assertEquals("M\u1eadt kh\u1ea9u ph\u1ea3i d\u00e0i 6-32 k\u00fd t\u1ef1 v\u00e0 kh\u00f4ng ch\u1ee9a kho\u1ea3ng tr\u1eafng.", ex.getMessage());
+        verify(userRepository, never()).saveOrUpdate(any());
+    }
+
+    @Test
+    @DisplayName("getBidHistory: Tra ve danh sach lich su khi ID hop le")
     void testGetBidHistorySuccess() {
         List<BiddingTransactionEntity> history = new ArrayList<>();
         when(userRepository.getBidHistoryByUserId("U001")).thenReturn(history);

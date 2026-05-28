@@ -45,6 +45,10 @@ public class UserService {
         if (password == null || password.trim().isEmpty()) {
             throw new RuntimeException("Mật khẩu không được để trống!");
         }
+        String normalizedPassword = password.trim();
+        if (!PASSWORD_PATTERN.matcher(normalizedPassword).matches()) {
+            throw new RuntimeException("M\u1eadt kh\u1ea9u ph\u1ea3i d\u00e0i 6-32 k\u00fd t\u1ef1 v\u00e0 kh\u00f4ng ch\u1ee9a kho\u1ea3ng tr\u1eafng.");
+        }
         if (fullName == null || fullName.trim().isEmpty()) {
             throw new RuntimeException("Họ tên không được để trống!");
         }
@@ -55,7 +59,7 @@ public class UserService {
         // Tạo một Object User mới toanh.
         // Truyền null vào vị trí ID để Entity cha tự động đẻ ra UUID mới.
         // Role mặc định chắc chắn là USER thường rồi.
-        User newUser = new User(null, username.trim(), email.trim(), password, fullName.trim(), UserRole.USER);
+        User newUser = new User(null, username.trim(), email.trim(), normalizedPassword, fullName.trim(), UserRole.USER);
 
         // Gọi Thủ kho cất hồ sơ xuống Database
         repository.saveOrUpdate(newUser);

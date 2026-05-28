@@ -58,8 +58,8 @@ public class ServerMain {
         AuctionService auctionService = new AuctionService();
         auctionService.loadAllAuctions();
 
-        ClientManager clientManager = new ClientManager();
         UserRepository userRepository = new UserRepository();
+        ClientManager clientManager = new ClientManager(userRepository);
         ItemRepository itemRepository = new ItemRepository();
         AdminService adminService = new AdminService(userRepository, auctionService, itemRepository);
         UserService userService = new UserService();

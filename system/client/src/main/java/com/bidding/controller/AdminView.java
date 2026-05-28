@@ -376,6 +376,7 @@ public class AdminView implements Initializable {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Đăng xuất");
         confirm.setHeaderText("Bạn có chắc muốn đăng xuất?");
+        AdminUiHelper.styleAdminDialog(confirm);
         confirm.showAndWait().ifPresent(btn -> {
             if (btn == ButtonType.OK) {
                 state.adminLoggedIn = false;
@@ -475,6 +476,7 @@ public class AdminView implements Initializable {
         confirm.setHeaderText("Khóa: " + user.getUsername());
         confirm.setContentText("ID: " + user.getId() + "  |  Role: " + user.getRole()
                 + "\n\nHành động này sẽ khóa tài khoản ngay lập tức.");
+        AdminUiHelper.styleAdminDialog(confirm);
         confirm.showAndWait().ifPresent(btn -> {
             if (btn == ButtonType.OK) {
                 sendBanUser(user.getId(), user.getUsername());
@@ -491,6 +493,7 @@ public class AdminView implements Initializable {
         confirm.setHeaderText("Mở khóa: " + user.getUsername());
         confirm.setContentText("ID: " + user.getId() + "  |  Role: " + user.getRole()
                 + "\n\nHành động này sẽ cho phép tài khoản đăng nhập lại.");
+        AdminUiHelper.styleAdminDialog(confirm);
         confirm.showAndWait().ifPresent(btn -> {
             if (btn == ButtonType.OK) {
                 sendUnbanUser(user.getId(), user.getUsername());
@@ -505,6 +508,7 @@ public class AdminView implements Initializable {
         confirm.setContentText("ID phiên: " + auction.getId()
                 + "\nGiá hiện tại: " + auction.getPriceFormatted()
                 + "\n\nHành động này kết thúc phiên ngay lập tức!");
+        AdminUiHelper.styleAdminDialog(confirm);
         confirm.showAndWait().ifPresent(btn -> {
             if (btn == ButtonType.OK) {
                 sendForceClose(auction.getId(), auction.getTitle());
@@ -522,6 +526,7 @@ public class AdminView implements Initializable {
         confirm.setContentText("ID: " + item.getId()
                 + "\nNgười bán: " + item.getSeller()
                 + "\n\nSản phẩm sẽ được phép mở phiên đấu giá.");
+        AdminUiHelper.styleAdminDialog(confirm);
         confirm.showAndWait().ifPresent(btn -> {
             if (btn == ButtonType.OK) {
                 sendApproveItem(item.getId(), item.getName());
@@ -537,6 +542,7 @@ public class AdminView implements Initializable {
         dialog.setTitle("Từ chối sản phẩm");
         dialog.setHeaderText("Từ chối: " + item.getName());
         dialog.setContentText("Lý do:");
+        AdminUiHelper.styleAdminDialog(dialog);
         dialog.showAndWait().ifPresent(reason ->
                 sendRejectItem(item.getId(), item.getName(), reason));
     }

@@ -140,6 +140,13 @@ public class AdminController {
             reply.addProperty("message", "Da duyet san pham.");
             reply.add("item", ItemJsonMapper.toJson(item));
             client.sendMessage(reply.toString());
+            if (clientManager != null && item.getSellerId() != null && !item.getSellerId().isBlank()) {
+                clientManager.notifyItemOwner(
+                        item.getSellerId(),
+                        "S\u1ea3n ph\u1ea9m \u0111\u00e3 \u0111\u01b0\u1ee3c duy\u1ec7t",
+                        "S\u1ea3n ph\u1ea9m [" + item.getName() + "] \u0111\u00e3 \u0111\u01b0\u1ee3c admin duy\u1ec7t. B\u1ea1n c\u00f3 th\u1ec3 m\u1edf phi\u00ean \u0111\u1ea5u gi\u00e1."
+                );
+            }
         } catch (SecurityException se) {
             client.sendError(se.getMessage());
         } catch (Exception e) {
@@ -162,6 +169,13 @@ public class AdminController {
             reply.addProperty("message", "Da tu choi san pham.");
             reply.add("item", ItemJsonMapper.toJson(item));
             client.sendMessage(reply.toString());
+            if (clientManager != null && item.getSellerId() != null && !item.getSellerId().isBlank()) {
+                clientManager.notifyItemOwner(
+                        item.getSellerId(),
+                        "S\u1ea3n ph\u1ea9m b\u1ecb t\u1eeb ch\u1ed1i",
+                        "S\u1ea3n ph\u1ea9m [" + item.getName() + "] b\u1ecb t\u1eeb ch\u1ed1i. L\u00fd do: " + item.getRejectionReason()
+                );
+            }
         } catch (SecurityException se) {
             client.sendError(se.getMessage());
         } catch (Exception e) {

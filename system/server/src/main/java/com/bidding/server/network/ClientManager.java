@@ -2,6 +2,7 @@ package com.bidding.server.network;
 
 import com.bidding.server.events.AuctionEvent;
 import com.bidding.server.events.AuctionObserver;
+import com.bidding.server.repository.UserRepository;
 import com.google.gson.JsonObject; // Xài JsonObject để bọc chuỗi cho an toàn
 
 import java.util.List;
@@ -10,7 +11,16 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ClientManager implements AuctionObserver {
     private final List<ClientHandler> activeClients = new CopyOnWriteArrayList<>();
     private final java.util.Set<String> announcedClosedAuctions = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    private final UserRepository userRepository;
     // ĐÃ XÓA: private final Gson gson = new Gson(); (Bom nổ chậm)
+
+    public ClientManager() {
+        this(null);
+    }
+
+    public ClientManager(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     public void addClient(ClientHandler client) {
         activeClients.add(client);
@@ -27,21 +37,16 @@ public class ClientManager implements AuctionObserver {
     // =========================================================
     @Override
     public void onAuctionStarted(AuctionEvent event) {
-        // ĐÃ FIX: Bỏ Gson chay. Bắn GLOBAL_NOTIFY vừa nhẹ Server vừa khỏe UI
-        JsonObject notifyJson = new JsonObject();
-        notifyJson.addProperty("action", "GLOBAL_NOTIFY");
-        // Nếu event.getMessage() từ Service có nội dung thì xài, không thì tự ghép:
+        String itemName = event.getAuction() != null && event.getAuction().getItem() != null
+                ? event.getAuction().getItem().getName()
+                : "Vat pham dau gia";
         String msg = (event.getMessage() != null && !event.getMessage().isEmpty())
                 ? event.getMessage()
-                : "Món hàng mới lên sàn: " + event.getAuction().getItem().getName() + "!";
-        notifyJson.addProperty("message", msg);
+                : "Mon hang moi len san: " + itemName + "!";
 
-        broadcast(notifyJson.toString());
+        notifyAllUsers(createNotification("Phiên đấu giá mới", msg));
     }
 
-    // =========================================================
-    // 2. KHI CÓ NGƯỜI VỪA ĐẶT GIÁ MỚI (PHỤC VỤ VẼ LINE CHART)
-    // =========================================================
     @Override
     public void onBidPlaced(AuctionEvent event) {
         System.out.println("[Debug] BidPlaced event received. Auction: " + event.getAuctionId());
@@ -132,13 +137,49 @@ public class ClientManager implements AuctionObserver {
             return;
         }
 
+        java.util.LinkedHashSet<String> followerIds = new java.util.LinkedHashSet<>();
+        if (auction != null && auction.getFollowerIds() != null) {
+            followerIds.addAll(auction.getFollowerIds());
+        }
+
+        String sellerId = auction != null && auction.getItem() != null && auction.getItem().getSellerId() != null
+                ? auction.getItem().getSellerId()
+                : "";
+        String winnerUserId = "";
+        String winnerUsername = "NONE";
+        String winnerDisplay = "Kh\u00f4ng c\u00f3 ng\u01b0\u1eddi \u0111\u1eb7t gi\u00e1";
+        if (auction != null && auction.getCurrentWinner() != null) {
+            var winner = auction.getCurrentWinner();
+            winnerUserId = winner.getId() != null ? winner.getId() : "";
+            winnerUsername = winner.getUsername() != null ? winner.getUsername() : "NONE";
+            winnerDisplay = winner.getFullName() != null && !winner.getFullName().isBlank()
+                    ? winner.getFullName()
+                    : winnerUsername;
+        }
+
+        String closeMessage = canceled
+                ? "Phi\u00ean \u0111\u1ea5u gi\u00e1 [" + itemName + "] \u0111\u00e3 b\u1ecb admin bu\u1ed9c d\u1eebng."
+                : "Phi\u00ean \u0111\u1ea5u gi\u00e1 [" + itemName + "] \u0111\u00e3 k\u1ebft th\u00fac. Ng\u01b0\u1eddi th\u1eafng: " + winnerDisplay + ".";
+
         JsonObject notifyJson = new JsonObject();
-        notifyJson.addProperty("action", "GLOBAL_NOTIFY");
+        notifyJson.addProperty("action", "AUCTION_STATUS_CHANGED");
+        notifyJson.addProperty("auctionId", auctionId);
+        notifyJson.addProperty("status", auctionStatus);
+        notifyJson.addProperty("winnerId", winnerUsername);
         notifyJson.addProperty("message", "Phiên đấu giá [" + itemName + "] đã kết thúc!");
         if (canceled) {
             notifyJson.addProperty("message", "Phiên đấu giá [" + itemName + "] đã bị admin buộc dừng.");
         }
+        notifyJson.addProperty("message", closeMessage);
         broadcast(notifyJson.toString());
+
+        if (!followerIds.isEmpty()) {
+            JsonObject followerNotice = createNotification(
+                    "Phi\u00ean \u0111\u00e3 theo d\u00f5i k\u1ebft th\u00fac",
+                    closeMessage
+            );
+            sendToUsers(new java.util.ArrayList<>(followerIds), wrapNotification(followerNotice).toString());
+        }
 
         // 2. Bắn thêm gói tin CHI TIẾT để UI hiển thị kết quả
         JsonObject endJson = new JsonObject();
@@ -175,9 +216,20 @@ public class ClientManager implements AuctionObserver {
             endJson.addProperty("winnerUsername", "NONE");
             endJson.addProperty("winnerName", "NONE");
         }
+        endJson.addProperty("winnerId", winnerUsername);
+        endJson.addProperty("winnerUserId", winnerUserId);
+        endJson.addProperty("winnerUsername", winnerUsername);
+        endJson.addProperty("winnerName", winnerDisplay);
         endJson.addProperty("itemName", itemName);
         endJson.addProperty("finalPrice", finalPrice);
-        broadcastOneConnectionPerAccount(endJson.toString());
+        java.util.LinkedHashSet<String> dialogRecipients = new java.util.LinkedHashSet<>(followerIds);
+        if (!winnerUserId.isBlank()) {
+            dialogRecipients.add(winnerUserId);
+        }
+        if (!sellerId.isBlank()) {
+            dialogRecipients.add(sellerId);
+        }
+        sendToUsersOneConnectionPerAccount(new java.util.ArrayList<>(dialogRecipients), endJson.toString());
     }
 
     @Override
@@ -203,6 +255,25 @@ public class ClientManager implements AuctionObserver {
             }
         }
     }
+
+    private void sendToUsersOneConnectionPerAccount(List<String> userIds, String message) {
+        if (userIds == null || userIds.isEmpty()) {
+            return;
+        }
+
+        java.util.Set<String> allowedAccounts = new java.util.HashSet<>(userIds);
+        java.util.Set<String> sentAccounts = new java.util.HashSet<>();
+        for (ClientHandler client : activeClients) {
+            if (client.getLoggedInUser() == null || client.getLoggedInUser().getId() == null) {
+                continue;
+            }
+
+            String accountKey = client.getLoggedInUser().getId();
+            if (allowedAccounts.contains(accountKey) && sentAccounts.add(accountKey)) {
+                client.sendMessage(message);
+            }
+        }
+    }
     // =========================================================
     // HÚ RIÊNG CHO MỘT NHÓM ANH EM (DÙNG CHO THÔNG BÁO THEO DÕI)
     // =========================================================
@@ -212,6 +283,74 @@ public class ClientManager implements AuctionObserver {
     public static final java.util.concurrent.ConcurrentHashMap<String, java.util.List<JsonObject>> mailbox = new java.util.concurrent.ConcurrentHashMap<>();
 
     // HÚ RIÊNG VÀ NHÉT VÀO HÒM THƯ
+    public void notifyItemOwner(String userId, String title, String message) {
+        sendToUsers(java.util.List.of(userId), wrapNotification(createNotification(title, message)).toString());
+    }
+
+    public void notifyBalanceChanged(String userId, double balance) {
+        if (userId == null || userId.isBlank()) {
+            return;
+        }
+
+        JsonObject json = new JsonObject();
+        json.addProperty("action", "BALANCE_UPDATE");
+        json.addProperty("balance", balance);
+
+        for (ClientHandler client : activeClients) {
+            if (client.getLoggedInUser() != null && userId.equals(client.getLoggedInUser().getId())) {
+                client.getLoggedInUser().setBalance(balance);
+                client.sendMessage(json.toString());
+            }
+        }
+    }
+
+    private void notifyAllUsers(JsonObject notificationData) {
+        sendToUsers(allKnownUserIds(), wrapNotification(notificationData).toString());
+    }
+
+    private java.util.List<String> allKnownUserIds() {
+        java.util.LinkedHashSet<String> ids = new java.util.LinkedHashSet<>();
+        if (userRepository != null) {
+            try {
+                for (com.bidding.server.model.user.User user : userRepository.findAll()) {
+                    if (user.getId() != null && !user.getId().isBlank()) {
+                        ids.add(user.getId());
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Khong the lay danh sach user de gui thong bao: " + e.getMessage());
+            }
+        }
+        for (ClientHandler client : activeClients) {
+            if (client.getLoggedInUser() != null && client.getLoggedInUser().getId() != null) {
+                ids.add(client.getLoggedInUser().getId());
+            }
+        }
+        return new java.util.ArrayList<>(ids);
+    }
+
+    private JsonObject createNotification(String title, String message) {
+        JsonObject data = new JsonObject();
+        data.addProperty("title", title);
+        data.addProperty("message", message);
+        data.addProperty("time", java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss")));
+        data.addProperty("read", false);
+        return data;
+    }
+
+    private JsonObject wrapNotification(JsonObject data) {
+        JsonObject notif = new JsonObject();
+        notif.addProperty("action", "NEW_NOTIFICATION");
+        notif.add("data", data);
+        return notif;
+    }
+
+    private String getString(JsonObject object, String key, String fallback) {
+        return object != null && object.has(key) && !object.get(key).isJsonNull()
+                ? object.get(key).getAsString()
+                : fallback;
+    }
+
     public void sendToUsers(List<String> userIds, String message) {
         if (userIds == null || userIds.isEmpty()) return;
 
@@ -222,7 +361,7 @@ public class ClientManager implements AuctionObserver {
                 JsonObject dataObj = msgObj.getAsJsonObject("data");
                 // Nhét vào hòm thư của từng ông
                 for(String uid : userIds) {
-                    mailbox.computeIfAbsent(uid, k -> new java.util.ArrayList<>()).add(dataObj);
+                    mailbox.computeIfAbsent(uid, k -> new CopyOnWriteArrayList<>()).add(dataObj.deepCopy());
                 }
             }
         } catch (Exception e) {

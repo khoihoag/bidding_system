@@ -85,11 +85,6 @@ public class AuctionService {
 
         for (Auction auction : models) {
             if (auction.getStatus() == AuctionStatus.FINISHED && auction.getCurrentWinner() != null) {
-                if (isItemAlreadyTransferredToWinner(auction)) {
-                    auction.setStatus(AuctionStatus.PAID);
-                    repository.finalizeAuction(auction.getId(), AuctionStatus.PAID, auction.getCurrentWinner());
-                    continue;
-                }
                 schedulePaymentTimeout(auction);
                 continue;
             }
@@ -114,20 +109,6 @@ public class AuctionService {
                 || status == AuctionStatus.PAID
                 || status == AuctionStatus.FAILED
                 || status == AuctionStatus.CANCELED;
-    }
-
-    private boolean isItemAlreadyTransferredToWinner(Auction auction) {
-        return auction != null
-                && auction.getItem() != null
-                && auction.getCurrentWinner() != null
-                && auction.getCurrentWinner().getId().equals(auction.getItem().getSellerId());
-    }
-
-    private boolean isItemAlreadyTransferredToWinner(AuctionEntity auction) {
-        return auction != null
-                && auction.getItem() != null
-                && auction.getCurrentWinner() != null
-                && auction.getCurrentWinner().getId().equals(auction.getItem().getSellerId());
     }
 
     private void scheduleAuctionEnd(Auction auction) {
@@ -261,7 +242,7 @@ public class AuctionService {
                 // CHỐT 1: Lệnh DB chốt người thắng (Không dùng mapper nữa)
                 repository.finalizeAuction(auction.getId(), AuctionStatus.FINISHED, winner, closedAt);
 
-                // CHỐT 2: Lệnh DB chuyển sổ đỏ món hàng
+                // Chi len lich cho nguoi thang thanh toan; chua tru tien hay chuyen chu san pham.
                 schedulePaymentTimeout(auction);
 
             } else {
@@ -316,17 +297,6 @@ public class AuctionService {
             paymentTimers.remove(auctionId);
             return;
         }
-        if (isItemAlreadyTransferredToWinner(entity)) {
-            repository.finalizeAuction(auctionId, AuctionStatus.PAID, entity.getCurrentWinner());
-            activeAuctions.remove(auctionId);
-            paymentTimers.remove(auctionId);
-            return;
-        }
-
-        if (baoVe != null) {
-            baoVe.addBalance(entity.getCurrentWinner(), entity.getCurrentPrice());
-        }
-
         Auction active = activeAuctions.get(auctionId);
         if (active != null) {
             active.setCurrentWinner(null);
@@ -335,10 +305,10 @@ public class AuctionService {
         repository.finalizeAuction(auctionId, AuctionStatus.FAILED, null);
         activeAuctions.remove(auctionId);
         paymentTimers.remove(auctionId);
-        System.out.println("[Service] Qua han thanh toan phien " + auctionId + ", da hoan tien va cho phep dau gia lai.");
+        System.out.println("[Service] Qua han thanh toan phien " + auctionId + ", cho phep dau gia lai.");
     }
 
-    public void payWonAuction(String auctionId, User payer) {
+    public AuctionRepository.AuctionPaymentResult payWonAuction(String auctionId, User payer) {
         if (payer == null) {
             throw new RuntimeException("Bạn phải đăng nhập để thanh toán.");
         }
@@ -359,20 +329,8 @@ public class AuctionService {
             throw new RuntimeException("Đã quá hạn thanh toán 10 phút. Sản phẩm được trả lại cho người bán.");
         }
 
-        if (isItemAlreadyTransferredToWinner(entity)) {
-            repository.finalizeAuction(auctionId, AuctionStatus.PAID, entity.getCurrentWinner());
-            activeAuctions.remove(auctionId);
-            cancelPaymentTimer(auctionId);
-            return;
-        }
-
-        User seller = baoVe != null ? baoVe.findById(entity.getItem().getSellerId()) : null;
-        if (baoVe != null && seller != null) {
-            baoVe.addBalance(seller, entity.getCurrentPrice());
-        }
-
-        quanLyKho.changeItemOwner(entity.getItem().getId(), entity.getCurrentWinner());
-        repository.finalizeAuction(auctionId, AuctionStatus.PAID, entity.getCurrentWinner());
+        AuctionRepository.AuctionPaymentResult payment = repository.payWonAuction(auctionId, payer.getId());
+        payer.setBalance(payment.getPayerBalance());
 
         Auction active = activeAuctions.get(auctionId);
         if (active != null) {
@@ -382,6 +340,7 @@ public class AuctionService {
         }
         activeAuctions.remove(auctionId);
         cancelPaymentTimer(auctionId);
+        return payment;
     }
 
     public long countAuctionsCreatedBySeller(String sellerId) {
@@ -423,11 +382,6 @@ public class AuctionService {
     private void cancelAuctionByAdmin(Auction auction) {
         cancelAuctionTimers(auction.getId());
 
-        User currentWinner = auction.getCurrentWinner();
-        if (currentWinner != null && baoVe != null) {
-            baoVe.addBalance(currentWinner, auction.getCurrentPrice().get());
-        }
-
         auction.setCurrentWinner(null);
         auction.setStatus(AuctionStatus.CANCELED);
         repository.finalizeAuction(auction.getId(), AuctionStatus.CANCELED, null);
@@ -446,23 +400,13 @@ public class AuctionService {
     // ================= XỬ LÝ ĐẶT GIÁ =================
     public void placeBid(String auctionId, Double amount, User bidder) {
         Auction auction = activeAuctions.get(auctionId);
-        if (auction == null) throw new RuntimeException("Phiên đấu giá ID " + auctionId + " không tồn tại.");
-        if (baoVe == null) throw new RuntimeException("Lỗi hệ thống: Chưa kết nối hệ thống Ngân hàng (UserService)!");
+        if (auction == null) {
+            throw new RuntimeException("Phien dau gia ID " + auctionId + " khong ton tai.");
+        }
+        validateBidderCanBid(auction, bidder);
 
-        // ================= LOGIC ĐẤU GIÁ NGƯỢC (INSTANT WIN) =================
-        // ================= LOGIC ĐẤU GIÁ NGƯỢC (INSTANT WIN) =================
-        // ================= LOGIC ĐẤU GIÁ NGƯỢC (INSTANT WIN) =================
-        // ================= LOGIC ĐẤU GIÁ NGƯỢC (INSTANT WIN) =================
-        // ================= LOGIC ĐẤU GIÁ NGƯỢC (INSTANT WIN) =================
         if (auction.isReverse()) {
             double finalPrice = auction.getCurrentPrice().get();
-            try {
-                baoVe.deductBalance(bidder, finalPrice);
-            } catch (RuntimeException e) {
-                recordRejectedBid(auction, finalPrice, bidder, false);
-                throw e;
-            }
-
             try {
                 auction.setCurrentWinner(bidder);
 
@@ -473,39 +417,20 @@ public class AuctionService {
                 txEntity.setAutoBid(false);
                 txEntity.setExtended(false);
                 txEntity.setBidder(bidder);
-                txEntity.setStatus(com.bidding.server.enums.BidStatus.ACCEPTED); // Đủ trạng thái
+                txEntity.setStatus(com.bidding.server.enums.BidStatus.ACCEPTED);
 
-                // 1. Lưu lịch sử đặt giá (Bây giờ đã dùng merge() nên cực mượt, không sập nữa)
                 repository.saveNewBid(auction.getId(), finalPrice, bidder, auction.getEndTime(), txEntity);
-
-                System.out.println("[Reverse Auction] Đại gia " + bidder.getUsername() + " đã chốt đơn với giá: " + finalPrice);
-
-                // 2. Gọi hàm đóng phiên ngay trên luồng này, an toàn 100%
                 closeAuction(auction);
-
                 return;
-
             } catch (Exception e) {
-                baoVe.addBalance(bidder, finalPrice);
-                System.err.println("❌ LỖI CHỐT ĐƠN NGƯỢC: " + e.getMessage());
-                e.printStackTrace();
-                throw new RuntimeException("Lỗi chốt đơn: " + e.getMessage());
+                throw new RuntimeException("Loi chot don: " + e.getMessage());
             }
         }
-        // =====================================================================
-        // =====================================================================
-        // =====================================================================
 
-        // =====================================================================
-
-        // ------------------ LUỒNG ĐẤU GIÁ THÔNG THƯỜNG -----------------------
-        User oldWinner = auction.getCurrentWinner();
-        Double oldPrice = auction.getCurrentPrice().get();
         LocalDateTime oldEndTime = auction.getEndTime();
 
         try {
             validateBidAmount(auction, amount);
-            baoVe.deductBalance(bidder, amount);
         } catch (RuntimeException e) {
             recordRejectedBid(auction, amount, bidder, false);
             throw e;
@@ -522,10 +447,6 @@ public class AuctionService {
                 scheduleAuctionEnd(auction);
             }
 
-            if (oldWinner != null && !oldWinner.getId().equals(bidder.getId())) {
-                baoVe.addBalance(oldWinner, oldPrice);
-            }
-
             BiddingTransactionEntity txEntity = new BiddingTransactionEntity();
             txEntity.setId(tx.getId());
             txEntity.setBidAmount(tx.getBidAmount());
@@ -537,18 +458,16 @@ public class AuctionService {
 
             repository.saveNewBid(auction.getId(), auction.getCurrentPrice().get(), bidder, auction.getEndTime(), txEntity);
 
-            AuctionEvent event = new AuctionEvent(EventType.BID_PLACED, auction, tx, java.time.LocalDateTime.now(), "Mức giá mới");
+            AuctionEvent event = new AuctionEvent(EventType.BID_PLACED, auction, tx, java.time.LocalDateTime.now(), "Muc gia moi");
             notifyObservers(event);
 
             triggerAutoBids(auction);
         } catch (RuntimeException e) {
-            baoVe.addBalance(bidder, amount);
             if (!modelAccepted) {
                 recordRejectedBid(auction, amount, bidder, false);
             }
             throw e;
         } catch (Exception e) {
-            baoVe.addBalance(bidder, amount);
             throw e;
         }
     }
@@ -648,11 +567,8 @@ public class AuctionService {
     }
 
     private void executeInternalBid(Auction auction, double amount, User bidder) {
-        User oldWinner = auction.getCurrentWinner();
-        Double oldPrice = auction.getCurrentPrice().get();
-
+        validateBidderCanBid(auction, bidder);
         validateBidAmount(auction, amount);
-        baoVe.deductBalance(bidder, amount);
 
         try {
             BiddingTransaction tx = auction.placeBid(bidder, amount, true);
@@ -661,10 +577,6 @@ public class AuctionService {
                 java.util.concurrent.ScheduledFuture<?> oldTimer = auctionTimers.get(auction.getId());
                 if (oldTimer != null) oldTimer.cancel(false);
                 scheduleAuctionEnd(auction);
-            }
-
-            if (oldWinner != null && !oldWinner.getId().equals(bidder.getId())) {
-                baoVe.addBalance(oldWinner, oldPrice);
             }
 
             BiddingTransactionEntity txEntity = new BiddingTransactionEntity();
@@ -678,14 +590,24 @@ public class AuctionService {
 
             repository.saveNewBid(auction.getId(), auction.getCurrentPrice().get(), bidder, auction.getEndTime(), txEntity);
 
-            AuctionEvent event = new AuctionEvent(EventType.BID_PLACED, auction, tx, java.time.LocalDateTime.now(), "Mức giá mới");
+            AuctionEvent event = new AuctionEvent(EventType.BID_PLACED, auction, tx, java.time.LocalDateTime.now(), "Muc gia moi");
             notifyObservers(event);
-
         } catch (Exception e) {
-            baoVe.addBalance(bidder, amount);
             throw e;
         }
     }
+
+    private void validateBidderCanBid(Auction auction, User bidder) {
+        if (auction == null || bidder == null) {
+            throw new RuntimeException("Thong tin nguoi dau gia khong hop le.");
+        }
+        if (auction.getItem() != null
+                && auction.getItem().getSellerId() != null
+                && auction.getItem().getSellerId().equals(bidder.getId())) {
+            throw new RuntimeException("Nguoi dang san pham khong duoc phep dau gia phien cua chinh minh.");
+        }
+    }
+
 
     public boolean isItemInActiveAuction(String itemId) {
         for (Auction auction : activeAuctions.values()) {
@@ -729,6 +651,38 @@ public class AuctionService {
     }
 
     // ================= KHỞI TẠO PHIÊN =================
+    public Auction followAuction(String auctionId, String userId) {
+        Auction auction = findAuctionById(auctionId);
+        if (auction == null) {
+            throw new RuntimeException("Kh\u00f4ng t\u00ecm th\u1ea5y phi\u00ean \u0111\u1ea5u gi\u00e1 n\u00e0y!");
+        }
+
+        auction.addFollower(userId);
+        repository.addFollower(auctionId, userId);
+
+        Auction active = activeAuctions.get(auctionId);
+        if (active != null) {
+            active.addFollower(userId);
+        }
+        return auction;
+    }
+
+    public Auction unfollowAuction(String auctionId, String userId) {
+        Auction auction = findAuctionById(auctionId);
+        if (auction == null) {
+            throw new RuntimeException("Kh\u00f4ng t\u00ecm th\u1ea5y phi\u00ean \u0111\u1ea5u gi\u00e1 n\u00e0y!");
+        }
+
+        auction.removeFollower(userId);
+        repository.removeFollower(auctionId, userId);
+
+        Auction active = activeAuctions.get(auctionId);
+        if (active != null) {
+            active.removeFollower(userId);
+        }
+        return auction;
+    }
+
     public Auction startAuction(Item item, int durationMinutes) {
         return startAuction(item, durationMinutes, false, 0.0);
     }
