@@ -178,6 +178,27 @@ public class AuctionRepository {
             throw e; // Quăng hẳn lỗi lên trên để Service biết đường hoàn tiền!
         }
     }
+
+    public void saveRejectedBid(String auctionId, com.bidding.server.model.transaction.BiddingTransactionEntity rejectedTx) {
+        Transaction transaction = null;
+        try (Session session = factory.openSession()) {
+            transaction = session.beginTransaction();
+
+            AuctionEntity auction = session.get(AuctionEntity.class, auctionId);
+            if (auction == null) {
+                throw new IllegalStateException("Auction not found: " + auctionId);
+            }
+
+            rejectedTx.setAuction(auction);
+            session.merge(rejectedTx);
+
+            transaction.commit();
+        } catch (Exception e) {
+            if (transaction != null) transaction.rollback();
+            throw e;
+        }
+    }
+
     // Trong AuctionRepository.java
     public void finalizeAuction(String auctionId, com.bidding.server.enums.AuctionStatus status, com.bidding.server.model.user.User winner) {
         finalizeAuction(auctionId, status, winner, null);
@@ -210,9 +231,11 @@ public class AuctionRepository {
     public AuctionEntity findByIdWithDetails(String id) {
         try (Session session = factory.openSession()) {
             return session.createQuery(
-                            "SELECT a FROM AuctionEntity a " +
+                            "SELECT DISTINCT a FROM AuctionEntity a " +
                                     "LEFT JOIN FETCH a.currentWinner " +
                                     "LEFT JOIN FETCH a.item " +
+                                    "LEFT JOIN FETCH a.transactions t " +
+                                    "LEFT JOIN FETCH t.bidder " +
                                     "WHERE a.id = :id",
                             AuctionEntity.class)
                     .setParameter("id", id)

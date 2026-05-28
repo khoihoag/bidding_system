@@ -41,6 +41,8 @@ public class AuctionController {
             // Dùng has() để tránh lỗi nếu UI cũ chưa kịp cập nhật gửi lên
             boolean isReverse = request.has("isReverse") ? request.get("isReverse").getAsBoolean() : false;
             double dropStep = request.has("dropStep") ? request.get("dropStep").getAsDouble() : 0.0;
+            int antiSnipingSeconds = getOptionalPositiveInt(request, "antiSnipingSeconds", AuctionService.DEFAULT_ANTI_SNIPING_SECONDS);
+            int extensionSeconds = getOptionalPositiveInt(request, "extensionSeconds", AuctionService.DEFAULT_EXTENSION_SECONDS);
             // ==============================================================
 
             Item item = quanLyKho.findById(itemId);
@@ -62,7 +64,7 @@ public class AuctionController {
             // ============================================================
 
             // GỌI HÀM VỚI ĐỦ 4 THAM SỐ MỚI
-            Auction newAuction = tongQuan.startAuction(item, duration, isReverse, dropStep);
+            Auction newAuction = tongQuan.startAuction(item, duration, isReverse, dropStep, antiSnipingSeconds, extensionSeconds);
 
             client.sendMessage(ApiResponse.success("START_AUCTION_REPLY", "auctionId", newAuction.getId()).toString());
 
@@ -84,6 +86,8 @@ public class AuctionController {
             // ================= BẮT THÔNG SỐ ĐẤU GIÁ NGƯỢC =================
             boolean isReverse = request.has("isReverse") ? request.get("isReverse").getAsBoolean() : false;
             double dropStep = request.has("dropStep") ? request.get("dropStep").getAsDouble() : 0.0;
+            int antiSnipingSeconds = getOptionalPositiveInt(request, "antiSnipingSeconds", AuctionService.DEFAULT_ANTI_SNIPING_SECONDS);
+            int extensionSeconds = getOptionalPositiveInt(request, "extensionSeconds", AuctionService.DEFAULT_EXTENSION_SECONDS);
             // ==============================================================
 
             Item item = quanLyKho.findById(itemId);
@@ -105,7 +109,7 @@ public class AuctionController {
             // ============================================================
 
             // GỌI HÀM VỚI ĐỦ 5 THAM SỐ MỚI
-            Auction newAuction = tongQuan.scheduleAuction(item, startTime, endTime, isReverse, dropStep);
+            Auction newAuction = tongQuan.scheduleAuction(item, startTime, endTime, isReverse, dropStep, antiSnipingSeconds, extensionSeconds);
 
             client.sendMessage(ApiResponse.success("SCHEDULE_AUCTION_REPLY", "auctionId", newAuction.getId()).toString());
 
@@ -114,6 +118,18 @@ public class AuctionController {
         } catch (Exception e) {
             client.sendError("Lỗi hệ thống: " + e.getMessage());
         }
+    }
+
+    private int getOptionalPositiveInt(JsonObject request, String propertyName, int defaultValue) {
+        if (!request.has(propertyName) || request.get(propertyName).isJsonNull()) {
+            return defaultValue;
+        }
+
+        int value = request.get(propertyName).getAsInt();
+        if (value <= 0) {
+            throw new IllegalArgumentException(propertyName + " phải lớn hơn 0.");
+        }
+        return value;
     }
 
     public void handlePayAuction(JsonObject request) {
@@ -366,6 +382,9 @@ public class AuctionController {
                             JsonObject point = new JsonObject();
                             point.addProperty("timestamp", tx.getBidTime().toString());
                             point.addProperty("price", tx.getBidAmount());
+                            point.addProperty("bidder", tx.getBidder() != null ? tx.getBidder().getUsername() : "---");
+                            point.addProperty("type", tx.isAutoBid() ? "AUTO" : "MANUAL");
+                            point.addProperty("status", tx.getStatus() != null ? tx.getStatus().toString() : "---");
                             dataArray.add(point);
                         });
                 // ============================================================

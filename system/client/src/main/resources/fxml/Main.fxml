@@ -62,7 +62,7 @@
                 <Button fx:id="btnWatchlist" text="Theo dõi" onAction="#handleWatchlist" maxWidth="Infinity" styleClass="menu-button">
                     <graphic>
                         <ImageView fitWidth="16" fitHeight="16" preserveRatio="true">
-                            <image><Image url="@../images/icons/order.png"/></image>
+                            <image><Image url="@../images/icons/follow.png"/></image>
                         </ImageView>
                     </graphic>
                 </Button>

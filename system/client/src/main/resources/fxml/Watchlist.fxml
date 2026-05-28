@@ -15,19 +15,27 @@
                 <Insets top="0" right="28" bottom="0" left="28"/>
             </padding>
             <VBox spacing="2" alignment="CENTER_LEFT">
-                <Label text="THEO DÕI" styleClass="dashboard-header-kicker"/>
-                <Label text="Sản phẩm đang theo dõi" styleClass="dashboard-header-title"/>
+                <Label text="THEO D&#213;I" styleClass="dashboard-header-kicker"/>
+                <Label text="S&#7843;n ph&#7849;m &#273;ang theo d&#245;i" styleClass="dashboard-header-title"/>
             </VBox>
             <Region HBox.hgrow="ALWAYS"/>
-            <Button text="Làm mới" onAction="#handleRefresh" styleClass="dashboard-search-clear-button"/>
+            <Button text="L&#224;m m&#7899;i" onAction="#handleRefresh" styleClass="dashboard-search-clear-button"/>
         </HBox>
     </top>
 
     <center>
-        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="content-surface">
-            <VBox spacing="24" styleClass="dashboard-body">
-                <VBox fx:id="watchlistContainer" spacing="22"/>
-            </VBox>
-        </ScrollPane>
+        <VBox spacing="14" styleClass="dashboard-body">
+            <TableView fx:id="watchlistTable" VBox.vgrow="ALWAYS" styleClass="table-view">
+                <columns>
+                    <TableColumn fx:id="colAuctionId" text="ID" prefWidth="220"/>
+                    <TableColumn fx:id="colProductName" text="T&#234;n s&#7843;n ph&#7849;m" prefWidth="240"/>
+                    <TableColumn fx:id="colCurrentPrice" text="Gi&#225; tr&#7883; hi&#7879;n t&#7841;i" prefWidth="170"/>
+                    <TableColumn fx:id="colLeader" text="Ng&#432;&#7901;i &#273;ang d&#7851;n &#273;&#7847;u" prefWidth="180"/>
+                    <TableColumn fx:id="colTime" text="Th&#7901;i gian" prefWidth="170"/>
+                    <TableColumn fx:id="colAction" text="Chi ti&#7871;t" prefWidth="160" resizable="false" sortable="false"/>
+                </columns>
+            </TableView>
+            <Label fx:id="statusLabel" text="" styleClass="muted-label"/>
+        </VBox>
     </center>
 </BorderPane>

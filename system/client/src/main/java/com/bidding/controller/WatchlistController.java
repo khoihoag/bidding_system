@@ -2,7 +2,6 @@ package com.bidding.controller;
 
 import com.bidding.model.UserSession;
 import com.bidding.network.NetworkClient;
-import com.bidding.util.FollowHeartButtonFactory;
 import com.bidding.util.JsonUtil;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -10,64 +9,148 @@ import com.google.gson.JsonObject;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 
-import java.io.File;
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
 public class WatchlistController {
-    @FXML private VBox watchlistContainer;
+    @FXML private TableView<WatchlistRow> watchlistTable;
+    @FXML private TableColumn<WatchlistRow, String> colAuctionId;
+    @FXML private TableColumn<WatchlistRow, String> colProductName;
+    @FXML private TableColumn<WatchlistRow, String> colCurrentPrice;
+    @FXML private TableColumn<WatchlistRow, String> colLeader;
+    @FXML private TableColumn<WatchlistRow, String> colTime;
+    @FXML private TableColumn<WatchlistRow, Void> colAction;
+    @FXML private Label statusLabel;
 
     private final NetworkClient networkClient = NetworkClient.getInstance();
     private final NumberFormat currencyFmt = NumberFormat.getNumberInstance(Locale.forLanguageTag("vi-VN"));
+    private static final DateTimeFormatter HISTORY_TIME_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+    private final ObservableList<WatchlistRow> watchlistRows = FXCollections.observableArrayList();
     private JsonArray followedAuctions = new JsonArray();
-    private final List<CardCountdownEntry> cardCountdownEntries = new ArrayList<>();
     private Timeline countdownTimeline;
-
-    private static final class CardCountdownEntry {
-        private final Label label;
-        private final LocalDateTime target;
-        private final boolean ended;
-        private final boolean upcoming;
-
-        private CardCountdownEntry(Label label, LocalDateTime target, boolean ended, boolean upcoming) {
-            this.label = label;
-            this.target = target;
-            this.ended = ended;
-            this.upcoming = upcoming;
-        }
-    }
+    private String pendingHistoryAuctionId;
+    private String pendingHistoryAuctionName;
 
     @FXML
     public void initialize() {
+        setupTable();
         networkClient.setMessageHandler(this::handleServerMessage);
+        showStatus("\u0110ang t\u1ea3i danh s\u00e1ch theo d\u00f5i...");
         requestAuctions();
     }
 
     @FXML
     private void handleRefresh() {
         networkClient.setMessageHandler(this::handleServerMessage);
+        showStatus("\u0110ang t\u1ea3i l\u1ea1i...");
         requestAuctions();
+    }
+
+    private void setupTable() {
+        watchlistTable.getStyleClass().add("watchlist-table");
+        colAuctionId.setCellValueFactory(data -> data.getValue().auctionIdProperty());
+        colProductName.setCellValueFactory(data -> data.getValue().productNameProperty());
+        colCurrentPrice.setCellValueFactory(data -> data.getValue().currentPriceProperty());
+        colLeader.setCellValueFactory(data -> data.getValue().leaderProperty());
+        colTime.setCellValueFactory(data -> data.getValue().timeDisplayProperty());
+
+        colAuctionId.setStyle("-fx-alignment: CENTER_LEFT;");
+        colCurrentPrice.setStyle("-fx-alignment: CENTER_RIGHT;");
+        colLeader.setStyle("-fx-alignment: CENTER;");
+        colTime.setStyle("-fx-alignment: CENTER;");
+
+        setupWrappedHeader(colProductName, "T\u00ean s\u1ea3n ph\u1ea9m");
+        setupWrappedHeader(colCurrentPrice, "Gi\u00e1 tr\u1ecb hi\u1ec7n t\u1ea1i");
+        setupWrappedHeader(colLeader, "Ng\u01b0\u1eddi \u0111ang d\u1eabn \u0111\u1ea7u");
+        setupWrappedHeader(colTime, "Th\u1eddi gian");
+        setupWrappedHeader(colAction, "Chi ti\u1ebft");
+        setupWrappedTextColumn(colProductName);
+        setupWrappedTextColumn(colLeader);
+
+        colAction.setCellFactory(column -> new TableCell<>() {
+            private final Button viewButton = new Button();
+
+            {
+                viewButton.getStyleClass().add("secondary-button");
+                viewButton.setOnAction(event -> {
+                    WatchlistRow row = getTableView().getItems().get(getIndex());
+                    if (row.isEnded(LocalDateTime.now())) {
+                        handleViewAuctionHistory(row);
+                    } else {
+                        handleViewAuction(row.getAuctionId());
+                    }
+                });
+            }
+
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(null);
+                setStyle("-fx-alignment: CENTER;");
+                if (empty || getIndex() < 0 || getIndex() >= getTableView().getItems().size()) {
+                    setGraphic(null);
+                    return;
+                }
+                WatchlistRow row = getTableView().getItems().get(getIndex());
+                viewButton.setText(row.isEnded(LocalDateTime.now()) ? "Xem l\u1ecbch s\u1eed" : "Xem chi ti\u1ebft");
+                setGraphic(viewButton);
+            }
+        });
+
+        watchlistTable.setItems(watchlistRows);
+        watchlistTable.setPlaceholder(new Label("Ch\u01b0a c\u00f3 s\u1ea3n ph\u1ea9m n\u00e0o trong danh s\u00e1ch theo d\u00f5i."));
+    }
+
+    private void setupWrappedHeader(TableColumn<?, ?> column, String text) {
+        Label header = new Label(text);
+        header.setWrapText(true);
+        header.setMaxWidth(140);
+        header.setStyle("-fx-text-alignment: center;");
+        column.setText(null);
+        column.setGraphic(header);
+    }
+
+    private void setupWrappedTextColumn(TableColumn<WatchlistRow, String> column) {
+        column.setCellFactory(col -> new TableCell<>() {
+            private final Label label = new Label();
+
+            {
+                label.setWrapText(true);
+                label.maxWidthProperty().bind(col.widthProperty().subtract(18));
+                label.getStyleClass().add("watchlist-table-cell-label");
+            }
+
+            @Override
+            protected void updateItem(String value, boolean empty) {
+                super.updateItem(value, empty);
+                if (empty || value == null || value.isBlank()) {
+                    setText(null);
+                    setGraphic(null);
+                    return;
+                }
+                label.setText(value);
+                setText(null);
+                setGraphic(label);
+            }
+        });
     }
 
     private void requestAuctions() {
@@ -90,9 +173,12 @@ public class WatchlistController {
 
         switch (json.get("action").getAsString()) {
             case "AUCTIONS_LIST" -> handleAuctionsList(json);
+            case "AUCTION_HISTORY_REPLY" -> handleAuctionHistoryReply(json);
             case "REALTIME_BID_UPDATE", "NEW_BID" -> handleRealtimeBidUpdate(json);
             case "GLOBAL_NOTIFY" -> requestAuctions();
-            case "ERROR" -> System.err.println("[Watchlist] " + (json.has("message") ? json.get("message").getAsString() : "Server error"));
+            case "ERROR" -> Platform.runLater(() -> showStatus(json.has("message")
+                    ? json.get("message").getAsString()
+                    : "Server error"));
             default -> { }
         }
     }
@@ -104,7 +190,7 @@ public class WatchlistController {
         JsonArray data = json.getAsJsonArray("data");
         Platform.runLater(() -> {
             followedAuctions = filterFollowedAuctions(data);
-            renderAuctions(followedAuctions);
+            renderTable(followedAuctions);
         });
     }
 
@@ -122,18 +208,9 @@ public class WatchlistController {
         return filtered;
     }
 
-    private void renderAuctions(JsonArray data) {
-        watchlistContainer.getChildren().clear();
+    private void renderTable(JsonArray data) {
         stopCountdowns();
-
-        if (data.isEmpty()) {
-            showEmptyMessage();
-            return;
-        }
-
-        HBox runningRow = buildAuctionRow();
-        HBox upcomingRow = buildAuctionRow();
-        HBox endedRow = buildAuctionRow();
+        watchlistRows.clear();
 
         for (JsonElement element : data) {
             if (!element.isJsonObject()) {
@@ -141,198 +218,58 @@ public class WatchlistController {
             }
             JsonObject auction = element.getAsJsonObject();
             String auctionId = getStringSafe(auction, "id");
-            double currentPrice = auction.has("currentPrice") ? auction.get("currentPrice").getAsDouble() : 0.0;
-            String status = getStringSafe(auction, "status");
-            String startTimeStr = getStringSafe(auction, "startTime");
-            String endTimeStr = getStringSafe(auction, "endTime");
-            boolean isEnded = isEndedAuction(status, endTimeStr);
-            boolean isUpcoming = !isEnded && isUpcomingAuction(status, startTimeStr);
-            String targetTimeStr = isEnded ? endTimeStr : (isUpcoming ? startTimeStr : endTimeStr);
-
-            String itemName = "Món hàng không xác định";
-            String imagePath = "";
-            String description = "";
+            String itemName = "\u0053\u1ea3n ph\u1ea9m kh\u00f4ng x\u00e1c \u0111\u1ecbnh";
             if (auction.has("item") && auction.get("item").isJsonObject()) {
-                JsonObject item = auction.getAsJsonObject("item");
-                itemName = getStringSafe(item, "name");
-                description = getStringSafe(item, "description");
-                if (item.has("images") && item.get("images").isJsonArray()) {
-                    JsonArray imgs = item.getAsJsonArray("images");
-                    if (!imgs.isEmpty()) {
-                        imagePath = imgs.get(0).getAsString();
-                    }
-                }
+                itemName = getStringSafe(auction.getAsJsonObject("item"), "name");
             }
 
-            StackPane card = buildAuctionCard(auctionId, itemName, description, currentPrice, imagePath, targetTimeStr, isEnded, isUpcoming);
-            if (isEnded) {
-                endedRow.getChildren().add(card);
-            } else if (isUpcoming) {
-                upcomingRow.getChildren().add(card);
-            } else {
-                runningRow.getChildren().add(card);
-            }
+            watchlistRows.add(new WatchlistRow(
+                    auctionId,
+                    itemName,
+                    formatCurrency(auction.has("currentPrice") ? auction.get("currentPrice").getAsDouble() : 0.0),
+                    getLeader(auction),
+                    getStringSafe(auction, "status"),
+                    parseDateTime(getStringSafe(auction, "startTime")),
+                    parseDateTime(getStringSafe(auction, "endTime"))
+            ));
         }
 
-        addAuctionSection("Đang đấu giá", runningRow);
-        addAuctionSection("Chuẩn bị đấu giá", upcomingRow);
-        addAuctionSection("Đã kết thúc", endedRow);
-        if (watchlistContainer.getChildren().isEmpty()) {
-            showEmptyMessage();
+        tickCountdowns();
+        if (watchlistRows.isEmpty()) {
+            showStatus("Ch\u01b0a c\u00f3 s\u1ea3n ph\u1ea9m n\u00e0o trong danh s\u00e1ch theo d\u00f5i.");
         } else {
+            showStatus("Hi\u1ec3n th\u1ecb " + watchlistRows.size() + " s\u1ea3n ph\u1ea9m \u0111ang theo d\u00f5i.");
             startCountdowns();
         }
-    }
-
-    private StackPane buildAuctionCard(String auctionId, String itemName, String description, double currentPrice,
-                                       String imagePath, String targetTimeStr, boolean isEnded, boolean isUpcoming) {
-        final double cardWidth = 276;
-        final double imageWidth = 248;
-        final double imageHeight = 236;
-        final double cardHeight = 448;
-
-        VBox card = new VBox(12);
-        card.getStyleClass().addAll("auction-card", "dashboard-auction-card");
-        card.setPrefWidth(cardWidth);
-        card.setMinWidth(cardWidth);
-        card.setMaxWidth(cardWidth);
-        card.setPrefHeight(cardHeight);
-        card.setMinHeight(cardHeight);
-        card.setMaxHeight(cardHeight);
-        card.setUserData(auctionId);
-
-        StackPane imageContainer = new StackPane();
-        imageContainer.getStyleClass().add("dashboard-card-image-box");
-        imageContainer.setPrefSize(imageWidth, imageHeight);
-        imageContainer.setMinSize(imageWidth, imageHeight);
-        imageContainer.setMaxSize(imageWidth, imageHeight);
-        Rectangle imageClip = new Rectangle(imageWidth, imageHeight);
-        imageClip.setArcWidth(20);
-        imageClip.setArcHeight(20);
-        imageContainer.setClip(imageClip);
-        imageContainer.setAlignment(Pos.CENTER);
-
-        if (imagePath != null && !imagePath.isEmpty()) {
-            File file = new File(imagePath);
-            if (file.exists()) {
-                Image image = new Image(file.toURI().toString());
-                ImageView imageView = new ImageView(image);
-                imageView.setSmooth(true);
-                fitImageCover(imageView, image, imageWidth, imageHeight);
-                StackPane.setAlignment(imageView, Pos.CENTER);
-                imageContainer.getChildren().add(imageView);
-            } else {
-                Label noImg = new Label("Lỗi hiển thị ảnh");
-                noImg.getStyleClass().add("dashboard-card-image-placeholder");
-                imageContainer.getChildren().add(noImg);
-            }
-        } else {
-            Label noImg = new Label("Không có ảnh");
-            noImg.getStyleClass().add("dashboard-card-image-placeholder");
-            imageContainer.getChildren().add(noImg);
-        }
-
-        if (!isEnded) {
-            Label timerValueLabel = new Label("--:--:--");
-            timerValueLabel.getStyleClass().add("dashboard-card-timer-value");
-            Label timerIconLabel = new Label("◷");
-            timerIconLabel.getStyleClass().add("dashboard-card-timer-icon");
-            HBox timerBadge = new HBox(3, timerIconLabel, timerValueLabel);
-            timerBadge.getStyleClass().add("dashboard-card-timer-badge");
-            timerBadge.setAlignment(Pos.CENTER);
-            timerBadge.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
-            StackPane.setAlignment(timerBadge, Pos.TOP_LEFT);
-            StackPane.setMargin(timerBadge, new Insets(6, 0, 0, 6));
-            imageContainer.getChildren().add(timerBadge);
-            cardCountdownEntries.add(new CardCountdownEntry(timerValueLabel, parseDateTime(targetTimeStr), false, isUpcoming));
-        }
-
-        VBox body = new VBox(10);
-        body.getStyleClass().add("dashboard-card-body");
-        body.setAlignment(Pos.TOP_LEFT);
-        body.setMaxWidth(imageWidth);
-        VBox.setVgrow(body, Priority.ALWAYS);
-
-        Label nameLabel = new Label(itemName);
-        nameLabel.setWrapText(true);
-        nameLabel.getStyleClass().add("dashboard-card-title");
-        nameLabel.setMaxWidth(imageWidth - 42);
-        HBox.setHgrow(nameLabel, Priority.ALWAYS);
-
-        Button favoriteButton = FollowHeartButtonFactory.create(true);
-        favoriteButton.getStyleClass().add("dashboard-card-heart-btn");
-        favoriteButton.setOnAction(e -> handleUnfollowAuction(auctionId));
-
-        HBox titleRow = new HBox(8, nameLabel, favoriteButton);
-        titleRow.getStyleClass().add("dashboard-card-title-row");
-        titleRow.setAlignment(Pos.CENTER_LEFT);
-        titleRow.setMaxWidth(imageWidth);
-
-        Label descLabel = new Label(truncateDescription(description));
-        descLabel.getStyleClass().add("dashboard-card-description");
-        descLabel.setWrapText(true);
-        descLabel.setMaxWidth(imageWidth);
-        descLabel.setTextAlignment(javafx.scene.text.TextAlignment.LEFT);
-
-        Label priceCaption = new Label("Giá hiện tại");
-        priceCaption.getStyleClass().add("dashboard-card-price-caption");
-        Label priceLabel = new Label(currencyFmt.format(currentPrice) + " đ");
-        priceLabel.getStyleClass().add("dashboard-card-price-value");
-
-        Button viewBtn = new Button("Vào xem chi tiết");
-        viewBtn.getStyleClass().add("dashboard-card-detail-btn");
-        viewBtn.setMaxWidth(Double.MAX_VALUE);
-        viewBtn.setOnAction(e -> handleViewAuction(auctionId));
-
-        body.getChildren().addAll(titleRow, descLabel, priceCaption, priceLabel, viewBtn);
-        card.getChildren().addAll(imageContainer, body);
-        StackPane cardShell = new StackPane(card);
-        cardShell.setUserData(auctionId);
-        return cardShell;
-    }
-
-    private void handleUnfollowAuction(String auctionId) {
-        if (auctionId == null || auctionId.isBlank()) {
-            return;
-        }
-        JsonObject request = new JsonObject();
-        request.addProperty("action", "UNFOLLOW_AUCTION");
-        request.addProperty("auctionId", auctionId);
-        networkClient.sendJson(request);
-        removeFollowedAuction(auctionId);
-        renderAuctions(followedAuctions);
-    }
-
-    private void removeFollowedAuction(String auctionId) {
-        JsonArray updated = new JsonArray();
-        for (JsonElement element : followedAuctions) {
-            if (!element.isJsonObject()) {
-                continue;
-            }
-            JsonObject auction = element.getAsJsonObject();
-            if (!auctionId.equals(getStringSafe(auction, "id"))) {
-                updated.add(auction);
-            }
-        }
-        followedAuctions = updated;
-    }
-
-    private void handleViewAuction(String auctionId) {
-        AppNavigator.passData(auctionId);
-        AppNavigator.navigate("AuctionDetail.fxml");
     }
 
     private void handleRealtimeBidUpdate(JsonObject json) {
         String auctionId = getStringSafe(json, "auctionId");
         double newPrice = json.has("newPrice") ? json.get("newPrice").getAsDouble() : 0.0;
+        String winner = getStringSafe(json, "winnerId");
+        String newEndTime = getStringSafe(json, "newEndTime");
+
         Platform.runLater(() -> {
-            updateCachedAuctionPrice(auctionId, newPrice);
-            updateVisibleAuctionPrice(watchlistContainer, auctionId, newPrice);
+            updateCachedAuction(auctionId, newPrice, winner, newEndTime);
+            for (WatchlistRow row : watchlistRows) {
+                if (row.getAuctionId().equals(auctionId)) {
+                    row.setCurrentPrice(formatCurrency(newPrice));
+                    if (!winner.isBlank()) {
+                        row.setLeader(winner);
+                    }
+                    LocalDateTime parsedEndTime = parseDateTime(newEndTime);
+                    if (parsedEndTime != null) {
+                        row.setEndTime(parsedEndTime);
+                    }
+                    row.updateTime(LocalDateTime.now());
+                    break;
+                }
+            }
         });
     }
 
-    private void updateCachedAuctionPrice(String auctionId, double newPrice) {
-        if (auctionId == null || auctionId.isEmpty()) {
+    private void updateCachedAuction(String auctionId, double newPrice, String winner, String newEndTime) {
+        if (auctionId == null || auctionId.isBlank()) {
             return;
         }
         for (JsonElement element : followedAuctions) {
@@ -342,70 +279,131 @@ public class WatchlistController {
             JsonObject auction = element.getAsJsonObject();
             if (auctionId.equals(getStringSafe(auction, "id"))) {
                 auction.addProperty("currentPrice", newPrice);
+                if (winner != null && !winner.isBlank()) {
+                    auction.addProperty("winnerId", winner);
+                }
+                if (newEndTime != null && !newEndTime.isBlank()) {
+                    auction.addProperty("endTime", newEndTime);
+                }
                 return;
             }
         }
     }
 
-    private boolean updateVisibleAuctionPrice(Node node, String auctionId, double newPrice) {
-        if (node instanceof VBox card && auctionId.equals(card.getUserData())) {
-            for (Node child : card.getChildren()) {
-                if (child instanceof Label lbl && lbl.getStyleClass().contains("dashboard-card-price-value")) {
-                    lbl.setText(currencyFmt.format(newPrice) + " đ");
-                    return true;
-                }
-                if (child instanceof Pane pane && updateVisibleAuctionPrice(pane, auctionId, newPrice)) {
-                    return true;
-                }
+    private void handleViewAuction(String auctionId) {
+        AppNavigator.passData(auctionId);
+        AppNavigator.navigate("AuctionDetail.fxml");
+    }
+
+    private void handleViewAuctionHistory(WatchlistRow row) {
+        pendingHistoryAuctionId = row.getAuctionId();
+        pendingHistoryAuctionName = row.getProductName();
+        showStatus("\u0110ang t\u1ea3i l\u1ecbch s\u1eed phi\u00ean " + pendingHistoryAuctionId + "...");
+
+        JsonObject request = new JsonObject();
+        request.addProperty("action", "GET_AUCTION_HISTORY");
+        request.addProperty("auctionId", pendingHistoryAuctionId);
+        networkClient.sendJson(request);
+    }
+
+    private void handleAuctionHistoryReply(JsonObject json) {
+        JsonArray data = json.has("data") && json.get("data").isJsonArray()
+                ? json.getAsJsonArray("data")
+                : new JsonArray();
+        String auctionId = pendingHistoryAuctionId == null ? "" : pendingHistoryAuctionId;
+        String auctionName = pendingHistoryAuctionName == null ? "" : pendingHistoryAuctionName;
+
+        Platform.runLater(() -> {
+            showHistoryDialog(auctionId, auctionName, data);
+            if (watchlistRows.isEmpty()) {
+                showStatus("Ch\u01b0a c\u00f3 s\u1ea3n ph\u1ea9m n\u00e0o trong danh s\u00e1ch theo d\u00f5i.");
+            } else {
+                showStatus("Hi\u1ec3n th\u1ecb " + watchlistRows.size() + " s\u1ea3n ph\u1ea9m \u0111ang theo d\u00f5i.");
             }
-        }
-        if (node instanceof Pane pane) {
-            for (Node child : pane.getChildren()) {
-                if (updateVisibleAuctionPrice(child, auctionId, newPrice)) {
-                    return true;
-                }
+        });
+    }
+
+    private void showHistoryDialog(String auctionId, String auctionName, JsonArray data) {
+        ObservableList<AuctionHistoryRow> rows = FXCollections.observableArrayList();
+        int index = 1;
+        for (JsonElement element : data) {
+            if (!element.isJsonObject()) {
+                continue;
             }
+            JsonObject point = element.getAsJsonObject();
+            rows.add(new AuctionHistoryRow(
+                    String.valueOf(index++),
+                    getStringSafe(point, "bidder").isBlank() ? "---" : getStringSafe(point, "bidder"),
+                    formatCurrency(point.has("price") ? point.get("price").getAsDouble() : 0.0),
+                    formatHistoryTime(getStringSafe(point, "timestamp")),
+                    mapBidType(getStringSafe(point, "type")),
+                    mapBidStatus(getStringSafe(point, "status"))
+            ));
         }
-        return false;
-    }
 
-    private void addAuctionSection(String title, HBox row) {
-        if (!row.getChildren().isEmpty()) {
-            watchlistContainer.getChildren().addAll(buildSectionHeader(title), buildHorizontalAuctionScroll(row));
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("L\u1ecbch s\u1eed \u0111\u1ea5u gi\u00e1");
+        dialog.setHeaderText((auctionName == null || auctionName.isBlank() ? "Phi\u00ean \u0111\u1ea5u gi\u00e1" : auctionName)
+                + "\nID: " + auctionId);
+        try {
+            dialog.getDialogPane().getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
+        } catch (Exception ignored) {
         }
+
+        VBox content = new VBox(12);
+        content.getStyleClass().add("watchlist-history-dialog");
+        content.setPrefWidth(880);
+        content.setPrefHeight(460);
+
+        Label summary = new Label(rows.isEmpty()
+                ? "Ch\u01b0a c\u00f3 l\u01b0\u1ee3t \u0111\u1ea5u gi\u00e1 n\u00e0o cho phi\u00ean n\u00e0y."
+                : "T\u1ed5ng s\u1ed1 l\u01b0\u1ee3t \u0111\u1ea5u gi\u00e1: " + rows.size());
+        summary.getStyleClass().add("watchlist-history-summary");
+
+        TableView<AuctionHistoryRow> table = new TableView<>(rows);
+        table.getStyleClass().addAll("table-view", "watchlist-history-table");
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        table.setPlaceholder(new Label("Ch\u01b0a c\u00f3 d\u1eef li\u1ec7u l\u1ecbch s\u1eed \u0111\u1ea5u gi\u00e1."));
+
+        TableColumn<AuctionHistoryRow, String> colNo = new TableColumn<>("#");
+        colNo.setCellValueFactory(dataRow -> dataRow.getValue().indexProperty());
+        colNo.setPrefWidth(48);
+        colNo.setStyle("-fx-alignment: CENTER;");
+
+        TableColumn<AuctionHistoryRow, String> colBidder = new TableColumn<>("Ng\u01b0\u1eddi \u0111\u1ea5u gi\u00e1");
+        colBidder.setCellValueFactory(dataRow -> dataRow.getValue().bidderProperty());
+        colBidder.setPrefWidth(190);
+
+        TableColumn<AuctionHistoryRow, String> colAmount = new TableColumn<>("Gi\u00e1 tr\u1ecb");
+        colAmount.setCellValueFactory(dataRow -> dataRow.getValue().amountProperty());
+        colAmount.setPrefWidth(150);
+        colAmount.setStyle("-fx-alignment: CENTER_RIGHT;");
+
+        TableColumn<AuctionHistoryRow, String> colTime = new TableColumn<>("Th\u1eddi gian");
+        colTime.setCellValueFactory(dataRow -> dataRow.getValue().timeProperty());
+        colTime.setPrefWidth(190);
+
+        TableColumn<AuctionHistoryRow, String> colType = new TableColumn<>("Lo\u1ea1i");
+        colType.setCellValueFactory(dataRow -> dataRow.getValue().typeProperty());
+        colType.setPrefWidth(110);
+
+        TableColumn<AuctionHistoryRow, String> colStatus = new TableColumn<>("Tr\u1ea1ng th\u00e1i");
+        colStatus.setCellValueFactory(dataRow -> dataRow.getValue().statusProperty());
+        colStatus.setPrefWidth(130);
+
+        table.getColumns().addAll(colNo, colBidder, colAmount, colTime, colType, colStatus);
+        VBox.setVgrow(table, Priority.ALWAYS);
+        content.getChildren().addAll(summary, table);
+
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        dialog.showAndWait();
     }
 
-    private Label buildSectionHeader(String text) {
-        Label header = new Label(text);
-        header.getStyleClass().add("dashboard-section-title");
-        header.setStyle("-fx-text-fill: #111827;");
-        return header;
-    }
-
-    private HBox buildAuctionRow() {
-        HBox row = new HBox(24);
-        row.setFillHeight(false);
-        row.setMinHeight(468);
-        return row;
-    }
-
-    private ScrollPane buildHorizontalAuctionScroll(HBox row) {
-        ScrollPane scrollPane = new ScrollPane(row);
-        scrollPane.setFitToHeight(true);
-        scrollPane.setFitToWidth(false);
-        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        scrollPane.setPannable(true);
-        scrollPane.getStyleClass().add("dashboard-auction-strip");
-        scrollPane.setMinHeight(488);
-        scrollPane.setPrefHeight(498);
-        return scrollPane;
-    }
-
-    private void showEmptyMessage() {
-        Label emptyLabel = new Label("Chưa có phiên đấu giá nào trong danh sách theo dõi.");
-        emptyLabel.getStyleClass().add("watchlist-empty-label");
-        watchlistContainer.getChildren().add(emptyLabel);
+    private void startCountdowns() {
+        countdownTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> tickCountdowns()));
+        countdownTimeline.setCycleCount(Timeline.INDEFINITE);
+        countdownTimeline.play();
     }
 
     private void stopCountdowns() {
@@ -413,38 +411,45 @@ public class WatchlistController {
             countdownTimeline.stop();
             countdownTimeline = null;
         }
-        cardCountdownEntries.clear();
-    }
-
-    private void startCountdowns() {
-        if (cardCountdownEntries.isEmpty()) {
-            return;
-        }
-        tickCountdowns();
-        countdownTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> tickCountdowns()));
-        countdownTimeline.setCycleCount(Timeline.INDEFINITE);
-        countdownTimeline.play();
     }
 
     private void tickCountdowns() {
         LocalDateTime now = LocalDateTime.now();
-        for (CardCountdownEntry entry : cardCountdownEntries) {
-            if (entry.ended) {
-                entry.label.setText("Đã kết thúc");
-                continue;
-            }
-            if (entry.target == null) {
-                entry.label.setText("--:--:--");
-                continue;
-            }
-            java.time.Duration remaining = java.time.Duration.between(now, entry.target);
-            if (remaining.isNegative() || remaining.isZero()) {
-                entry.label.setText(entry.upcoming ? "Sắp mở" : "Đã kết thúc");
-            } else {
-                entry.label.setText(String.format("%02d:%02d:%02d",
-                        remaining.toHours(), remaining.toMinutesPart(), remaining.toSecondsPart()));
-            }
+        for (WatchlistRow row : watchlistRows) {
+            row.updateTime(now);
         }
+        watchlistTable.refresh();
+    }
+
+    private String getLeader(JsonObject auction) {
+        String winner = getStringSafe(auction, "winnerId");
+        return winner.isBlank() ? "---" : winner;
+    }
+
+    private String formatCurrency(double value) {
+        return currencyFmt.format(value) + " \u0111";
+    }
+
+    private String formatHistoryTime(String value) {
+        LocalDateTime parsed = parseDateTime(value);
+        return parsed == null ? "---" : parsed.format(HISTORY_TIME_FMT);
+    }
+
+    private String mapBidType(String type) {
+        return switch (type == null ? "" : type.toUpperCase()) {
+            case "AUTO" -> "Auto-bid";
+            case "MANUAL" -> "Th\u1ee7 c\u00f4ng";
+            default -> type == null || type.isBlank() ? "---" : type;
+        };
+    }
+
+    private String mapBidStatus(String status) {
+        return switch (status == null ? "" : status.toUpperCase()) {
+            case "ACCEPTED" -> "Ch\u1ea5p nh\u1eadn";
+            case "REJECTED" -> "T\u1eeb ch\u1ed1i";
+            case "PENDING" -> "Ch\u1edd x\u1eed l\u00fd";
+            default -> status == null || status.isBlank() ? "---" : status;
+        };
     }
 
     private LocalDateTime parseDateTime(String value) {
@@ -458,54 +463,162 @@ public class WatchlistController {
         }
     }
 
-    private String truncateDescription(String description) {
-        if (description == null || description.isBlank()) {
-            return "Chưa có mô tả sản phẩm.";
-        }
-        String normalized = description.trim().replaceAll("\\s+", " ");
-        return normalized.length() <= 110 ? normalized : normalized.substring(0, 107) + "...";
-    }
-
-    private boolean isEndedAuction(String status, String endTimeStr) {
-        if ("FINISHED".equals(status) || "CLOSED".equals(status) || "CANCELED".equals(status)
-                || "CANCELLED".equals(status) || "PAID".equals(status) || "FAILED".equals(status)) {
-            return true;
-        }
-        if (endTimeStr == null || endTimeStr.isBlank()) {
-            return false;
-        }
-        try {
-            return LocalDateTime.now().isAfter(LocalDateTime.parse(endTimeStr));
-        } catch (Exception ignored) {
-            return false;
-        }
-    }
-
-    private boolean isUpcomingAuction(String status, String startTimeStr) {
-        if ("OPEN".equals(status) || "SCHEDULED".equals(status)) {
-            return true;
-        }
-        if (startTimeStr == null || startTimeStr.isBlank()) {
-            return false;
-        }
-        try {
-            return LocalDateTime.now().isBefore(LocalDateTime.parse(startTimeStr));
-        } catch (Exception ignored) {
-            return false;
-        }
-    }
-
-    private void fitImageCover(ImageView imageView, Image image, double targetWidth, double targetHeight) {
-        if (image == null || image.getWidth() <= 0 || image.getHeight() <= 0) {
-            return;
-        }
-        imageView.setPreserveRatio(true);
-        double scale = Math.max(targetWidth / image.getWidth(), targetHeight / image.getHeight());
-        imageView.setFitWidth(image.getWidth() * scale);
-        imageView.setFitHeight(image.getHeight() * scale);
-    }
-
     private String getStringSafe(JsonObject obj, String key) {
         return JsonUtil.getString(obj, key);
+    }
+
+    private void showStatus(String message) {
+        statusLabel.setText(message);
+    }
+
+    private static final class WatchlistRow {
+        private final StringProperty auctionId;
+        private final StringProperty productName;
+        private final StringProperty currentPrice;
+        private final StringProperty leader;
+        private final StringProperty timeDisplay;
+        private final String status;
+        private final LocalDateTime startTime;
+        private LocalDateTime endTime;
+
+        private WatchlistRow(String auctionId,
+                             String productName,
+                             String currentPrice,
+                             String leader,
+                             String status,
+                             LocalDateTime startTime,
+                             LocalDateTime endTime) {
+            this.auctionId = new SimpleStringProperty(auctionId);
+            this.productName = new SimpleStringProperty(productName);
+            this.currentPrice = new SimpleStringProperty(currentPrice);
+            this.leader = new SimpleStringProperty(leader);
+            this.timeDisplay = new SimpleStringProperty("");
+            this.status = status;
+            this.startTime = startTime;
+            this.endTime = endTime;
+        }
+
+        private String getAuctionId() {
+            return auctionId.get();
+        }
+
+        private String getProductName() {
+            return productName.get();
+        }
+
+        private StringProperty auctionIdProperty() {
+            return auctionId;
+        }
+
+        private StringProperty productNameProperty() {
+            return productName;
+        }
+
+        private StringProperty currentPriceProperty() {
+            return currentPrice;
+        }
+
+        private void setCurrentPrice(String value) {
+            currentPrice.set(value);
+        }
+
+        private StringProperty leaderProperty() {
+            return leader;
+        }
+
+        private void setLeader(String value) {
+            leader.set(value);
+        }
+
+        private StringProperty timeDisplayProperty() {
+            return timeDisplay;
+        }
+
+        private void setEndTime(LocalDateTime endTime) {
+            this.endTime = endTime;
+        }
+
+        private void updateTime(LocalDateTime now) {
+            if (isEnded(now)) {
+                timeDisplay.set("K\u1ebft th\u00fac");
+                return;
+            }
+            if (isUpcoming(now)) {
+                timeDisplay.set("Ch\u01b0a di\u1ec5n ra");
+                return;
+            }
+            if (endTime == null) {
+                timeDisplay.set("--:--:--");
+                return;
+            }
+            java.time.Duration remaining = java.time.Duration.between(now, endTime);
+            if (remaining.isNegative() || remaining.isZero()) {
+                timeDisplay.set("K\u1ebft th\u00fac");
+                return;
+            }
+
+            long days = remaining.toDays();
+            long hours = remaining.toHoursPart();
+            String clock = String.format("%02d:%02d:%02d",
+                    hours, remaining.toMinutesPart(), remaining.toSecondsPart());
+            timeDisplay.set(days > 0 ? days + " ng\u00e0y " + clock : clock);
+        }
+
+        private boolean isEnded(LocalDateTime now) {
+            if ("FINISHED".equals(status) || "CLOSED".equals(status) || "CANCELED".equals(status)
+                    || "CANCELLED".equals(status) || "PAID".equals(status) || "FAILED".equals(status)) {
+                return true;
+            }
+            return endTime != null && now.isAfter(endTime);
+        }
+
+        private boolean isUpcoming(LocalDateTime now) {
+            if ("OPEN".equals(status) || "SCHEDULED".equals(status)) {
+                return true;
+            }
+            return startTime != null && now.isBefore(startTime);
+        }
+    }
+
+    private static final class AuctionHistoryRow {
+        private final StringProperty index;
+        private final StringProperty bidder;
+        private final StringProperty amount;
+        private final StringProperty time;
+        private final StringProperty type;
+        private final StringProperty status;
+
+        private AuctionHistoryRow(String index, String bidder, String amount, String time, String type, String status) {
+            this.index = new SimpleStringProperty(index);
+            this.bidder = new SimpleStringProperty(bidder);
+            this.amount = new SimpleStringProperty(amount);
+            this.time = new SimpleStringProperty(time);
+            this.type = new SimpleStringProperty(type);
+            this.status = new SimpleStringProperty(status);
+        }
+
+        private StringProperty indexProperty() {
+            return index;
+        }
+
+        private StringProperty bidderProperty() {
+            return bidder;
+        }
+
+        private StringProperty amountProperty() {
+            return amount;
+        }
+
+        private StringProperty timeProperty() {
+            return time;
+        }
+
+        private StringProperty typeProperty() {
+            return type;
+        }
+
+        private StringProperty statusProperty() {
+            return status;
+        }
     }
 }

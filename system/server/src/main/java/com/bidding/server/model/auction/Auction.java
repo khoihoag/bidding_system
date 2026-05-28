@@ -15,6 +15,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import com.bidding.server.model.user.User;
+
 public class Auction extends Entity {
     private final CopyOnWriteArrayList<AuctionObserver> observers = new CopyOnWriteArrayList<>();
     private CopyOnWriteArrayList<String> followerIds;
@@ -249,14 +250,6 @@ public class Auction extends Entity {
         return autoBidQueue;
     }
 
-
-    public void validate() {
-        // TODO: Implement validate logic
-    }
-
-    public void printInfo() {
-        // TODO: Implement printInfo logic
-    }
 
     // Kiểm tra xem phiên đã có người đặt giá hay chưa
     public boolean hasBids() {

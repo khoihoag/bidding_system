@@ -24,8 +24,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class AuctionService {
-    private final ItemService quanLyKho;
-    private final AuctionRepository repository;
+    public static final int DEFAULT_ANTI_SNIPING_SECONDS = 30;
+    public static final int DEFAULT_EXTENSION_SECONDS = 60;
+
+    private final ItemService quanLyKho = new ItemService(new com.bidding.server.repository.ItemRepository());
+    private final AuctionRepository repository = new AuctionRepository();
     private final AuctionMapper mapper = AuctionMapper.INSTANCE;
     private final List<AuctionObserver> observers = new CopyOnWriteArrayList<>();
     private final ConcurrentHashMap<String, Auction> activeAuctions = new ConcurrentHashMap<>();
@@ -37,15 +40,6 @@ public class AuctionService {
 
     // BỘ ĐẾM THỜI GIAN
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors());
-
-    public AuctionService() {
-        this(new ItemService(new com.bidding.server.repository.ItemRepository()), new AuctionRepository());
-    }
-
-    public AuctionService(ItemService itemService, AuctionRepository repository) {
-        this.quanLyKho = itemService;
-        this.repository = repository;
-    }
 
     public void setUserService(UserService userService) {
         this.baoVe = userService;
@@ -195,7 +189,7 @@ public class AuctionService {
         if (active != null) {
             return active;
         }
-        AuctionEntity entity = repository.findById(auctionId);
+        AuctionEntity entity = repository.findByIdWithDetails(auctionId);
         return entity != null ? mapper.toModel(entity) : null;
     }
 
@@ -308,11 +302,15 @@ public class AuctionService {
             paymentTimers.remove(auctionId);
             return;
         }
-        if (false && isItemAlreadyTransferredToWinner(entity)) {
+        if (isItemAlreadyTransferredToWinner(entity)) {
             repository.finalizeAuction(auctionId, AuctionStatus.PAID, entity.getCurrentWinner());
             activeAuctions.remove(auctionId);
             paymentTimers.remove(auctionId);
             return;
+        }
+
+        if (baoVe != null) {
+            baoVe.addBalance(entity.getCurrentWinner(), entity.getCurrentPrice());
         }
 
         Auction active = activeAuctions.get(auctionId);
@@ -323,7 +321,7 @@ public class AuctionService {
         repository.finalizeAuction(auctionId, AuctionStatus.FAILED, null);
         activeAuctions.remove(auctionId);
         paymentTimers.remove(auctionId);
-        System.out.println("[Service] Qua han thanh toan phien " + auctionId + ", da cho phep dau gia lai.");
+        System.out.println("[Service] Qua han thanh toan phien " + auctionId + ", da hoan tien va cho phep dau gia lai.");
     }
 
     public void payWonAuction(String auctionId, User payer) {
@@ -347,42 +345,29 @@ public class AuctionService {
             throw new RuntimeException("Đã quá hạn thanh toán 10 phút. Sản phẩm được trả lại cho người bán.");
         }
 
-        User seller;
-        if (baoVe == null) {
-            throw new RuntimeException("Lỗi hệ thống: chưa kết nối hệ thống ví.");
-        }
-        User freshPayer = baoVe.findById(payer.getId());
-        if (freshPayer == null) {
-            throw new RuntimeException("Khong tim thay tai khoan thanh toan.");
-        }
-        seller = baoVe.findById(entity.getItem().getSellerId());
-        if (seller == null) {
-            throw new RuntimeException("Không tìm thấy người bán để thanh toán.");
-        }
-
-        double paymentAmount = entity.getCurrentPrice();
-        baoVe.deductBalance(freshPayer, paymentAmount);
-        payer.setBalance(freshPayer.getBalance());
-
-        try {
-            baoVe.addBalance(seller, entity.getCurrentPrice());
-
-            quanLyKho.changeItemOwner(entity.getItem().getId(), entity.getCurrentWinner());
+        if (isItemAlreadyTransferredToWinner(entity)) {
             repository.finalizeAuction(auctionId, AuctionStatus.PAID, entity.getCurrentWinner());
-
-            Auction active = activeAuctions.get(auctionId);
-            if (active != null) {
-                active.getItem().setSellerId(entity.getCurrentWinner().getId());
-                active.getItem().setSellerFullName(entity.getCurrentWinner().getFullName());
-                active.setStatus(AuctionStatus.PAID);
-            }
             activeAuctions.remove(auctionId);
             cancelPaymentTimer(auctionId);
-        } catch (RuntimeException e) {
-            baoVe.addBalance(freshPayer, paymentAmount);
-            payer.setBalance(freshPayer.getBalance());
-            throw e;
+            return;
         }
+
+        User seller = baoVe != null ? baoVe.findById(entity.getItem().getSellerId()) : null;
+        if (baoVe != null && seller != null) {
+            baoVe.addBalance(seller, entity.getCurrentPrice());
+        }
+
+        quanLyKho.changeItemOwner(entity.getItem().getId(), entity.getCurrentWinner());
+        repository.finalizeAuction(auctionId, AuctionStatus.PAID, entity.getCurrentWinner());
+
+        Auction active = activeAuctions.get(auctionId);
+        if (active != null) {
+            active.getItem().setSellerId(entity.getCurrentWinner().getId());
+            active.getItem().setSellerFullName(entity.getCurrentWinner().getFullName());
+            active.setStatus(AuctionStatus.PAID);
+        }
+        activeAuctions.remove(auctionId);
+        cancelPaymentTimer(auctionId);
     }
 
     public long countAuctionsCreatedBySeller(String sellerId) {
@@ -424,6 +409,11 @@ public class AuctionService {
     private void cancelAuctionByAdmin(Auction auction) {
         cancelAuctionTimers(auction.getId());
 
+        User currentWinner = auction.getCurrentWinner();
+        if (currentWinner != null && baoVe != null) {
+            baoVe.addBalance(currentWinner, auction.getCurrentPrice().get());
+        }
+
         auction.setCurrentWinner(null);
         auction.setStatus(AuctionStatus.CANCELED);
         repository.finalizeAuction(auction.getId(), AuctionStatus.CANCELED, null);
@@ -452,11 +442,23 @@ public class AuctionService {
         // ================= LOGIC ĐẤU GIÁ NGƯỢC (INSTANT WIN) =================
         if (auction.isReverse()) {
             double finalPrice = auction.getCurrentPrice().get();
+            try {
+                baoVe.deductBalance(bidder, finalPrice);
+            } catch (RuntimeException e) {
+                recordRejectedBid(auction, finalPrice, bidder, false);
+                throw e;
+            }
 
             try {
                 auction.setCurrentWinner(bidder);
 
-                BiddingTransactionEntity txEntity = createBidEntity(finalPrice, bidder);
+                BiddingTransactionEntity txEntity = new BiddingTransactionEntity();
+                txEntity.setId(System.currentTimeMillis());
+                txEntity.setBidAmount(finalPrice);
+                txEntity.setBidTime(LocalDateTime.now());
+                txEntity.setAutoBid(false);
+                txEntity.setExtended(false);
+                txEntity.setBidder(bidder);
                 txEntity.setStatus(com.bidding.server.enums.BidStatus.ACCEPTED); // Đủ trạng thái
 
                 // 1. Lưu lịch sử đặt giá (Bây giờ đã dùng merge() nên cực mượt, không sập nữa)
@@ -470,6 +472,7 @@ public class AuctionService {
                 return;
 
             } catch (Exception e) {
+                baoVe.addBalance(bidder, finalPrice);
                 System.err.println("❌ LỖI CHỐT ĐƠN NGƯỢC: " + e.getMessage());
                 e.printStackTrace();
                 throw new RuntimeException("Lỗi chốt đơn: " + e.getMessage());
@@ -482,12 +485,22 @@ public class AuctionService {
         // =====================================================================
 
         // ------------------ LUỒNG ĐẤU GIÁ THÔNG THƯỜNG -----------------------
+        User oldWinner = auction.getCurrentWinner();
+        Double oldPrice = auction.getCurrentPrice().get();
         LocalDateTime oldEndTime = auction.getEndTime();
 
-        validateBidAmount(auction, amount);
+        try {
+            validateBidAmount(auction, amount);
+            baoVe.deductBalance(bidder, amount);
+        } catch (RuntimeException e) {
+            recordRejectedBid(auction, amount, bidder, false);
+            throw e;
+        }
 
+        boolean modelAccepted = false;
         try {
             BiddingTransaction tx = auction.placeBid(bidder, amount, false);
+            modelAccepted = true;
 
             if (auction.getEndTime().isAfter(oldEndTime)) {
                 java.util.concurrent.ScheduledFuture<?> oldTimer = auctionTimers.get(auction.getId());
@@ -495,7 +508,18 @@ public class AuctionService {
                 scheduleAuctionEnd(auction);
             }
 
-            BiddingTransactionEntity txEntity = createBidEntity(tx, bidder);
+            if (oldWinner != null && !oldWinner.getId().equals(bidder.getId())) {
+                baoVe.addBalance(oldWinner, oldPrice);
+            }
+
+            BiddingTransactionEntity txEntity = new BiddingTransactionEntity();
+            txEntity.setId(tx.getId());
+            txEntity.setBidAmount(tx.getBidAmount());
+            txEntity.setBidTime(tx.getBidTime());
+            txEntity.setAutoBid(tx.isAutoBid());
+            txEntity.setExtended(tx.isExtended());
+            txEntity.setStatus(tx.getStatus());
+            txEntity.setBidder(bidder);
 
             repository.saveNewBid(auction.getId(), auction.getCurrentPrice().get(), bidder, auction.getEndTime(), txEntity);
 
@@ -503,8 +527,46 @@ public class AuctionService {
             notifyObservers(event);
 
             triggerAutoBids(auction);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
+            baoVe.addBalance(bidder, amount);
+            if (!modelAccepted) {
+                recordRejectedBid(auction, amount, bidder, false);
+            }
             throw e;
+        } catch (Exception e) {
+            baoVe.addBalance(bidder, amount);
+            throw e;
+        }
+    }
+
+    private void recordRejectedBid(Auction auction, Double amount, User bidder, boolean isAutoBid) {
+        if (auction == null || auction.getId() == null || bidder == null) {
+            return;
+        }
+
+        try {
+            BiddingTransaction rejected = new BiddingTransaction(
+                    bidder,
+                    auction,
+                    amount,
+                    LocalDateTime.now(),
+                    BidStatus.REJECTED,
+                    isAutoBid,
+                    false
+            );
+            auction.getBidHistory().add(rejected);
+
+            BiddingTransactionEntity txEntity = new BiddingTransactionEntity();
+            txEntity.setBidAmount(amount != null ? amount : 0.0);
+            txEntity.setBidTime(rejected.getBidTime());
+            txEntity.setAutoBid(isAutoBid);
+            txEntity.setExtended(false);
+            txEntity.setStatus(BidStatus.REJECTED);
+            txEntity.setBidder(bidder);
+
+            repository.saveRejectedBid(auction.getId(), txEntity);
+        } catch (Exception e) {
+            System.err.println("[BidHistory] Không thể lưu lượt đặt giá bị từ chối: " + e.getMessage());
         }
     }
 
@@ -572,7 +634,11 @@ public class AuctionService {
     }
 
     private void executeInternalBid(Auction auction, double amount, User bidder) {
+        User oldWinner = auction.getCurrentWinner();
+        Double oldPrice = auction.getCurrentPrice().get();
+
         validateBidAmount(auction, amount);
+        baoVe.deductBalance(bidder, amount);
 
         try {
             BiddingTransaction tx = auction.placeBid(bidder, amount, true);
@@ -583,7 +649,18 @@ public class AuctionService {
                 scheduleAuctionEnd(auction);
             }
 
-            BiddingTransactionEntity txEntity = createBidEntity(tx, bidder);
+            if (oldWinner != null && !oldWinner.getId().equals(bidder.getId())) {
+                baoVe.addBalance(oldWinner, oldPrice);
+            }
+
+            BiddingTransactionEntity txEntity = new BiddingTransactionEntity();
+            txEntity.setId(tx.getId());
+            txEntity.setBidAmount(tx.getBidAmount());
+            txEntity.setBidTime(tx.getBidTime());
+            txEntity.setAutoBid(tx.isAutoBid());
+            txEntity.setExtended(tx.isExtended());
+            txEntity.setStatus(tx.getStatus());
+            txEntity.setBidder(bidder);
 
             repository.saveNewBid(auction.getId(), auction.getCurrentPrice().get(), bidder, auction.getEndTime(), txEntity);
 
@@ -591,32 +668,9 @@ public class AuctionService {
             notifyObservers(event);
 
         } catch (Exception e) {
+            baoVe.addBalance(bidder, amount);
             throw e;
         }
-    }
-
-    private BiddingTransactionEntity createBidEntity(BiddingTransaction tx, User bidder) {
-        BiddingTransactionEntity txEntity = new BiddingTransactionEntity();
-        txEntity.setId(tx.getId());
-        txEntity.setBidAmount(tx.getBidAmount());
-        txEntity.setBidTime(tx.getBidTime());
-        txEntity.setAutoBid(tx.isAutoBid());
-        txEntity.setExtended(tx.isExtended());
-        txEntity.setStatus(tx.getStatus());
-        txEntity.setBidder(bidder);
-        return txEntity;
-    }
-
-    private BiddingTransactionEntity createBidEntity(double amount, User bidder) {
-        BiddingTransactionEntity txEntity = new BiddingTransactionEntity();
-        txEntity.setId(System.currentTimeMillis());
-        txEntity.setBidAmount(amount);
-        txEntity.setBidTime(LocalDateTime.now());
-        txEntity.setAutoBid(false);
-        txEntity.setExtended(false);
-        txEntity.setBidder(bidder);
-        txEntity.setStatus(BidStatus.ACCEPTED);
-        return txEntity;
     }
 
     public boolean isItemInActiveAuction(String itemId) {
@@ -666,14 +720,20 @@ public class AuctionService {
     }
 
     public Auction startAuction(Item item, int durationMinutes, boolean isReverse, double dropStep) {
+        return startAuction(item, durationMinutes, isReverse, dropStep, DEFAULT_ANTI_SNIPING_SECONDS, DEFAULT_EXTENSION_SECONDS);
+    }
+
+    public Auction startAuction(Item item, int durationMinutes, boolean isReverse, double dropStep,
+                                int antiSnipingSeconds, int extensionSeconds) {
         if (!item.isApprovedForAuction()) throw new RuntimeException("San pham chua duoc admin duyet.");
         validateAuctionItemBidStep(item);
+        validateAntiSnipingConfig(antiSnipingSeconds, extensionSeconds);
         if (isItemInActiveAuction(item.getId())) throw new RuntimeException("Sản phẩm này đang được đấu giá rồi!");
 
         LocalDateTime startTime = LocalDateTime.now();
         LocalDateTime endTime = startTime.plusMinutes(durationMinutes);
 
-        Auction newAuction = new Auction(null, item, startTime, endTime, 30, 60);
+        Auction newAuction = new Auction(null, item, startTime, endTime, antiSnipingSeconds, extensionSeconds);
 
         newAuction.setReverse(isReverse);
         newAuction.setDropStep(dropStep);
@@ -700,13 +760,19 @@ public class AuctionService {
     }
 
     public Auction scheduleAuction(Item item, LocalDateTime startTime, LocalDateTime endTime, boolean isReverse, double dropStep) {
+        return scheduleAuction(item, startTime, endTime, isReverse, dropStep, DEFAULT_ANTI_SNIPING_SECONDS, DEFAULT_EXTENSION_SECONDS);
+    }
+
+    public Auction scheduleAuction(Item item, LocalDateTime startTime, LocalDateTime endTime, boolean isReverse, double dropStep,
+                                   int antiSnipingSeconds, int extensionSeconds) {
         if (!item.isApprovedForAuction()) throw new RuntimeException("San pham chua duoc admin duyet.");
         validateAuctionItemBidStep(item);
+        validateAntiSnipingConfig(antiSnipingSeconds, extensionSeconds);
         if (isItemInActiveAuction(item.getId())) throw new RuntimeException("Sản phẩm này đang nằm trong một phiên đấu giá khác!");
         if (startTime.isBefore(LocalDateTime.now())) throw new RuntimeException("Thời gian bắt đầu không được ở trong quá khứ!");
         if (endTime.isBefore(startTime)) throw new RuntimeException("Thời gian kết thúc phải diễn ra sau thời gian bắt đầu!");
 
-        Auction newAuction = new Auction(null, item, startTime, endTime, 30, 60);
+        Auction newAuction = new Auction(null, item, startTime, endTime, antiSnipingSeconds, extensionSeconds);
 
         newAuction.setReverse(isReverse);
         newAuction.setDropStep(dropStep);
@@ -731,6 +797,15 @@ public class AuctionService {
         }
         if (item.getBidStep() > item.getStartingPrice()) {
             throw new RuntimeException("Bước giá không được lớn hơn giá trị sản phẩm.");
+        }
+    }
+
+    private void validateAntiSnipingConfig(int antiSnipingSeconds, int extensionSeconds) {
+        if (antiSnipingSeconds <= 0) {
+            throw new RuntimeException("Thời gian kích hoạt anti-snipe phải lớn hơn 0 giây.");
+        }
+        if (extensionSeconds <= 0) {
+            throw new RuntimeException("Thời gian gia hạn anti-snipe phải lớn hơn 0 giây.");
         }
     }
 }
