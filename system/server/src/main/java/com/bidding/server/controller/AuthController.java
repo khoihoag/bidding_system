@@ -51,7 +51,11 @@ public class AuthController {
             baoVe.register(user, pass, email, fullName);
             client.sendMessage(ApiResponse.success("REGISTER_REPLY").toString());
         } catch (Exception e) {
-            client.sendError("Lỗi khi tạo tài khoản: " + e.getMessage());
+            JsonObject reply = new JsonObject();
+            reply.addProperty("action", "REGISTER_REPLY");
+            reply.addProperty("status", "ERROR");
+            reply.addProperty("message", "L\u1ed7i khi t\u1ea1o t\u00e0i kho\u1ea3n: " + e.getMessage());
+            client.sendMessage(reply.toString());
         }
     }
     // 1. Đổi sang PUBLIC để ClientHandler gọi được

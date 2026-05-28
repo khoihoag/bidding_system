@@ -39,7 +39,7 @@ public class AuctionDetailResponseHandler {
 
         switch (action) {
             case "DEPOSIT_REPLY" -> handleDepositReply(json);
-            case "AUCTION_FINISHED" -> handleAuctionFinished(json);
+            case "AUCTION_FINISHED", "AUCTION_STATUS_CHANGED" -> handleAuctionFinished(json);
             case "AUCTION_HISTORY_REPLY" -> handleAuctionHistoryReply(json);
             case "BID_REPLY" -> handleBidReply(json);
             case "REGISTER_AUTO_BID_REPLY" -> handleAutoBidReply(json);

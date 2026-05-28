@@ -140,13 +140,17 @@ public class AuctionController {
 
         try {
             String auctionId = request.get("auctionId").getAsString();
-            tongQuan.payWonAuction(auctionId, client.getLoggedInUser());
-            double freshBal = baoVe.getFreshBalance(client.getLoggedInUser().getId());
+            var payment = tongQuan.payWonAuction(auctionId, client.getLoggedInUser());
+            double freshBal = payment.getPayerBalance();
             client.getLoggedInUser().setBalance(freshBal);
 
             JsonObject reply = ApiResponse.success("PAY_AUCTION_REPLY", "auctionId", auctionId);
             reply.addProperty("balance", freshBal);
             client.sendMessage(reply.toString());
+
+            if (loaPhuong != null) {
+                loaPhuong.notifyBalanceChanged(payment.getSellerId(), payment.getSellerBalance());
+            }
         } catch (Exception e) {
             client.sendError("Lỗi khi thanh toán phiên đấu giá: " + e.getMessage());
         }
@@ -369,7 +373,7 @@ public class AuctionController {
             Auction auction = tongQuan.findAuctionById(auctionId);
 
             if (auction == null) {
-                client.sendError("Không tìm thấy phiên đấu giá này!");
+                client.sendError("Khong tim thay phien dau gia nay!");
                 return;
             }
 
@@ -387,7 +391,6 @@ public class AuctionController {
                             point.addProperty("status", tx.getStatus() != null ? tx.getStatus().toString() : "---");
                             dataArray.add(point);
                         });
-                // ============================================================
             }
 
             JsonObject reply = new JsonObject();
@@ -395,62 +398,45 @@ public class AuctionController {
             reply.add("data", dataArray);
             client.sendMessage(reply.toString());
         } catch (Exception e) {
-            client.sendError("Lỗi tải lịch sử: " + e.getMessage());
+            client.sendError("Loi tai lich su: " + e.getMessage());
         }
     }
     // ================= XỬ LÝ LỆNH THEO DÕI TỪ UI =================
     public void handleFollowAuction(JsonObject request) {
         if (client.getLoggedInUser() == null) {
-            client.sendError("Vui lòng đăng nhập để theo dõi phiên đấu giá!");
+            client.sendError("Vui long dang nhap de theo doi phien dau gia!");
             return;
         }
         try {
             String auctionId = request.get("auctionId").getAsString();
             String userId = client.getLoggedInUser().getId();
 
-            Auction auction = tongQuan.findAuctionById(auctionId);
-            if (auction == null) {
-                client.sendError("Không tìm thấy phiên đấu giá này!");
-                return;
-            }
-
-            // Gọi logic thêm follower (Sếp phải tự viết hàm addFollower trong Model hoặc Service nhé)
-            auction.addFollower(userId);
-            // Nếu dùng Database, sếp gọi: tongQuan.saveFollowerToDB(auctionId, userId);
-
-            // Phản hồi về UI cho vui (Thực ra UI mình đã tự đổi chữ thành ĐÃ THEO DÕI rồi)
+            tongQuan.followAuction(auctionId, userId);
             client.sendMessage(ApiResponse.success("FOLLOW_AUCTION_REPLY").toString());
-            System.out.println("[Theo dõi] User " + client.getLoggedInUser().getUsername() + " đang hóng phiên: " + auctionId);
-
+            System.out.println("[Theo doi] User " + client.getLoggedInUser().getUsername() + " dang theo doi phien: " + auctionId);
         } catch (Exception e) {
-            client.sendError("Lỗi hệ thống khi theo dõi: " + e.getMessage());
+            client.sendError("Loi he thong khi theo doi: " + e.getMessage());
         }
     }
 
     public void handleUnfollowAuction(JsonObject request) {
         if (client.getLoggedInUser() == null) {
-            client.sendError("Vui lòng đăng nhập để hủy theo dõi phiên đấu giá!");
+            client.sendError("Vui long dang nhap de huy theo doi phien dau gia!");
             return;
         }
         try {
             String auctionId = request.get("auctionId").getAsString();
             String userId = client.getLoggedInUser().getId();
 
-            Auction auction = tongQuan.findAuctionById(auctionId);
-            if (auction == null) {
-                client.sendError("Không tìm thấy phiên đấu giá này!");
-                return;
-            }
-
-            auction.removeFollower(userId);
+            tongQuan.unfollowAuction(auctionId, userId);
             client.sendMessage(ApiResponse.success("UNFOLLOW_AUCTION_REPLY").toString());
-            System.out.println("[Theo dõi] User " + client.getLoggedInUser().getUsername() + " đã hủy theo dõi phiên: " + auctionId);
+            System.out.println("[Theo doi] User " + client.getLoggedInUser().getUsername() + " da huy theo doi phien: " + auctionId);
         } catch (Exception e) {
-            client.sendError("Lỗi hệ thống khi hủy theo dõi: " + e.getMessage());
+            client.sendError("Loi he thong khi huy theo doi: " + e.getMessage());
         }
     }
 
-    // Sếp dán hàm này vào AuctionController.java
+    // Sep dan ham nay vao AuctionController.java
     public void handleGetNotifications(JsonObject request) {
         if (client.getLoggedInUser() == null) {
             client.sendError("Vui lòng đăng nhập!");

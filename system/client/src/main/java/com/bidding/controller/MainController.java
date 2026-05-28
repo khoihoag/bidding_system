@@ -225,6 +225,11 @@ public class MainController {
             return;
         }
 
+        if (json.has("balance") && !json.get("balance").isJsonNull()) {
+            UserSession.getInstance().setBalance(json.get("balance").getAsDouble());
+            updateBalanceDisplay();
+        }
+
         String action = json.get("action").getAsString();
         if ("ACCOUNT_BANNED".equals(action)) {
             handleAccountBanned();
@@ -235,9 +240,15 @@ public class MainController {
             case "NEW_NOTIFICATION" -> addNotification(extractNotificationMessage(json), json);
             case "NOTIFICATIONS_LIST" -> populateSidebarFromServer(json);
             case "AUCTION_FINISHED" -> WinnerCelebrationDialog.show(json, getClass());
-            case "UPDATE_PROFILE_REPLY" -> handleUpdateProfileReply(json);
+            case "UPDATE_PROFILE_REPLY" -> {
+                if (settingsProfileUpdatePending) {
+                    settingsProfileUpdatePending = false;
+                    handleUpdateProfileReply(json);
+                }
+            }
             case "ERROR" -> {
                 if (settingsProfileUpdatePending) {
+                    settingsProfileUpdatePending = false;
                     handleUpdateProfileReply(json);
                 }
             }

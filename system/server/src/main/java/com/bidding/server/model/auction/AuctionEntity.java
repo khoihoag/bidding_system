@@ -7,7 +7,9 @@ import com.bidding.server.model.transaction.BiddingTransactionEntity;
 import jakarta.persistence.Table;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @jakarta.persistence.Entity
 @Table(name = "auctions")
@@ -51,6 +53,11 @@ public class AuctionEntity extends Entity {
     @Column(name = "extension_seconds")
     private int extensionSeconds;
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "auction_followers", joinColumns = @JoinColumn(name = "auction_id"))
+    @Column(name = "user_id", nullable = false)
+    private Set<String> followerIds = new HashSet<>();
+
     // Vũ khí chống xung đột dữ liệu đa luồng dưới Database (Optimistic Locking)
     @Version
     @Column(name = "version")
@@ -90,6 +97,8 @@ public class AuctionEntity extends Entity {
     public void setAntiSnipingSeconds(int antiSnipingSeconds) { this.antiSnipingSeconds = antiSnipingSeconds; }
     public int getExtensionSeconds() { return extensionSeconds; }
     public void setExtensionSeconds(int extensionSeconds) { this.extensionSeconds = extensionSeconds; }
+    public Set<String> getFollowerIds() { return followerIds; }
+    public void setFollowerIds(Set<String> followerIds) { this.followerIds = followerIds; }
     public int getVersion() { return version; }
     public void setVersion(int version) { this.version = version; }
 }

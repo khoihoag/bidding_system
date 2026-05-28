@@ -70,7 +70,7 @@ public class AdminResponseHandler {
             case "CREATE_ADMIN_LEVEL1_REPLY" -> handleCreateAdminLevel1Reply(response);
             case "HISTORY_REPLY" -> handleHistoryReply(response);
             case "ADMIN_AUCTION_BID_HISTORY_REPLY" -> handleAdminAuctionBidHistoryReply(response);
-            case "GLOBAL_NOTIFY" -> handleGlobalNotify(response);
+            case "GLOBAL_NOTIFY", "AUCTION_STATUS_CHANGED" -> handleGlobalNotify(response);
             case "ERROR" -> handleError(response);
             default -> { }
         }

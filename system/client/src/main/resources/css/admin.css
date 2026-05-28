@@ -501,36 +501,110 @@
     -fx-font-weight: 800;
 }
 
-.dialog-pane {
+.dialog-pane,
+.admin-dialog-pane {
+    -admin-bg: #f3f4f6;
+    -admin-surface: #ffffff;
+    -admin-border: #e5e7eb;
+    -admin-border-soft: #f3f4f6;
+    -admin-text: #111827;
+    -admin-muted: #64748b;
+    -admin-accent: #BC9C4F;
+    -admin-accent-dark: #a68a45;
+    -admin-accent-text: #b08a1e;
+    -admin-danger: #b91c1c;
+
     -fx-background-color: #ffffff;
+    -fx-background-radius: 8;
+    -fx-border-color: #e5e7eb;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 0;
+    -fx-effect: dropshadow(gaussian, rgba(15, 23, 42, 0.18), 24, 0.14, 0, 8);
 }
 
-.dialog-pane .header-panel {
-    -fx-background-color: #ffffff;
+.admin-dialog-pane > .header-panel {
+    -fx-background-color: #f8fafc;
+    -fx-background-radius: 8 8 0 0;
+    -fx-border-color: transparent transparent #e5e7eb transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 18 22 14 22;
 }
 
-.dialog-pane .header-panel .label {
+.admin-dialog-pane > .header-panel .label {
     -fx-text-fill: #111827;
     -fx-font-size: 16px;
     -fx-font-weight: 800;
+    -fx-wrap-text: true;
 }
 
-.dialog-pane .content.label {
+.admin-dialog-pane > .content {
+    -fx-padding: 18 22 12 22;
+}
+
+.admin-dialog-pane .content.label {
+    -fx-text-fill: #374151;
+    -fx-font-size: 13px;
+    -fx-line-spacing: 3;
+}
+
+.admin-dialog-pane .text-field,
+.admin-dialog-pane .password-field,
+.admin-dialog-pane .text-area {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #d9dee7;
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-padding: 9 12;
     -fx-text-fill: #111827;
+    -fx-prompt-text-fill: #8a94a6;
+    -fx-effect: none;
 }
 
-.dialog-pane .button-bar .button {
+.admin-dialog-pane .text-field:focused,
+.admin-dialog-pane .password-field:focused,
+.admin-dialog-pane .text-area:focused {
+    -fx-border-color: #d2aa2a;
+    -fx-effect: dropshadow(gaussian, rgba(188, 156, 79, 0.16), 8, 0.14, 0, 0);
+}
+
+.admin-dialog-pane > .button-bar {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 0 0 8 8;
+    -fx-border-color: #edf0f4 transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 12 18 14 18;
+}
+
+.admin-dialog-pane .button-bar .button {
     -fx-background-color: -admin-accent;
     -fx-text-fill: #ffffff;
     -fx-font-weight: 800;
-    -fx-background-radius: 8;
-    -fx-border-radius: 8;
-    -fx-padding: 8 14;
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-border-color: transparent;
+    -fx-padding: 9 18;
     -fx-cursor: hand;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
 }
 
-.dialog-pane .button-bar .button:hover {
+.admin-dialog-pane .button-bar .button:hover,
+.admin-dialog-pane .button-bar .button:default:hover {
     -fx-background-color: -admin-accent-dark;
+}
+
+.admin-dialog-pane .button-bar .button:cancel {
+    -fx-background-color: #ffffff;
+    -fx-text-fill: #4b5563;
+    -fx-border-color: #d9dee7;
+    -fx-border-width: 1;
+}
+
+.admin-dialog-pane .button-bar .button:cancel:hover {
+    -fx-background-color: #f9fafb;
+    -fx-border-color: #c4cad4;
 }
 
 .date-picker-popup {

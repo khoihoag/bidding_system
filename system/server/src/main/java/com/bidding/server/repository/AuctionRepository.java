@@ -1,10 +1,13 @@
 package com.bidding.server.repository;
 
 import com.bidding.server.model.auction.AuctionEntity;
+import com.bidding.server.model.item.Item;
 import com.bidding.server.model.transaction.BiddingTransactionEntity;
+import com.bidding.server.model.user.User;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
+import org.hibernate.LockMode;
 import com.bidding.server.config.HibernateSessionFactory;
 import org.hibernate.query.Query;
 import java.sql.Connection;
@@ -18,6 +21,36 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class AuctionRepository {
     private static final AtomicBoolean ITEM_INDEX_CHECKED = new AtomicBoolean(false);
     private final SessionFactory factory;
+
+    public static final class AuctionPaymentResult {
+        private final double payerBalance;
+        private final double sellerBalance;
+        private final double amount;
+        private final String sellerId;
+
+        public AuctionPaymentResult(double payerBalance, double sellerBalance, double amount, String sellerId) {
+            this.payerBalance = payerBalance;
+            this.sellerBalance = sellerBalance;
+            this.amount = amount;
+            this.sellerId = sellerId;
+        }
+
+        public double getPayerBalance() {
+            return payerBalance;
+        }
+
+        public double getSellerBalance() {
+            return sellerBalance;
+        }
+
+        public double getAmount() {
+            return amount;
+        }
+
+        public String getSellerId() {
+            return sellerId;
+        }
+    }
 
     public AuctionRepository() {
         this(HibernateSessionFactory.getSessionFactory());
@@ -240,6 +273,114 @@ public class AuctionRepository {
                             AuctionEntity.class)
                     .setParameter("id", id)
                     .uniqueResult();
+        }
+    }
+
+    public AuctionPaymentResult payWonAuction(String auctionId, String payerId) {
+        Transaction transaction = null;
+        try (Session session = factory.openSession()) {
+            transaction = session.beginTransaction();
+
+            AuctionEntity entity = session.createQuery(
+                            "SELECT DISTINCT a FROM AuctionEntity a " +
+                                    "LEFT JOIN FETCH a.currentWinner " +
+                                    "LEFT JOIN FETCH a.item " +
+                                    "WHERE a.id = :id",
+                            AuctionEntity.class)
+                    .setParameter("id", auctionId)
+                    .uniqueResult();
+
+            if (entity == null) {
+                throw new IllegalStateException("Khong tim thay phien dau gia.");
+            }
+            if (entity.getStatus() != com.bidding.server.enums.AuctionStatus.FINISHED
+                    || entity.getCurrentWinner() == null) {
+                throw new IllegalStateException("Phien dau gia nay khong con trong trang thai cho thanh toan.");
+            }
+            if (!payerId.equals(entity.getCurrentWinner().getId())) {
+                throw new IllegalStateException("Chi nguoi chien thang moi duoc thanh toan phien nay.");
+            }
+
+            Item item = entity.getItem();
+            if (item == null || item.getSellerId() == null || item.getSellerId().isBlank()) {
+                throw new IllegalStateException("Khong tim thay thong tin nguoi ban cua san pham.");
+            }
+
+            String sellerId = item.getSellerId();
+            if (sellerId.equals(payerId)) {
+                throw new IllegalStateException("Du lieu phien da bi chuyen quyen so huu truoc khi thanh toan.");
+            }
+
+            User payer = session.get(User.class, payerId, LockMode.PESSIMISTIC_WRITE);
+            User seller = session.get(User.class, sellerId, LockMode.PESSIMISTIC_WRITE);
+            if (payer == null) {
+                throw new IllegalStateException("Khong tim thay tai khoan thanh toan.");
+            }
+            if (seller == null) {
+                throw new IllegalStateException("Khong tim thay tai khoan nguoi ban.");
+            }
+
+            double amount = entity.getCurrentPrice() != null ? entity.getCurrentPrice() : 0.0;
+            if (amount < 0) {
+                throw new IllegalStateException("Gia thanh toan khong hop le.");
+            }
+            if (payer.getBalance() < amount) {
+                throw new IllegalStateException("Vi cua ban khong du tien! Vui long nap them.");
+            }
+
+            payer.setBalance(payer.getBalance() - amount);
+            seller.setBalance(seller.getBalance() + amount);
+            item.setSellerId(payer.getId());
+            item.setSellerFullName(payer.getFullName());
+            entity.setCurrentWinner(payer);
+            entity.setStatus(com.bidding.server.enums.AuctionStatus.PAID);
+
+            session.merge(payer);
+            session.merge(seller);
+            session.merge(item);
+            session.merge(entity);
+
+            transaction.commit();
+            return new AuctionPaymentResult(payer.getBalance(), seller.getBalance(), amount, sellerId);
+        } catch (Exception e) {
+            if (transaction != null) transaction.rollback();
+            throw e;
+        }
+    }
+
+    public void addFollower(String auctionId, String userId) {
+        updateFollower(auctionId, userId, true);
+    }
+
+    public void removeFollower(String auctionId, String userId) {
+        updateFollower(auctionId, userId, false);
+    }
+
+    private void updateFollower(String auctionId, String userId, boolean follow) {
+        if (auctionId == null || auctionId.isBlank() || userId == null || userId.isBlank()) {
+            return;
+        }
+
+        Transaction transaction = null;
+        try (Session session = factory.openSession()) {
+            transaction = session.beginTransaction();
+            AuctionEntity auction = session.get(AuctionEntity.class, auctionId);
+            if (auction == null) {
+                throw new IllegalStateException("Auction not found: " + auctionId);
+            }
+            if (auction.getFollowerIds() == null) {
+                auction.setFollowerIds(new java.util.HashSet<>());
+            }
+            if (follow) {
+                auction.getFollowerIds().add(userId);
+            } else {
+                auction.getFollowerIds().remove(userId);
+            }
+            session.merge(auction);
+            transaction.commit();
+        } catch (Exception e) {
+            if (transaction != null) transaction.rollback();
+            throw e;
         }
     }
 

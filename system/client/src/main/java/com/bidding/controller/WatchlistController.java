@@ -175,7 +175,7 @@ public class WatchlistController {
             case "AUCTIONS_LIST" -> handleAuctionsList(json);
             case "AUCTION_HISTORY_REPLY" -> handleAuctionHistoryReply(json);
             case "REALTIME_BID_UPDATE", "NEW_BID" -> handleRealtimeBidUpdate(json);
-            case "GLOBAL_NOTIFY" -> requestAuctions();
+            case "GLOBAL_NOTIFY", "NEW_NOTIFICATION", "AUCTION_STATUS_CHANGED" -> requestAuctions();
             case "ERROR" -> Platform.runLater(() -> showStatus(json.has("message")
                     ? json.get("message").getAsString()
                     : "Server error"));
