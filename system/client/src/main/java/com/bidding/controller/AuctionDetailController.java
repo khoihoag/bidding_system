@@ -1,8 +1,13 @@
 package com.bidding.controller;
 
 import com.bidding.controller.auctiondetail.*;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.AreaChart;
@@ -11,6 +16,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ScrollPane; // ĐÃ THÊM IMPORT
 import javafx.scene.control.SplitPane;  // ĐÃ THÊM IMPORT
@@ -18,14 +25,20 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
 import java.io.File;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class AuctionDetailController {
+    private static final java.time.format.DateTimeFormatter HISTORY_TIME_FMT =
+            java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+
     @FXML private Button btnFollow;
     @FXML private Button btnEnterTradingRoom;
     // ================= BIẾN CỦA MÀN 1 (SOTHEBY'S SHOWCASE) =================
@@ -98,6 +111,9 @@ public class AuctionDetailController {
     private Label sellerProfileAuctionProductsValue;
     private boolean sellerProfileLoading;
     private int sellerProfileRequestVersion;
+    private JsonArray auctionHistoryData;
+    private boolean openHistoryWhenLoaded;
+    private final NumberFormat currencyFmt = NumberFormat.getNumberInstance(Locale.forLanguageTag("vi-VN"));
 
     @FXML
     public void initialize() {
@@ -154,6 +170,11 @@ public class AuctionDetailController {
 
     @FXML
     private void handleEnterTradingRoom() {
+        if (isCurrentAuctionEnded()) {
+            openAuctionHistoryView();
+            return;
+        }
+
         showcaseView.setVisible(false);
         showcaseView.setManaged(false);
 
@@ -170,6 +191,100 @@ public class AuctionDetailController {
 
         showcaseView.setVisible(true);
         showcaseView.setManaged(true);
+    }
+
+    public void cacheAuctionHistory(JsonArray data) {
+        auctionHistoryData = data == null ? new JsonArray() : data.deepCopy();
+        if (openHistoryWhenLoaded) {
+            openHistoryWhenLoaded = false;
+            showAuctionHistoryDialog();
+        }
+    }
+
+    private void openAuctionHistoryView() {
+        if (auctionHistoryData == null) {
+            openHistoryWhenLoaded = true;
+            ui.showResult("\u0110ang t\u1ea3i l\u1ecbch s\u1eed \u0111\u1ea5u gi\u00e1...");
+            network.requestAuctionHistory(state.currentAuctionId);
+            return;
+        }
+        showAuctionHistoryDialog();
+    }
+
+    private void showAuctionHistoryDialog() {
+        ObservableList<AuctionHistoryRow> rows = FXCollections.observableArrayList();
+        int index = 1;
+        for (JsonElement element : auctionHistoryData) {
+            if (!element.isJsonObject()) {
+                continue;
+            }
+            JsonObject point = element.getAsJsonObject();
+            rows.add(new AuctionHistoryRow(
+                    String.valueOf(index++),
+                    getStringOrDefault(point, "bidder", "---"),
+                    formatCurrency(point.has("price") ? point.get("price").getAsDouble() : 0.0),
+                    formatHistoryTime(getStringOrDefault(point, "timestamp", "")),
+                    mapBidType(getStringOrDefault(point, "type", "")),
+                    mapBidStatus(getStringOrDefault(point, "status", ""))
+            ));
+        }
+
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("L\u1ecbch s\u1eed \u0111\u1ea5u gi\u00e1");
+        dialog.setHeaderText(buildAuctionHistoryHeader());
+        try {
+            dialog.getDialogPane().getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
+        } catch (Exception ignored) {
+        }
+
+        VBox content = new VBox(12);
+        content.getStyleClass().add("watchlist-history-dialog");
+        content.setPrefWidth(900);
+        content.setPrefHeight(460);
+
+        Label summary = new Label(rows.isEmpty()
+                ? "Ch\u01b0a c\u00f3 l\u01b0\u1ee3t \u0111\u1ea5u gi\u00e1 n\u00e0o cho phi\u00ean n\u00e0y."
+                : "T\u1ed5ng s\u1ed1 l\u01b0\u1ee3t \u0111\u1ea5u gi\u00e1: " + rows.size());
+        summary.getStyleClass().add("watchlist-history-summary");
+
+        TableView<AuctionHistoryRow> table = new TableView<>(rows);
+        table.getStyleClass().addAll("table-view", "watchlist-history-table");
+        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        table.setPlaceholder(new Label("Ch\u01b0a c\u00f3 d\u1eef li\u1ec7u l\u1ecbch s\u1eed \u0111\u1ea5u gi\u00e1."));
+
+        TableColumn<AuctionHistoryRow, String> colNo = new TableColumn<>("#");
+        colNo.setCellValueFactory(data -> data.getValue().indexProperty());
+        colNo.setPrefWidth(50);
+        colNo.setStyle("-fx-alignment: CENTER;");
+
+        TableColumn<AuctionHistoryRow, String> colBidder = new TableColumn<>("Ng\u01b0\u1eddi \u0111\u1ea5u gi\u00e1");
+        colBidder.setCellValueFactory(data -> data.getValue().bidderProperty());
+        colBidder.setPrefWidth(190);
+
+        TableColumn<AuctionHistoryRow, String> colAmount = new TableColumn<>("Gi\u00e1 tr\u1ecb");
+        colAmount.setCellValueFactory(data -> data.getValue().amountProperty());
+        colAmount.setPrefWidth(150);
+        colAmount.setStyle("-fx-alignment: CENTER_RIGHT;");
+
+        TableColumn<AuctionHistoryRow, String> colTime = new TableColumn<>("Th\u1eddi gian");
+        colTime.setCellValueFactory(data -> data.getValue().timeProperty());
+        colTime.setPrefWidth(190);
+
+        TableColumn<AuctionHistoryRow, String> colType = new TableColumn<>("Lo\u1ea1i");
+        colType.setCellValueFactory(data -> data.getValue().typeProperty());
+        colType.setPrefWidth(110);
+
+        TableColumn<AuctionHistoryRow, String> colStatus = new TableColumn<>("Tr\u1ea1ng th\u00e1i");
+        colStatus.setCellValueFactory(data -> data.getValue().statusProperty());
+        colStatus.setPrefWidth(130);
+
+        table.getColumns().addAll(colNo, colBidder, colAmount, colTime, colType, colStatus);
+        VBox.setVgrow(table, Priority.ALWAYS);
+        content.getChildren().addAll(summary, table);
+
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        dialog.showAndWait();
     }
 
     @FXML
@@ -773,6 +888,69 @@ public class AuctionDetailController {
     private void handleBack() {
         AppNavigator.navigate("Main.fxml");
     }
+
+    private boolean isCurrentAuctionEnded() {
+        if (state.currentSelectedAuction == null) {
+            return false;
+        }
+        String status = getStringOrDefault(state.currentSelectedAuction, "status", "");
+        return "FINISHED".equals(status)
+                || "CLOSED".equals(status)
+                || "PAID".equals(status)
+                || "FAILED".equals(status)
+                || "CANCELED".equals(status)
+                || "CANCELLED".equals(status);
+    }
+
+    private String buildAuctionHistoryHeader() {
+        String itemName = itemNameLabel == null ? "" : itemNameLabel.getText();
+        String id = state.currentAuctionId == null ? "" : state.currentAuctionId;
+        if (itemName == null || itemName.isBlank()) {
+            return "ID: " + id;
+        }
+        return itemName + "\nID: " + id;
+    }
+
+    private String formatCurrency(double value) {
+        return currencyFmt.format(value) + " \u0111";
+    }
+
+    private String formatHistoryTime(String value) {
+        if (value == null || value.isBlank()) {
+            return "---";
+        }
+        try {
+            return java.time.LocalDateTime.parse(value).format(HISTORY_TIME_FMT);
+        } catch (Exception ignored) {
+            return value;
+        }
+    }
+
+    private String mapBidType(String type) {
+        return switch (type == null ? "" : type.toUpperCase()) {
+            case "AUTO" -> "Auto-bid";
+            case "MANUAL" -> "Th\u1ee7 c\u00f4ng";
+            default -> type == null || type.isBlank() ? "---" : type;
+        };
+    }
+
+    private String mapBidStatus(String status) {
+        return switch (status == null ? "" : status.toUpperCase()) {
+            case "ACCEPTED" -> "Ch\u1ea5p nh\u1eadn";
+            case "REJECTED" -> "T\u1eeb ch\u1ed1i";
+            case "PENDING" -> "Ch\u1edd x\u1eed l\u00fd";
+            default -> status == null || status.isBlank() ? "---" : status;
+        };
+    }
+
+    private String getStringOrDefault(JsonObject obj, String key, String fallback) {
+        if (obj == null || !obj.has(key) || obj.get(key).isJsonNull()) {
+            return fallback;
+        }
+        String value = obj.get(key).getAsString();
+        return value == null || value.isBlank() ? fallback : value;
+    }
+
     // ================= XỬ LÝ THEO DÕI PHIÊN ĐẤU GIÁ =================
     @FXML
     private void handleFollowAuction() {
@@ -786,5 +964,47 @@ public class AuctionDetailController {
 
         state.isFollowing = !following;
         ui.setFollowButtonState(state.isFollowing);
+    }
+
+    private static final class AuctionHistoryRow {
+        private final StringProperty index;
+        private final StringProperty bidder;
+        private final StringProperty amount;
+        private final StringProperty time;
+        private final StringProperty type;
+        private final StringProperty status;
+
+        private AuctionHistoryRow(String index, String bidder, String amount, String time, String type, String status) {
+            this.index = new SimpleStringProperty(index);
+            this.bidder = new SimpleStringProperty(bidder);
+            this.amount = new SimpleStringProperty(amount);
+            this.time = new SimpleStringProperty(time);
+            this.type = new SimpleStringProperty(type);
+            this.status = new SimpleStringProperty(status);
+        }
+
+        private StringProperty indexProperty() {
+            return index;
+        }
+
+        private StringProperty bidderProperty() {
+            return bidder;
+        }
+
+        private StringProperty amountProperty() {
+            return amount;
+        }
+
+        private StringProperty timeProperty() {
+            return time;
+        }
+
+        private StringProperty typeProperty() {
+            return type;
+        }
+
+        private StringProperty statusProperty() {
+            return status;
+        }
     }
 }

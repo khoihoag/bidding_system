@@ -2238,6 +2238,47 @@
     -fx-font-weight: 800;
 }
 
+.watchlist-table {
+    -fx-font-family: "Segoe UI", Arial, sans-serif;
+    -fx-font-size: 13px;
+    -fx-fixed-cell-size: 58;
+}
+
+.watchlist-table .column-header {
+    -fx-pref-height: 48;
+}
+
+.watchlist-table .column-header .label {
+    -fx-wrap-text: true;
+    -fx-text-alignment: center;
+    -fx-alignment: center;
+    -fx-font-size: 13px;
+}
+
+.watchlist-table .table-cell {
+    -fx-padding: 9 12;
+    -fx-font-size: 13px;
+}
+
+.watchlist-table-cell-label {
+    -fx-text-fill: #111827;
+    -fx-font-size: 13px;
+}
+
+.watchlist-history-dialog {
+    -fx-padding: 12;
+}
+
+.watchlist-history-summary {
+    -fx-text-fill: #111827;
+    -fx-font-weight: 800;
+}
+
+.watchlist-history-table {
+    -fx-font-family: "Segoe UI", Arial, sans-serif;
+    -fx-font-size: 13px;
+}
+
 .table-row-cell,
 .list-cell {
     -fx-background-color: #ffffff;

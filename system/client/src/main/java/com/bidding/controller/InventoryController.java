@@ -43,6 +43,7 @@ public class InventoryController implements Initializable {
     private static final double WON_ITEM_CARD_INSET = 10;
     @FXML private javafx.scene.control.CheckBox chkReverseNow, chkReverseSchedule;
     @FXML private javafx.scene.control.TextField txtDropStepNow, txtDropStepSchedule;
+    @FXML private TextField txtAntiSnipingNow, txtExtensionNow, txtAntiSnipingSchedule, txtExtensionSchedule;
     @FXML private GridPane wonItemsGrid;
     @FXML private ScrollPane inventoryScroll;
     @FXML private Button btnSubmitItem;
@@ -109,6 +110,10 @@ public class InventoryController implements Initializable {
         request.addProperty("itemId", itemId);
         request.addProperty("startTime", startTime);
         request.addProperty("endTime", endTime);
+        if (!addOptionalPositiveSeconds(request, "antiSnipingSeconds", txtAntiSnipingSchedule, "Thời gian kích hoạt anti-snipe")
+                || !addOptionalPositiveSeconds(request, "extensionSeconds", txtExtensionSchedule, "Thời gian gia hạn anti-snipe")) {
+            return;
+        }
 
         networkClient.sendJson(request);
     }
@@ -168,6 +173,10 @@ public class InventoryController implements Initializable {
             });
         }
         forceNumericOnly(txtDuration);
+        forceNumericOnly(txtAntiSnipingNow);
+        forceNumericOnly(txtExtensionNow);
+        forceNumericOnly(txtAntiSnipingSchedule);
+        forceNumericOnly(txtExtensionSchedule);
         forceNumericOnly(txtDropStepNow);
         forceNumericOnly(txtDropStepSchedule);
         forceNumericOnly(txtNewPrice);
@@ -233,6 +242,10 @@ public class InventoryController implements Initializable {
             request.addProperty("action", "START_AUCTION");
             request.addProperty("itemId", itemId);
             request.addProperty("durationMinutes", duration);
+            if (!addOptionalPositiveSeconds(request, "antiSnipingSeconds", txtAntiSnipingNow, "Thời gian kích hoạt anti-snipe")
+                    || !addOptionalPositiveSeconds(request, "extensionSeconds", txtExtensionNow, "Thời gian gia hạn anti-snipe")) {
+                return;
+            }
             networkClient.sendJson(request);
         } catch (NumberFormatException e) {
             showAlert(AlertType.ERROR, "Lỗi định dạng", "Thời gian phải là số!");
@@ -349,6 +362,30 @@ public class InventoryController implements Initializable {
         }
 
         return Integer.parseInt(text);
+    }
+
+    private boolean addOptionalPositiveSeconds(JsonObject request, String propertyName, TextField field, String fieldName) {
+        if (field == null) {
+            return true;
+        }
+
+        String text = field.getText() != null ? field.getText().trim() : "";
+        if (text.isEmpty()) {
+            return true;
+        }
+
+        try {
+            int seconds = Integer.parseInt(text);
+            if (seconds <= 0) {
+                showAlert(AlertType.WARNING, "Lỗi nhập liệu", fieldName + " phải lớn hơn 0 giây.");
+                return false;
+            }
+            request.addProperty(propertyName, seconds);
+            return true;
+        } catch (NumberFormatException e) {
+            showAlert(AlertType.ERROR, "Lỗi định dạng", fieldName + " phải là số nguyên dương.");
+            return false;
+        }
     }
 
     private void handleServerMessage(JsonObject response) {
