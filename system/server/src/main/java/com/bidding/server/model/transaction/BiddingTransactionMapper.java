@@ -1,18 +1,29 @@
 package com.bidding.server.model.transaction;
 
+import com.bidding.server.model.auction.Auction;
+import com.bidding.server.model.auction.AuctionEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
-import java.util.List;
-import com.bidding.server.model.auction.AuctionMapper;
-@Mapper(uses = {AuctionMapper.class}) // <--- CHIÊU NÀY QUAN TRỌNG
+
+@Mapper
 public interface BiddingTransactionMapper {
     BiddingTransactionMapper INSTANCE = Mappers.getMapper(BiddingTransactionMapper.class);
 
-    // Bây giờ thì ĐÉO CẦN @Mapping loằng ngoằng nữa
-    // Vì tên thuộc tính cùng là 'auction' (nhưng khác kiểu dữ liệu), 
-    // MapStruct sẽ tự dùng AuctionMapper để chuyển đổi.
+    @Mapping(target = "auction", source = "auction", qualifiedByName = "auctionReference")
     BiddingTransactionEntity toEntity(BiddingTransaction model);
+
     @Mapping(target = "auction", ignore = true)
     BiddingTransaction toModel(BiddingTransactionEntity entity);
+
+    @Named("auctionReference")
+    default AuctionEntity toAuctionEntity(Auction auction) {
+        if (auction == null) {
+            return null;
+        }
+        AuctionEntity entity = new AuctionEntity();
+        entity.setId(auction.getId());
+        return entity;
+    }
 }

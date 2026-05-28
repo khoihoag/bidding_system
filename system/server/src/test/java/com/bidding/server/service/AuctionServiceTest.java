@@ -33,6 +33,9 @@ class AuctionServiceTest {
     @Mock
     private UserService userService;
 
+    @Mock
+    private ItemService itemService;
+
     @InjectMocks
     private AuctionService auctionService;
 
@@ -98,11 +101,11 @@ class AuctionServiceTest {
         auctionService.placeBid(auctionId, 1500.0, bidder);
 
         // Kiểm tra: Repository phải được update giá mới
-        verify(repository, atLeastOnce()).saveOrUpdate(any());
+        verify(repository, times(1)).saveNewBid(eq(auctionId), eq(1500.0), eq(bidder), any(), any());
 
         // Kiểm tra: Observer phải nhận được sự kiện BID_PLACED
         verify(observer, times(1)).onBidPlaced(any());
-        verify(userService, never()).deductBalance(any(), anyDouble());
+        verify(userService, times(1)).deductBalance(bidder, 1500.0);
         verify(userService, never()).addBalance(any(), anyDouble());
     }
 
@@ -126,6 +129,6 @@ class AuctionServiceTest {
         // Kiểm tra: Observer phải nhận được sự kiện AUCTION_CLOSED
         verify(observer, times(1)).onAuctionClosed(any());
         // Repository phải lưu trạng thái đóng
-        verify(repository, atLeastOnce()).saveOrUpdate(any());
+        verify(repository, times(1)).finalizeAuction(auction.getId(), com.bidding.server.enums.AuctionStatus.CANCELED, null);
     }
 }
