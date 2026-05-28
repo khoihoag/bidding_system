@@ -85,7 +85,10 @@ public class AuctionDetailResponseHandler {
             return;
         }
         JsonArray data = json.getAsJsonArray("data");
-        Platform.runLater(() -> chartBinder.loadHistory(data));
+        Platform.runLater(() -> {
+            chartBinder.loadHistory(data);
+            controller.cacheAuctionHistory(data);
+        });
     }
 
     private void handleBidReply(JsonObject json) {

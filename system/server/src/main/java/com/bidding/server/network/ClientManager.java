@@ -9,6 +9,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ClientManager implements AuctionObserver {
     private final List<ClientHandler> activeClients = new CopyOnWriteArrayList<>();
+    private final java.util.Set<String> announcedClosedAuctions = java.util.concurrent.ConcurrentHashMap.newKeySet();
     // ĐÃ XÓA: private final Gson gson = new Gson(); (Bom nổ chậm)
 
     public void addClient(ClientHandler client) {
@@ -126,6 +127,10 @@ public class ClientManager implements AuctionObserver {
                 ? auction.getStatus().name()
                 : "UNKNOWN";
         boolean canceled = "CANCELED".equals(auctionStatus);
+        String auctionId = event.getAuctionId() != null ? event.getAuctionId() : "UNKNOWN";
+        if (!announcedClosedAuctions.add(auctionId + ":" + auctionStatus)) {
+            return;
+        }
 
         JsonObject notifyJson = new JsonObject();
         notifyJson.addProperty("action", "GLOBAL_NOTIFY");
@@ -138,7 +143,7 @@ public class ClientManager implements AuctionObserver {
         // 2. Bắn thêm gói tin CHI TIẾT để UI hiển thị kết quả
         JsonObject endJson = new JsonObject();
         endJson.addProperty("action", "AUCTION_FINISHED");
-        endJson.addProperty("auctionId", event.getAuctionId());
+        endJson.addProperty("auctionId", auctionId);
         endJson.addProperty("status", auctionStatus);
 
         // Giá chốt: ưu tiên dùng convenience getter để lấy đúng giá từ RAM model (AtomicReference)
@@ -157,9 +162,22 @@ public class ClientManager implements AuctionObserver {
         }
 
         endJson.addProperty("winnerId", winnerName);
+        if (auction != null && auction.getCurrentWinner() != null) {
+            var winner = auction.getCurrentWinner();
+            endJson.addProperty("winnerUserId", winner.getId() != null ? winner.getId() : "");
+            endJson.addProperty("winnerUsername", winner.getUsername() != null ? winner.getUsername() : "NONE");
+            endJson.addProperty("winnerName",
+                    winner.getFullName() != null && !winner.getFullName().isBlank()
+                            ? winner.getFullName()
+                            : (winner.getUsername() != null ? winner.getUsername() : "NONE"));
+        } else {
+            endJson.addProperty("winnerUserId", "");
+            endJson.addProperty("winnerUsername", "NONE");
+            endJson.addProperty("winnerName", "NONE");
+        }
         endJson.addProperty("itemName", itemName);
         endJson.addProperty("finalPrice", finalPrice);
-        broadcast(endJson.toString());
+        broadcastOneConnectionPerAccount(endJson.toString());
     }
 
     @Override
@@ -171,6 +189,18 @@ public class ClientManager implements AuctionObserver {
     public void broadcast(String message) {
         for (ClientHandler client : activeClients) {
             client.sendMessage(message);
+        }
+    }
+
+    private void broadcastOneConnectionPerAccount(String message) {
+        java.util.Set<String> sentAccounts = new java.util.HashSet<>();
+        for (ClientHandler client : activeClients) {
+            String accountKey = client.getLoggedInUser() != null && client.getLoggedInUser().getId() != null
+                    ? client.getLoggedInUser().getId()
+                    : "connection:" + System.identityHashCode(client);
+            if (sentAccounts.add(accountKey)) {
+                client.sendMessage(message);
+            }
         }
     }
     // =========================================================

@@ -57,6 +57,21 @@
                                         <TextField fx:id="txtDuration" promptText="VD: 60" styleClass="input-field"/>
                                     </VBox>
 
+                                    <GridPane hgap="14" vgap="12">
+                                        <columnConstraints>
+                                            <ColumnConstraints percentWidth="50"/>
+                                            <ColumnConstraints percentWidth="50"/>
+                                        </columnConstraints>
+                                        <VBox spacing="6" GridPane.columnIndex="0">
+                                            <Label text="Kích hoạt anti-snipe (giây)" styleClass="field-label"/>
+                                            <TextField fx:id="txtAntiSnipingNow" promptText="Mặc định: 30" styleClass="input-field"/>
+                                        </VBox>
+                                        <VBox spacing="6" GridPane.columnIndex="1">
+                                            <Label text="Gia hạn anti-snipe (giây)" styleClass="field-label"/>
+                                            <TextField fx:id="txtExtensionNow" promptText="Mặc định: 60" styleClass="input-field"/>
+                                        </VBox>
+                                    </GridPane>
+
                                     <CheckBox fx:id="chkReverseNow" text="Kích hoạt đấu giá ngược" styleClass="inventory-check"/>
 
                                     <VBox spacing="6">
@@ -83,6 +98,21 @@
                                         <VBox spacing="6" GridPane.columnIndex="1">
                                             <Label text="Thời gian kết thúc" styleClass="field-label"/>
                                             <TextField fx:id="txtEndTime" promptText="VD: 2026-05-01T20:00:00" styleClass="input-field"/>
+                                        </VBox>
+                                    </GridPane>
+
+                                    <GridPane hgap="14" vgap="12">
+                                        <columnConstraints>
+                                            <ColumnConstraints percentWidth="50"/>
+                                            <ColumnConstraints percentWidth="50"/>
+                                        </columnConstraints>
+                                        <VBox spacing="6" GridPane.columnIndex="0">
+                                            <Label text="Kích hoạt anti-snipe (giây)" styleClass="field-label"/>
+                                            <TextField fx:id="txtAntiSnipingSchedule" promptText="Mặc định: 30" styleClass="input-field"/>
+                                        </VBox>
+                                        <VBox spacing="6" GridPane.columnIndex="1">
+                                            <Label text="Gia hạn anti-snipe (giây)" styleClass="field-label"/>
+                                            <TextField fx:id="txtExtensionSchedule" promptText="Mặc định: 60" styleClass="input-field"/>
                                         </VBox>
                                     </GridPane>
 
@@ -222,10 +252,12 @@
                 <Label text="Tài sản bạn đã đấu giá thành công" styleClass="hint-label"/>
             </VBox>
             <ScrollPane fitToWidth="true" fitToHeight="true" hbarPolicy="NEVER" maxWidth="Infinity" VBox.vgrow="ALWAYS" styleClass="inventory-scroll">
-                <GridPane fx:id="wonItemsGrid" hgap="12" vgap="12" styleClass="inventory-grid">
+                <GridPane fx:id="wonItemsGrid" hgap="16" vgap="16" styleClass="inventory-grid won-items-grid">
                     <columnConstraints>
-                        <ColumnConstraints percentWidth="50" hgrow="ALWAYS"/>
-                        <ColumnConstraints percentWidth="50" hgrow="ALWAYS"/>
+                        <ColumnConstraints percentWidth="25" hgrow="ALWAYS"/>
+                        <ColumnConstraints percentWidth="25" hgrow="ALWAYS"/>
+                        <ColumnConstraints percentWidth="25" hgrow="ALWAYS"/>
+                        <ColumnConstraints percentWidth="25" hgrow="ALWAYS"/>
                     </columnConstraints>
                 </GridPane>
             </ScrollPane>
