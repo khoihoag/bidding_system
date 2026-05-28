@@ -23,7 +23,7 @@ public class AdminService {
     private static final Pattern PASSWORD_PATTERN = Pattern.compile("^(?=.*[A-Za-z])(?=.*\\d).{6,}$");
 
     public AdminService(UserRepository userRepository, AuctionService auctionService) {
-        this(userRepository, auctionService, auctionService.getAuctionRepository(), new ItemRepository());
+        this(userRepository, auctionService, null, null);
     }
 
     public AdminService(UserRepository userRepository, AuctionService auctionService, ItemRepository itemRepository) {
@@ -91,6 +91,9 @@ public class AdminService {
 
     public boolean banUser(User actor, String targetUserId) {
         requireAdminLevel1(actor);
+        if (actor.getId() != null && actor.getId().equals(targetUserId)) {
+            throw new RuntimeException("Khong the tu khoa chinh minh.");
+        }
 
         User targetUser = userRepository.findById(targetUserId);
         if (targetUser == null) {
@@ -133,17 +136,17 @@ public class AdminService {
         if (auctionId == null || auctionId.isBlank()) {
             throw new IllegalArgumentException("Thiếu ID phiên đấu giá.");
         }
-        return auctionRepository.findBidHistoryByAuctionId(auctionId);
+        return auctionRepository().findBidHistoryByAuctionId(auctionId);
     }
 
     public List<Item> getPendingItems(User actor) {
         requireAdminLevel1(actor);
-        return itemRepository.findByApprovalStatus(ItemApprovalStatus.PENDING);
+        return itemRepository().findByApprovalStatus(ItemApprovalStatus.PENDING);
     }
 
     public Item approveItem(User actor, String itemId) {
         requireAdminLevel1(actor);
-        Item item = itemRepository.findById(itemId);
+        Item item = itemRepository().findById(itemId);
         if (item == null) {
             throw new RuntimeException("Khong tim thay san pham.");
         }
@@ -152,13 +155,13 @@ public class AdminService {
         item.setReviewedByAdminId(actor.getId());
         item.setReviewedAt(LocalDateTime.now());
         item.setRejectionReason(null);
-        itemRepository.saveOrUpdate(item);
+        itemRepository().saveOrUpdate(item);
         return item;
     }
 
     public Item rejectItem(User actor, String itemId, String reason) {
         requireAdminLevel1(actor);
-        Item item = itemRepository.findById(itemId);
+        Item item = itemRepository().findById(itemId);
         if (item == null) {
             throw new RuntimeException("Khong tim thay san pham.");
         }
@@ -169,7 +172,7 @@ public class AdminService {
         item.setRejectionReason(reason == null || reason.trim().isEmpty()
                 ? "San pham khong duoc duyet."
                 : reason.trim());
-        itemRepository.saveOrUpdate(item);
+        itemRepository().saveOrUpdate(item);
         return item;
     }
 
@@ -217,5 +220,13 @@ public class AdminService {
             case "fullName" -> "Họ và tên";
             default -> fieldName;
         };
+    }
+
+    private AuctionRepository auctionRepository() {
+        return auctionRepository != null ? auctionRepository : auctionService.getAuctionRepository();
+    }
+
+    private ItemRepository itemRepository() {
+        return itemRepository != null ? itemRepository : new ItemRepository();
     }
 }

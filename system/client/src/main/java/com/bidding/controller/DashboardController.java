@@ -2,6 +2,8 @@ package com.bidding.controller;
 
 import com.bidding.network.NetworkClient;
 import com.bidding.util.FollowHeartButtonFactory;
+import com.bidding.util.JsonUtil;
+import com.bidding.util.TextUtil;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -29,7 +31,6 @@ import com.bidding.controller.MainController;
 import java.io.File;
 import java.io.IOException;
 import java.text.NumberFormat;
-import java.text.Normalizer;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -495,7 +496,7 @@ public class DashboardController {
         }
     }
     private JsonArray getFilteredAuctions() {
-        String keyword = normalizeSearchText(auctionSearchField != null ? auctionSearchField.getText() : "");
+        String keyword = TextUtil.normalizeSearchText(auctionSearchField != null ? auctionSearchField.getText() : "");
         if (keyword.isEmpty()) return allAuctions;
 
         JsonArray filtered = new JsonArray();
@@ -535,7 +536,7 @@ public class DashboardController {
             }
         }
 
-        return normalizeSearchText(content.toString()).contains(keyword);
+        return TextUtil.normalizeSearchText(content.toString()).contains(keyword);
     }
 
     private void appendSearchValue(StringBuilder content, String value) {
@@ -546,15 +547,6 @@ public class DashboardController {
 
     private boolean hasSearchKeyword() {
         return auctionSearchField != null && !auctionSearchField.getText().trim().isEmpty();
-    }
-
-    private String normalizeSearchText(String text) {
-        if (text == null) return "";
-        String normalized = Normalizer.normalize(text, Normalizer.Form.NFD)
-                .replaceAll("\\p{M}", "")
-                .replace('đ', 'd')
-                .replace('Đ', 'D');
-        return normalized.toLowerCase(Locale.ROOT).trim();
     }
 
     private JsonArray copyAuctions(JsonArray source) {
@@ -799,7 +791,7 @@ public class DashboardController {
 
     // Hàm tiện ích lấy String an toàn, chống chết NullPointerException
     private String getStringSafe(JsonObject obj, String key) {
-        return (obj != null && obj.has(key) && !obj.get(key).isJsonNull()) ? obj.get(key).getAsString() : "";
+        return JsonUtil.getString(obj, key);
     }
 
     // Hàm dịch trạng thái sang Tiếng Việt (nếu sếp cần hiển thị lên thẻ)

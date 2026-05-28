@@ -1,5 +1,6 @@
 package com.bidding.controller.auctiondetail;
 
+import com.bidding.util.JsonUtil;
 import com.google.gson.JsonObject;
 
 import java.text.NumberFormat;
@@ -24,9 +25,7 @@ public final class AuctionDetailFormats {
     }
 
     public static String getStringSafe(JsonObject json, String key) {
-        return json.has(key) && !json.get(key).isJsonNull()
-                ? json.get(key).getAsString()
-                : "";
+        return JsonUtil.getString(json, key);
     }
 
     public static String formatTimestampForDisplay(String isoTimestamp) {

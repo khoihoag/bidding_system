@@ -1,6 +1,7 @@
 package com.bidding.controller.admin;
 
 import com.bidding.network.NetworkClient;
+import com.bidding.util.JsonUtil;
 import com.google.gson.JsonObject;
 import javafx.scene.control.Label;
 
@@ -52,8 +53,7 @@ public class AdminNetworkGateway {
         if (!checkConnected()) {
             return;
         }
-        JsonObject req = new JsonObject();
-        req.addProperty("action", action);
+        JsonObject req = JsonUtil.request(action);
         sendRequest(req);
     }
 
@@ -61,8 +61,7 @@ public class AdminNetworkGateway {
         if (!checkConnected()) {
             return;
         }
-        JsonObject req = new JsonObject();
-        req.addProperty("action", "BAN_USER");
+        JsonObject req = JsonUtil.request("BAN_USER");
         req.addProperty("targetUserId", userId);
         sendRequest(req);
     }
@@ -71,8 +70,7 @@ public class AdminNetworkGateway {
         if (!checkConnected()) {
             return;
         }
-        JsonObject req = new JsonObject();
-        req.addProperty("action", "UNBAN_USER");
+        JsonObject req = JsonUtil.request("UNBAN_USER");
         req.addProperty("targetUserId", userId);
         sendRequest(req);
     }
@@ -81,8 +79,7 @@ public class AdminNetworkGateway {
         if (!checkConnected()) {
             return;
         }
-        JsonObject req = new JsonObject();
-        req.addProperty("action", "FORCE_CLOSE");
+        JsonObject req = JsonUtil.request("FORCE_CLOSE");
         req.addProperty("auctionId", auctionId);
         sendRequest(req);
     }
@@ -91,8 +88,7 @@ public class AdminNetworkGateway {
         if (!checkConnected()) {
             return;
         }
-        JsonObject req = new JsonObject();
-        req.addProperty("action", "GET_ADMIN_AUCTION_BID_HISTORY");
+        JsonObject req = JsonUtil.request("GET_ADMIN_AUCTION_BID_HISTORY");
         req.addProperty("auctionId", auctionId);
         sendRequest(req);
     }
@@ -101,8 +97,7 @@ public class AdminNetworkGateway {
         if (!checkConnected()) {
             return;
         }
-        JsonObject req = new JsonObject();
-        req.addProperty("action", "APPROVE_ITEM");
+        JsonObject req = JsonUtil.request("APPROVE_ITEM");
         req.addProperty("itemId", itemId);
         sendRequest(req);
     }
@@ -111,8 +106,7 @@ public class AdminNetworkGateway {
         if (!checkConnected()) {
             return;
         }
-        JsonObject req = new JsonObject();
-        req.addProperty("action", "REJECT_ITEM");
+        JsonObject req = JsonUtil.request("REJECT_ITEM");
         req.addProperty("itemId", itemId);
         req.addProperty("reason", reason == null ? "" : reason);
         sendRequest(req);
@@ -122,8 +116,7 @@ public class AdminNetworkGateway {
         if (!checkConnected()) {
             return;
         }
-        JsonObject req = new JsonObject();
-        req.addProperty("action", "CREATE_ADMIN_LEVEL1");
+        JsonObject req = JsonUtil.request("CREATE_ADMIN_LEVEL1");
         req.addProperty("username", username);
         req.addProperty("email", email);
         req.addProperty("fullName", fullName);

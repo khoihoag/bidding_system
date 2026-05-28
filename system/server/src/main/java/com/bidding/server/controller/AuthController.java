@@ -49,7 +49,7 @@ public class AuthController {
 
         try {
             baoVe.register(user, pass, email, fullName);
-            client.sendMessage("{\"action\": \"REGISTER_REPLY\", \"status\": \"SUCCESS\"}");
+            client.sendMessage(ApiResponse.success("REGISTER_REPLY").toString());
         } catch (Exception e) {
             client.sendError("Lỗi khi tạo tài khoản: " + e.getMessage());
         }

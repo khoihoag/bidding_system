@@ -16,8 +16,16 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AuctionRepository {
-    private static final SessionFactory factory = HibernateSessionFactory.getSessionFactory();
     private static final AtomicBoolean ITEM_INDEX_CHECKED = new AtomicBoolean(false);
+    private final SessionFactory factory;
+
+    public AuctionRepository() {
+        this(HibernateSessionFactory.getSessionFactory());
+    }
+
+    AuctionRepository(SessionFactory factory) {
+        this.factory = factory;
+    }
 
     /**
      * Hàm "Cất đồ": Dùng cho cả tạo mới (Insert) và cập nhật (Update)

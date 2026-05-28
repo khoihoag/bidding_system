@@ -38,6 +38,7 @@ class UserServiceTest {
     @DisplayName("login: Đăng nhập thành công khi đúng tài khoản/mật khẩu và đang Active")
     void testLoginSuccess() {
         when(userRepository.findByUsernameAndPassword("loi_uet", "pass123")).thenReturn(activeUser);
+        when(userRepository.findById(activeUser.getId())).thenReturn(activeUser);
 
         User result = userService.login("loi_uet", "pass123");
 
@@ -63,12 +64,13 @@ class UserServiceTest {
     void testLoginInactive() {
         activeUser.setActive(false); // Cho bay màu
         when(userRepository.findByUsernameAndPassword("loi_uet", "pass123")).thenReturn(activeUser);
+        when(userRepository.findById(activeUser.getId())).thenReturn(activeUser);
 
         RuntimeException ex = assertThrows(RuntimeException.class, () -> {
             userService.login("loi_uet", "pass123");
         });
 
-        assertEquals("Tài khoản của bạn đã bị Admin khóa mõm!", ex.getMessage());
+        assertEquals("Tài khoản của bạn đã bị admin khóa.", ex.getMessage());
     }
 
     @Test

@@ -6,6 +6,7 @@ import com.bidding.server.model.auction.AuctionEntity;
 import com.bidding.server.service.ItemService;
 import com.bidding.server.service.AuctionService;
 import com.google.gson.JsonObject;
+import com.bidding.server.utils.ApiResponse;
 import com.bidding.server.utils.ItemJsonMapper;
 import java.util.List;
 import java.net.URI;
@@ -110,7 +111,10 @@ public class ItemController {
 
             newItem.setBidStep(bidStep);
             quanLyKho.createItem(client.getLoggedInUser(), newItem);
-            client.sendMessage("{\"action\": \"ADD_ITEM_REPLY\", \"status\": \"SUCCESS\", \"message\": \"San pham da duoc gui va dang cho admin duyet.\"}");
+            client.sendMessage(ApiResponse.successMessage(
+                    "ADD_ITEM_REPLY",
+                    "San pham da duoc gui va dang cho admin duyet."
+            ).toString());
 
         } catch (Exception e) {
             client.sendError("Lỗi khi đăng bán vật phẩm: " + e.getMessage());
@@ -211,7 +215,7 @@ public class ItemController {
 
             updateData.setBidStep(bidStep);
             quanLyKho.updateItem(client.getLoggedInUser(), itemId, updateData);
-            client.sendMessage("{\"action\": \"UPDATE_ITEM_REPLY\", \"status\": \"SUCCESS\"}");
+            client.sendMessage(ApiResponse.success("UPDATE_ITEM_REPLY").toString());
 
         } catch (SecurityException se) {
             client.sendError("Lỗi bảo mật: " + se.getMessage());
@@ -235,7 +239,7 @@ public class ItemController {
 
             boolean success = quanLyKho.deleteItem(client.getLoggedInUser(), itemId);
             if (success) {
-                client.sendMessage("{\"action\": \"DELETE_ITEM_REPLY\", \"status\": \"SUCCESS\"}");
+                client.sendMessage(ApiResponse.success("DELETE_ITEM_REPLY").toString());
             } else {
                 client.sendError("Không tìm thấy món đồ này trong kho.");
             }

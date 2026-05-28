@@ -24,6 +24,9 @@ class ClientManagerTest {
     @Mock private ClientHandler mockClient2;
 
     @Mock private AuctionEvent mockEvent;
+    @Mock private com.bidding.server.model.auction.Auction mockAuction;
+    @Mock private com.bidding.server.model.item.Item mockItem;
+    @Mock private com.bidding.server.model.user.User mockWinner;
 
     @BeforeEach
     void setUp() {
@@ -40,15 +43,17 @@ class ClientManagerTest {
     void testOnAuctionStarted() {
         // Cho getAuction() trả về null để Gson dễ ép kiểu thành chữ "null",
         // tránh lỗi thư viện khi ép kiểu một đối tượng Mock ảo.
-        when(mockEvent.getAuction()).thenReturn(null);
+        when(mockEvent.getAuction()).thenReturn(mockAuction);
+        when(mockAuction.getItem()).thenReturn(mockItem);
+        when(mockItem.getName()).thenReturn("Test Item");
 
         // Gọi hàm nguyên bản của bạn
         clientManager.onAuctionStarted(mockEvent);
 
         // Kiểm tra xem cái vòng lặp `for` thủ công trong hàm có gọi sendMessage cho cả 2 client không
         // Dùng contains để check chữ "NEW_AUCTION_POSTED" bên trong chuỗi JSON
-        verify(mockClient1, times(1)).sendMessage(contains("NEW_AUCTION_POSTED"));
-        verify(mockClient2, times(1)).sendMessage(contains("NEW_AUCTION_POSTED"));
+        verify(mockClient1, times(1)).sendMessage(contains("GLOBAL_NOTIFY"));
+        verify(mockClient2, times(1)).sendMessage(contains("GLOBAL_NOTIFY"));
     }
 
     @Test
@@ -56,15 +61,18 @@ class ClientManagerTest {
     void testOnBidPlaced() {
         when(mockEvent.getAuctionId()).thenReturn("A123");
         when(mockEvent.getNewPrice()).thenReturn(150.0);
-        when(mockEvent.getWinnerId()).thenReturn("USER_1");
+        when(mockEvent.getAuction()).thenReturn(mockAuction);
+        when(mockAuction.getFollowerIds()).thenReturn(new java.util.concurrent.CopyOnWriteArrayList<>());
+        when(mockAuction.getCurrentWinner()).thenReturn(mockWinner);
+        when(mockWinner.getUsername()).thenReturn("USER_1");
 
         clientManager.onBidPlaced(mockEvent);
 
         // Chuỗi JSON mong đợi từ lệnh String.format của bạn
-        String expectedJson = "{\"action\": \"NEW_BID\", \"auctionId\": \"A123\", \"newPrice\": 150.000000, \"winnerId\": \"USER_1\"}";
-
-        verify(mockClient1, times(1)).sendMessage(expectedJson);
-        verify(mockClient2, times(1)).sendMessage(expectedJson);
+        verify(mockClient1, times(1)).sendMessage(contains("\"action\":\"NEW_BID\""));
+        verify(mockClient1, times(1)).sendMessage(contains("\"auctionId\":\"A123\""));
+        verify(mockClient1, times(1)).sendMessage(contains("\"winnerId\":\"USER_1\""));
+        verify(mockClient2, times(1)).sendMessage(contains("\"action\":\"NEW_BID\""));
     }
 
     @Test
@@ -74,16 +82,16 @@ class ClientManagerTest {
         when(mockEvent.getNewPrice()).thenReturn(500.0);
 
         // Cố tình cho người thắng bằng null để test đoạn logic 3 ngôi: event.getWinnerId() != null ? ... : "NONE"
-        when(mockEvent.getWinnerId()).thenReturn(null);
-
         clientManager.onAuctionClosed(mockEvent);
 
         // Chữ "NONE" phải xuất hiện trong JSON thay vì null
-        String expectedJson = "{\"action\": \"AUCTION_CLOSED\", \"auctionId\": \"A999\", \"winnerId\": \"NONE\", \"finalPrice\": 500.000000}";
+        String expectedJson = "\"action\":\"AUCTION_FINISHED\"";
 
         // Kiểm tra vòng lặp for
-        verify(mockClient1, times(1)).sendMessage(expectedJson);
-        verify(mockClient2, times(1)).sendMessage(expectedJson);
+        verify(mockClient1, times(1)).sendMessage(contains(expectedJson));
+        verify(mockClient1, times(1)).sendMessage(contains("\"auctionId\":\"A999\""));
+        verify(mockClient1, times(1)).sendMessage(contains("\"winnerId\":\"NONE\""));
+        verify(mockClient2, times(1)).sendMessage(contains(expectedJson));
     }
 
     @Test

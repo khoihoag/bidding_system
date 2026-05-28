@@ -3,6 +3,7 @@ package com.bidding.controller;
 import com.bidding.model.BidHistoryRecord;
 import com.bidding.model.UserSession;
 import com.bidding.network.NetworkClient;
+import com.bidding.util.JsonUtil;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -360,8 +361,6 @@ public class BidHistoryController {
     }
 
     private String getStringSafe(JsonObject json, String key) {
-        return json.has(key) && !json.get(key).isJsonNull()
-                ? json.get(key).getAsString()
-                : "";
+        return JsonUtil.getString(json, key);
     }
 }

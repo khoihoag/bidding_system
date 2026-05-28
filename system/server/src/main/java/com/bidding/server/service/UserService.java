@@ -8,9 +8,17 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 public class UserService {
-    private final UserRepository repository = new UserRepository();
+    private final UserRepository repository;
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
     private static final Pattern PASSWORD_PATTERN = Pattern.compile("^\\S{6,32}$");
+
+    public UserService() {
+        this(new UserRepository());
+    }
+
+    public UserService(UserRepository repository) {
+        this.repository = repository;
+    }
 
     // ================= XỬ LÝ LOGIN =================
     public User login(String username, String password) {

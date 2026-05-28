@@ -8,11 +8,10 @@ import com.bidding.server.model.transaction.BiddingTransactionEntity;
 import com.bidding.server.service.AuctionService;
 import com.bidding.server.service.ItemService;
 import com.bidding.server.service.UserService;
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import java.time.LocalDateTime;
 import java.util.List;
-import com.bidding.server.utils.GsonUtil;
+import com.bidding.server.utils.ApiResponse;
 import com.bidding.server.utils.ItemJsonMapper;
 public class AuctionController {
     private final ClientHandler client;
@@ -20,7 +19,6 @@ public class AuctionController {
     private final ItemService quanLyKho;
     private final ClientManager loaPhuong; // Vẫn giữ để không vỡ cấu trúc gọi hàm từ ClientHandler
     private final UserService baoVe;
-    Gson gson = GsonUtil.getInstance();
 
     public AuctionController(ClientHandler client, AuctionService tongQuan, ItemService quanLyKho, ClientManager loaPhuong, UserService baoVe) {
         this.client = client;
@@ -68,7 +66,7 @@ public class AuctionController {
             // GỌI HÀM VỚI ĐỦ 4 THAM SỐ MỚI
             Auction newAuction = tongQuan.startAuction(item, duration, isReverse, dropStep, antiSnipingSeconds, extensionSeconds);
 
-            client.sendMessage("{\"action\": \"START_AUCTION_REPLY\", \"status\": \"SUCCESS\", \"auctionId\": \"" + newAuction.getId() + "\"}");
+            client.sendMessage(ApiResponse.success("START_AUCTION_REPLY", "auctionId", newAuction.getId()).toString());
 
         } catch (Exception e) {
             client.sendError("Lỗi khi mở phiên đấu giá: " + e.getMessage());
@@ -113,7 +111,7 @@ public class AuctionController {
             // GỌI HÀM VỚI ĐỦ 5 THAM SỐ MỚI
             Auction newAuction = tongQuan.scheduleAuction(item, startTime, endTime, isReverse, dropStep, antiSnipingSeconds, extensionSeconds);
 
-            client.sendMessage("{\"action\": \"SCHEDULE_AUCTION_REPLY\", \"status\": \"SUCCESS\", \"auctionId\": \"" + newAuction.getId() + "\"}");
+            client.sendMessage(ApiResponse.success("SCHEDULE_AUCTION_REPLY", "auctionId", newAuction.getId()).toString());
 
         } catch (java.time.format.DateTimeParseException e) {
             client.sendError("Lỗi định dạng thời gian. Vui lòng dùng chuẩn yyyy-MM-ddTHH:mm:ss");
@@ -143,7 +141,12 @@ public class AuctionController {
         try {
             String auctionId = request.get("auctionId").getAsString();
             tongQuan.payWonAuction(auctionId, client.getLoggedInUser());
-            client.sendMessage("{\"action\": \"PAY_AUCTION_REPLY\", \"status\": \"SUCCESS\", \"auctionId\": \"" + auctionId + "\"}");
+            double freshBal = baoVe.getFreshBalance(client.getLoggedInUser().getId());
+            client.getLoggedInUser().setBalance(freshBal);
+
+            JsonObject reply = ApiResponse.success("PAY_AUCTION_REPLY", "auctionId", auctionId);
+            reply.addProperty("balance", freshBal);
+            client.sendMessage(reply.toString());
         } catch (Exception e) {
             client.sendError("Lỗi khi thanh toán phiên đấu giá: " + e.getMessage());
         }
@@ -286,7 +289,7 @@ public class AuctionController {
             }
             // ======================================================
 
-            client.sendMessage("{\"action\": \"BID_REPLY\", \"status\": \"SUCCESS\", \"balance\": " + freshBal + "}");
+            client.sendMessage(ApiResponse.success("BID_REPLY", "balance", freshBal).toString());
         } catch (Exception e) {
             client.sendError(e.getMessage());
         }
@@ -353,7 +356,7 @@ public class AuctionController {
             auction.registerAutoBid(client.getLoggedInUser(), maxBid, increment);
             tongQuan.triggerAutoBids(auction);
             // Controller gửi Reply
-            client.sendMessage("{\"action\": \"REGISTER_AUTO_BID_REPLY\", \"status\": \"SUCCESS\"}");
+            client.sendMessage(ApiResponse.success("REGISTER_AUTO_BID_REPLY").toString());
             System.out.println("[Auto-Bid] Đã nạp cấu hình Bot cho User: " + client.getLoggedInUser().getUsername());
 
         } catch (Exception e) {
@@ -416,7 +419,7 @@ public class AuctionController {
             // Nếu dùng Database, sếp gọi: tongQuan.saveFollowerToDB(auctionId, userId);
 
             // Phản hồi về UI cho vui (Thực ra UI mình đã tự đổi chữ thành ĐÃ THEO DÕI rồi)
-            client.sendMessage("{\"action\": \"FOLLOW_AUCTION_REPLY\", \"status\": \"SUCCESS\"}");
+            client.sendMessage(ApiResponse.success("FOLLOW_AUCTION_REPLY").toString());
             System.out.println("[Theo dõi] User " + client.getLoggedInUser().getUsername() + " đang hóng phiên: " + auctionId);
 
         } catch (Exception e) {
@@ -440,7 +443,7 @@ public class AuctionController {
             }
 
             auction.removeFollower(userId);
-            client.sendMessage("{\"action\": \"UNFOLLOW_AUCTION_REPLY\", \"status\": \"SUCCESS\"}");
+            client.sendMessage(ApiResponse.success("UNFOLLOW_AUCTION_REPLY").toString());
             System.out.println("[Theo dõi] User " + client.getLoggedInUser().getUsername() + " đã hủy theo dõi phiên: " + auctionId);
         } catch (Exception e) {
             client.sendError("Lỗi hệ thống khi hủy theo dõi: " + e.getMessage());
