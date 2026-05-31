@@ -1,22 +1,22 @@
 package com.bidding.controller;
 
+import com.bidding.network.NetworkClient;
+import com.bidding.util.JsonUtil;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
-import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.application.Platform;
-import com.bidding.network.NetworkClient;
-import com.bidding.util.JsonUtil;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 
 import java.net.URL;
 import java.util.ResourceBundle;
@@ -24,7 +24,7 @@ import java.util.ResourceBundle;
 public class NotificationController implements Initializable {
 
     @FXML
-    private ListView<JsonObject> mainNotificationList; // Lưu danh sách dưới dạng JsonObject để dễ bóc tách
+    private ListView<JsonObject> mainNotificationList;
     @FXML
     private Button markAllReadButton;
 
@@ -52,20 +52,19 @@ public class NotificationController implements Initializable {
                     setText(null);
                     setGraphic(buildNotificationCell(item));
                     setStyle("-fx-background-color: transparent;");
-                    setMinHeight(88);
-                    setPrefHeight(88);
+                    setMinHeight(104);
+                    setPrefHeight(104);
                 }
             }
         });
-        mainNotificationList.setFixedCellSize(88);
+        mainNotificationList.setFixedCellSize(104);
 
-        // Tự động gọi server lấy danh sách thông báo mới khi vừa vào trang
         requestNotifications();
     }
 
     private void requestNotifications() {
         JsonObject request = new JsonObject();
-        request.addProperty("action", "GET_NOTIFICATIONS"); // Sếp kiểm tra action này bên Server nhé
+        request.addProperty("action", "GET_NOTIFICATIONS");
         networkClient.sendJson(request);
     }
 

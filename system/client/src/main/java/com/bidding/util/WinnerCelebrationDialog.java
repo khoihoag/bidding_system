@@ -45,7 +45,7 @@ public final class WinnerCelebrationDialog {
 
         String winnerUserId = getString(json, "winnerUserId", "");
         String winnerUsername = getString(json, "winnerUsername", getString(json, "winnerId", "---"));
-        String winnerName = getString(json, "winnerName", winnerUsername);
+        String winnerName = getString(json, "winnerName", "");
         String winnerDisplay = buildWinnerDisplay(winnerName, winnerUsername);
         String itemName = getString(json, "itemName", "Vật phẩm đấu giá");
         double finalPrice = json.has("finalPrice") && !json.get("finalPrice").isJsonNull()
@@ -90,6 +90,7 @@ public final class WinnerCelebrationDialog {
         winnerCaption.getStyleClass().add("winner-dialog-field-caption");
         Label winnerValue = new Label(noWinner ? "Chưa có" : winnerDisplay);
         winnerValue.getStyleClass().add(noWinner ? "winner-dialog-winner-muted" : "winner-dialog-winner-name");
+        winnerValue.setWrapText(true);
 
         Label priceCaption = new Label("Giá chốt");
         priceCaption.getStyleClass().add("winner-dialog-field-caption");
@@ -170,11 +171,13 @@ public final class WinnerCelebrationDialog {
         if (isEmptyWinner(username) && isEmptyWinner(fullName)) {
             return "Không có người đặt giá";
         }
-        if (fullName != null && !fullName.isBlank()
-                && username != null && !username.isBlank()
-                && !fullName.equals(username)
-                && !isEmptyWinner(username)) {
-            return fullName + " (" + username + ")";
+        if (!isEmptyWinner(username)) {
+            if (fullName != null && !fullName.isBlank()
+                    && !isEmptyWinner(fullName)
+                    && !fullName.equals(username)) {
+                return username + " - " + fullName;
+            }
+            return username;
         }
         if (fullName != null && !fullName.isBlank()) {
             return fullName;

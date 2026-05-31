@@ -2,15 +2,15 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox spacing="26"
+<VBox spacing="22"
       xmlns="http://javafx.com/javafx/21"
       xmlns:fx="http://javafx.com/fxml/1"
       fx:controller="com.bidding.controller.NotificationController"
       stylesheets="@../css/style.css"
       styleClass="notifications-page">
 
-    <HBox alignment="BOTTOM_LEFT" spacing="18" styleClass="notifications-header">
-        <VBox spacing="7" HBox.hgrow="ALWAYS">
+    <HBox alignment="CENTER_LEFT" spacing="18" styleClass="notifications-header">
+        <VBox spacing="6" HBox.hgrow="ALWAYS">
             <Label text="Thông báo của bạn" styleClass="notifications-title"/>
             <Label text="Cập nhật mới nhất về các phiên đấu giá và tài khoản." styleClass="notifications-subtitle"/>
         </VBox>

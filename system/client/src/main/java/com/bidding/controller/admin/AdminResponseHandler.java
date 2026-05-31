@@ -12,6 +12,9 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.Alert;
 
+import java.time.LocalDateTime;
+import java.util.Comparator;
+
 /**
  * Parses inbound admin socket messages and updates state/UI bindings.
  */
@@ -169,8 +172,13 @@ public class AdminResponseHandler {
             return;
         }
 
+        java.util.List<JsonObject> items = new java.util.ArrayList<>();
         for (JsonElement el : res.getAsJsonArray("data")) {
-            JsonObject item = el.getAsJsonObject();
+            items.add(el.getAsJsonObject());
+        }
+        items.sort(Comparator.comparing(this::createdAtOf).reversed());
+
+        for (JsonObject item : items) {
             double price = item.has("startingPrice") && !item.get("startingPrice").isJsonNull()
                     ? item.get("startingPrice").getAsDouble() : 0.0;
             state.pendingItems.add(new PendingItemRow(
@@ -181,6 +189,18 @@ public class AdminResponseHandler {
                     price,
                     item.deepCopy()
             ));
+        }
+    }
+
+    private LocalDateTime createdAtOf(JsonObject item) {
+        String value = AdminUiHelper.getString(item, "createdAt");
+        if (value.isBlank()) {
+            value = AdminUiHelper.getString(item, "updatedAt");
+        }
+        try {
+            return value.isBlank() ? LocalDateTime.MIN : LocalDateTime.parse(value);
+        } catch (Exception ignored) {
+            return LocalDateTime.MIN;
         }
     }
 

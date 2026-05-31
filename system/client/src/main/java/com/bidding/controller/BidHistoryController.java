@@ -38,6 +38,7 @@ public class BidHistoryController {
     @FXML private Label totalBidsStatLabel;
     @FXML private Label acceptedBidsStatLabel;
     @FXML private Label rejectedBidsStatLabel;
+    @FXML private Label totalAmountStatLabel;
     @FXML private Label highestBidStatLabel;
 
     // ─── FXML nodes — Filter ──────────────────────────────────────────────────
@@ -189,6 +190,7 @@ public class BidHistoryController {
             int index         = 1;
             int acceptedCount = 0;
             int rejectedCount = 0;
+            double totalAmount = 0.0;
             double highestBid = 0.0;
 
             for (JsonElement element : data) {
@@ -223,6 +225,7 @@ public class BidHistoryController {
                 // Tính thống kê
                 if ("ACCEPTED".equalsIgnoreCase(status)) acceptedCount++;
                 if ("REJECTED".equalsIgnoreCase(status)) rejectedCount++;
+                totalAmount += bidAmount;
                 if (bidAmount > highestBid) highestBid = bidAmount;
             }
 
@@ -230,6 +233,7 @@ public class BidHistoryController {
             totalBidsStatLabel.setText(String.valueOf(masterList.size()));
             acceptedBidsStatLabel.setText(String.valueOf(acceptedCount));
             rejectedBidsStatLabel.setText(String.valueOf(rejectedCount));
+            totalAmountStatLabel.setText(currencyFmt.format(totalAmount) + " ₫");
             highestBidStatLabel.setText(currencyFmt.format(highestBid) + " ₫");
 
             updateRecordCount();
@@ -298,6 +302,7 @@ public class BidHistoryController {
         totalBidsStatLabel.setText("0");
         acceptedBidsStatLabel.setText("0");
         rejectedBidsStatLabel.setText("0");
+        totalAmountStatLabel.setText("0 ₫");
         highestBidStatLabel.setText("0 ₫");
     }
 
