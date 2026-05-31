@@ -31,7 +31,6 @@ Server lắng nghe tại `localhost:8080`. Client hiện được cấu hình k�
 | Giao tiếp client-server | TCP socket, JSON, Gson |
 | Lưu trữ dữ liệu | MySQL, Hibernate ORM |
 | Mapping dữ liệu | MapStruct |
-| Tích hợp tùy chọn | HTTP client gọi FastAPI dự đoán giá AI |
 | CI | GitHub Actions trên Linux, Windows và macOS |
 
 ## 3. Yêu cầu cài đặt
@@ -42,7 +41,6 @@ Cài đặt các phần mềm sau:
 - Maven 3.9 trở lên.
 - MySQL 8 trở lên.
 - Git nếu cần clone repository.
-- Dịch vụ FastAPI dự đoán giá AI tại `localhost:8000` nếu muốn dùng chức năng gợi ý giá. Mã nguồn dịch vụ AI không nằm trong repository này.
 
 Kiểm tra Java và Maven:
 
@@ -178,7 +176,6 @@ Có thể mở thêm client ở terminal khác để kiểm tra cập nhật đ�
 - Đặt giá thủ công, cấu hình tự động đặt giá và nhận cập nhật giá theo thời gian thực.
 - Theo dõi hoặc bỏ theo dõi phiên đấu giá; nhận thông báo.
 - Xem vật phẩm thắng đấu giá và thanh toán.
-- Yêu cầu dự đoán giá AI khi dịch vụ FastAPI bên ngoài khả dụng.
 
 ### Quản trị viên
 
