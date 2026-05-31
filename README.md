@@ -191,7 +191,5 @@ Có thể mở thêm client ở terminal khác để kiểm tra cập nhật đ�
 
 ## 8. Báo cáo và video demo
 
-Repository hiện chưa chứa URL báo cáo và video. Cập nhật hai placeholder sau trước khi nộp bài:
-
-- [Báo cáo PDF](TODO_REPORT_PDF_URL)
-- [Video demo](TODO_DEMO_VIDEO_URL)
+- [Báo cáo PDF](https://docs.google.com/document/d/1EG4beJ8RRhDhFjMWVFcCJgh69U4wio0n-QvQpW20QNY/edit?usp=sharing)
+- [Video demo]([TODO_DEMO_VIDEO_URL](https://youtu.be/bIVS6nGiM0I?si=pPUAAu9rT_7SRYQ5))
