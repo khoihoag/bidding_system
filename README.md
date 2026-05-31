@@ -176,7 +176,9 @@ Có thể mở thêm client ở terminal khác để kiểm tra cập nhật đ�
 - Đặt giá thủ công, cấu hình tự động đặt giá và nhận cập nhật giá theo thời gian thực.
 - Theo dõi hoặc bỏ theo dõi phiên đấu giá; nhận thông báo.
 - Xem vật phẩm thắng đấu giá và thanh toán.
-
+- Chức năng nâng cao : Auto-Bidding, Anti-Sniping , Bid History Visualization
+- Chức năng tự sáng tạo : Follow phiên đấu giá ( sẽ nhân được thông báo khi giá thay đổi và khi phiên kết thúc ) , Đấu giá ngược ( giá tự động giảm dần theo thời gian người đấu giá đầu tiên sẽ thắng)
+  
 ### Quản trị viên
 
 - Xem danh sách người dùng và số dư.
