@@ -1,5 +1,126 @@
 # Bidding System
 
+<<<<<<< HEAD
+Ứng dụng đấu giá thời gian thực viết bằng Java 21. Dự án gồm JavaFX client, TCP server trao đổi dữ liệu JSON, tầng xử lý nghiệp vụ và lưu trữ MySQL thông qua Hibernate.
+
+## Tính năng chính
+
+- Đăng ký, đăng nhập, cập nhật hồ sơ và nạp tiền tài khoản.
+- Quản lý sản phẩm theo người bán, bao gồm thêm, sửa, xóa và duyệt sản phẩm.
+- Tạo phiên đấu giá, đặt lịch phiên đấu giá và đóng phiên thủ công.
+- Đặt giá, tự động đặt giá, theo dõi phiên đấu giá và xem lịch sử đấu giá.
+- Gửi thông báo cho người dùng khi có sự kiện liên quan đến phiên đấu giá.
+- Giao diện quản trị để quản lý người dùng, phiên đấu giá, sản phẩm chờ duyệt và lịch sử bid.
+
+## Công nghệ sử dụng
+
+- Java 21
+- JavaFX 21
+- Maven
+- MySQL 8
+- Hibernate ORM
+- Gson
+- JUnit 5 và Mockito
+- Lombok, MapStruct
+
+## Cấu trúc dự án
+
+```text
+.
+├── pom.xml
+├── README.md
+└── system
+    ├── client
+    │   └── src/main
+    │       ├── java/com/bidding
+    │       └── resources
+    └── server
+        └── src
+            ├── main/java/com/bidding/server
+            ├── main/resources
+            └── test/java/com/bidding/server
+```
+
+Các entry point chính:
+
+- Client JavaFX: `com.bidding.App`
+- TCP server: `com.bidding.server.network.ServerMain`
+- Server lắng nghe tại `localhost:8080`
+
+## Yêu cầu môi trường
+
+- JDK 21
+- Maven 3.9 trở lên
+- MySQL đang chạy local
+
+Tạo database trước khi chạy server. Nếu máy đã nhận lệnh `mysql`, có thể chạy trực tiếp bằng PowerShell:
+
+```powershell
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS bidding_system CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+```
+
+Nếu PowerShell báo không tìm thấy `mysql`, tìm vị trí file `mysql.exe` trước:
+
+```powershell
+Get-ChildItem -Path "C:\" -Filter mysql.exe -Recurse -ErrorAction SilentlyContinue
+```
+
+Sau khi tìm được file, lấy thư mục chứa `mysql.exe` và thêm vào User PATH. Ví dụ nếu `mysql.exe` nằm trong `C:\Program Files\MySQL\MySQL Server 9.6\bin`:
+
+```powershell
+[Environment]::SetEnvironmentVariable(
+  "Path",
+  [Environment]::GetEnvironmentVariable("Path", "User") + ";C:\Program Files\MySQL\MySQL Server 9.6\bin",
+  "User"
+)
+```
+
+Lệnh trên chỉ cập nhật User PATH cho các terminal mở sau đó. Nếu muốn dùng ngay trong PowerShell hiện tại, chạy thêm:
+
+```powershell
+$env:Path += ";C:\Program Files\MySQL\MySQL Server 9.6\bin"
+```
+
+Hoặc chạy trực tiếp bằng đường dẫn đầy đủ, không cần thêm PATH:
+
+```powershell
+& "C:\Program Files\MySQL\MySQL Server 9.6\bin\mysql.exe" --version
+```
+
+Đóng PowerShell hiện tại, mở lại PowerShell mới hoặc dùng `$env:Path` như trên rồi kiểm tra:
+
+```powershell
+mysql --version
+```
+
+Sau đó chạy lại lệnh tạo database:
+
+```powershell
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS bidding_system CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+```
+
+Cấu hình kết nối database tại:
+
+```text
+system/server/src/main/resources/hibernate.cfg.xml
+```
+
+Mặc định hiện tại:
+
+- URL: `jdbc:mysql://localhost:3306/bidding_system`
+- Username: `root`
+- Password: `123456`
+
+## Build và test
+
+```bash
+mvn clean test
+```
+
+## Chạy ứng dụng
+
+Chạy server trước:
+=======
 ## 1. Mô tả bài toán và phạm vi hệ thống
 
 `Bidding System` là ứng dụng đấu giá thời gian thực theo mô hình client-server. Người dùng thao tác trên giao diện JavaFX; client gửi và nhận JSON qua TCP socket với server; server xử lý nghiệp vụ và lưu dữ liệu bằng Hibernate vào MySQL.
@@ -147,21 +268,82 @@ Thực hiện theo đúng thứ tự sau.
 ### Bước 2: Khởi động server
 
 Mở terminal thứ nhất tại thư mục gốc của repository:
+>>>>>>> 633fc6d0480dd215738e884d479b2de7bfd24793
 
 ```bash
 mvn exec:java -Dexec.mainClass="com.bidding.server.network.ServerMain"
 ```
 
+<<<<<<< HEAD
+Sau đó mở một terminal khác và chạy client:
+=======
 Khi server chạy thành công, terminal hiển thị thông báo đang lắng nghe tại cổng `8080`.
 
 ### Bước 3: Khởi động client
 
 Giữ server đang chạy. Mở terminal thứ hai tại thư mục gốc của repository:
+>>>>>>> 633fc6d0480dd215738e884d479b2de7bfd24793
 
 ```bash
 mvn javafx:run
 ```
 
+<<<<<<< HEAD
+## Dữ liệu demo
+
+Khi database đang trống, server sẽ tạo dữ liệu mẫu tự động. Có thể đăng nhập bằng các tài khoản sau:
+
+| Vai trò | Username | Password |
+| --- | --- | --- |
+| Admin | `admin` | `admin123` |
+| Người bán | `seller` | `seller123` |
+| Người mua | `bidder` | `bidder123` |
+
+## Tạo admin level 2
+
+Nếu pull repo về và chạy với database trống, không cần tạo thủ công. Khi server khởi động lần đầu, `DatabaseSeeder` sẽ tự tạo admin level 2:
+
+- Username: `admin`
+- Password: `admin123`
+
+Lưu ý: seeder chỉ chạy khi bảng người dùng đang trống. Nếu database đã có dữ liệu sẵn, hãy tạo admin level 2 thủ công bằng PowerShell:
+
+```powershell
+mysql -u root -p bidding_system -e "INSERT INTO users (user_type, id, createdAt, updatedAt, username, email, passwordHash, fullName, role, isActive, balance, totalRevenue, admin_level) SELECT 'ADMIN', UUID(), NOW(), NOW(), 'admin', 'admin@bidviet.local', 'admin123', 'Quan tri vien', 'ADMIN', 1, 0, 0, 2 WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'admin');"
+```
+
+Sau khi tạo xong, đăng nhập bằng:
+
+```text
+Username: admin
+Password: admin123
+```
+
+Admin level 2 có quyền tạo admin level 1 trong màn quản trị của client.
+
+## Kiến trúc xử lý
+
+```text
+JavaFX Client
+    -> NetworkClient
+    -> TCP/JSON
+    -> ServerMain / ClientHandler
+    -> Controllers
+    -> Services
+    -> Repositories
+    -> Hibernate
+    -> MySQL
+```
+
+Client gửi request JSON có trường `action`; server định tuyến request trong `ClientHandler` đến controller tương ứng như `AuthController`, `ItemController`, `AuctionController` hoặc `AdminController`.
+
+## Ghi chú phát triển
+
+- Luôn chạy server trước client vì client kết nối đến `localhost:8080`.
+- Nếu đổi cổng server, cần cập nhật lại cấu hình trong `NetworkClient`.
+- Hibernate đang dùng `hbm2ddl.auto=update`, nên schema có thể được tự cập nhật khi chạy ứng dụng.
+- Không commit thông tin database thật hoặc mật khẩu production vào `hibernate.cfg.xml`.
+=======
 Có thể mở thêm client ở terminal khác để kiểm tra cập nhật đấu giá thời gian thực.
 
 ## 7. Chức năng đã hoàn thành
@@ -192,3 +374,5 @@ Có thể mở thêm client ở terminal khác để kiểm tra cập nhật đ�
 
 - <a href="https://docs.google.com/document/d/1EG4beJ8RRhDhFjMWVFcCJgh69U4wio0n-QvQpW20QNY/edit?usp=sharing" target="_blank">Báo cáo PDF</a>
 - <a href="https://youtu.be/bIVS6nGiM0I?si=pPUAAu9rT_7SRYQ5" target="_blank">Video demo</a>
+>>>>>>> 633fc6d0480dd215738e884d479b2de7bfd24793
+
