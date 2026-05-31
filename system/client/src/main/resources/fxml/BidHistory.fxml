@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
-<?import javafx.geometry.Insets?>
 
 <BorderPane xmlns="http://javafx.com/javafx/21"
             xmlns:fx="http://javafx.com/fxml/1"
@@ -47,6 +46,14 @@
                     <VBox spacing="2">
                         <Label fx:id="rejectedBidsStatLabel" text="0" styleClass="stat-number"/>
                         <Label text="Bị từ chối" styleClass="stat-desc"/>
+                    </VBox>
+                </HBox>
+
+                <HBox alignment="CENTER_LEFT" spacing="16" HBox.hgrow="ALWAYS" styleClass="stat-card" style="-fx-padding: 18;">
+                    <Label text="Σ" style="-fx-font-size: 25px; -fx-text-fill: #b08a1e; -fx-background-color: #f7f1dd; -fx-background-radius: 8; -fx-padding: 10 14;"/>
+                    <VBox spacing="2">
+                        <Label fx:id="totalAmountStatLabel" text="0 ₫" styleClass="stat-number"/>
+                        <Label text="Tổng số tiền đã đặt" styleClass="stat-desc"/>
                     </VBox>
                 </HBox>
 

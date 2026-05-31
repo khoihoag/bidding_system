@@ -767,6 +767,9 @@ public class InventoryController implements Initializable {
     }
 
     private double getGridCardWidth(GridPane grid) {
+        if (grid == wonItemsGrid) {
+            return 276;
+        }
         double gridWidth = grid != null ? grid.getWidth() : 0;
         if (gridWidth <= 1 && grid != null && grid.getParent() instanceof ScrollPane scroll) {
             gridWidth = scroll.getViewportBounds().getWidth();
@@ -808,9 +811,9 @@ public class InventoryController implements Initializable {
         final double cardWidth = getGridCardWidth(sizeGrid);
         final boolean compact = !editable;
         final double cardInset = compact ? WON_ITEM_CARD_INSET : INVENTORY_CARD_INSET;
-        final double imageWidth = Math.max(compact ? 160 : 120, cardWidth - (cardInset * 2));
+        final double imageWidth = compact ? 248 : Math.max(120, cardWidth - (cardInset * 2));
         final double imageHeight = compact
-                ? Math.max(150, Math.min(190, imageWidth * 0.48))
+                ? 236
                 : 132;
         final double contentWidth = Math.max(compact ? 160 : 120, cardWidth - (cardInset * 2) - (compact ? 0 : 20));
 
@@ -820,11 +823,13 @@ public class InventoryController implements Initializable {
             card.getStyleClass().add("won-item-card");
         }
         card.setPrefWidth(cardWidth);
-        card.setMinWidth(10);
-        card.setMaxWidth(Double.MAX_VALUE);
+        card.setMinWidth(compact ? cardWidth : 10);
+        card.setMaxWidth(compact ? cardWidth : Double.MAX_VALUE);
         if (compact) {
-            card.setMinHeight(286);
-            card.setPrefHeight(286);
+            double compactCardHeight = imageHeight + 124;
+            card.setMinHeight(compactCardHeight);
+            card.setPrefHeight(compactCardHeight);
+            card.setMaxHeight(compactCardHeight);
         }
         card.setAlignment(Pos.TOP_CENTER);
         card.setPadding(new javafx.geometry.Insets(cardInset));
@@ -835,8 +840,8 @@ public class InventoryController implements Initializable {
         imageBox.setMinSize(imageWidth, imageHeight);
         imageBox.setMaxSize(imageWidth, imageHeight);
         Rectangle imageClip = new Rectangle(imageWidth, imageHeight);
-        imageClip.setArcWidth(16);
-        imageClip.setArcHeight(16);
+        imageClip.setArcWidth(compact ? 20 : 16);
+        imageClip.setArcHeight(compact ? 20 : 16);
         imageBox.setClip(imageClip);
 
         ImageView imgView = new ImageView();
@@ -894,8 +899,8 @@ public class InventoryController implements Initializable {
         body.setAlignment(Pos.TOP_LEFT);
         body.setMaxWidth(contentWidth);
         if (compact) {
-            body.setMinHeight(38);
-            body.setPrefHeight(38);
+            body.setMinHeight(34);
+            body.setPrefHeight(34);
         }
 
         HBox actions = new HBox(compact ? 6 : 8);

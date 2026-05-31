@@ -67,7 +67,7 @@ public class ItemRepository {
 
     public List<Item> findByApprovalStatus(ItemApprovalStatus status) {
         try (Session session = factory.openSession()) {
-            String hql = "FROM Item i WHERE i.approvalStatus = :status";
+            String hql = "FROM Item i WHERE i.approvalStatus = :status ORDER BY i.createdAt DESC";
             return session.createQuery(hql, Item.class)
                     .setParameter("status", status)
                     .list();
