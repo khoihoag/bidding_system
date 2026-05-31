@@ -191,5 +191,5 @@ Có thể mở thêm client ở terminal khác để kiểm tra cập nhật đ�
 
 ## 8. Báo cáo và video demo
 
-- [Báo cáo PDF](https://docs.google.com/document/d/1EG4beJ8RRhDhFjMWVFcCJgh69U4wio0n-QvQpW20QNY/edit?usp=sharing)
-- [Video demo]([TODO_DEMO_VIDEO_URL](https://youtu.be/bIVS6nGiM0I?si=pPUAAu9rT_7SRYQ5))
+- <a href="https://docs.google.com/document/d/1EG4beJ8RRhDhFjMWVFcCJgh69U4wio0n-QvQpW20QNY/edit?usp=sharing" target="_blank">Báo cáo PDF</a>
+- <a href="https://youtu.be/bIVS6nGiM0I?si=pPUAAu9rT_7SRYQ5" target="_blank">Video demo</a>
