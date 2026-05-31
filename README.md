@@ -1,6 +1,5 @@
 # Bidding System
 
-<<<<<<< HEAD
 Ứng dụng đấu giá thời gian thực viết bằng Java 21. Dự án gồm JavaFX client, TCP server trao đổi dữ liệu JSON, tầng xử lý nghiệp vụ và lưu trữ MySQL thông qua Hibernate.
 
 ## Tính năng chính
@@ -120,7 +119,6 @@ mvn clean test
 ## Chạy ứng dụng
 
 Chạy server trước:
-=======
 ## 1. Mô tả bài toán và phạm vi hệ thống
 
 `Bidding System` là ứng dụng đấu giá thời gian thực theo mô hình client-server. Người dùng thao tác trên giao diện JavaFX; client gửi và nhận JSON qua TCP socket với server; server xử lý nghiệp vụ và lưu dữ liệu bằng Hibernate vào MySQL.
@@ -268,27 +266,22 @@ Thực hiện theo đúng thứ tự sau.
 ### Bước 2: Khởi động server
 
 Mở terminal thứ nhất tại thư mục gốc của repository:
->>>>>>> 633fc6d0480dd215738e884d479b2de7bfd24793
 
 ```bash
 mvn exec:java -Dexec.mainClass="com.bidding.server.network.ServerMain"
 ```
 
-<<<<<<< HEAD
 Sau đó mở một terminal khác và chạy client:
-=======
 Khi server chạy thành công, terminal hiển thị thông báo đang lắng nghe tại cổng `8080`.
 
 ### Bước 3: Khởi động client
 
 Giữ server đang chạy. Mở terminal thứ hai tại thư mục gốc của repository:
->>>>>>> 633fc6d0480dd215738e884d479b2de7bfd24793
 
 ```bash
 mvn javafx:run
 ```
 
-<<<<<<< HEAD
 ## Dữ liệu demo
 
 Khi database đang trống, server sẽ tạo dữ liệu mẫu tự động. Có thể đăng nhập bằng các tài khoản sau:
@@ -343,7 +336,6 @@ Client gửi request JSON có trường `action`; server định tuyến request
 - Nếu đổi cổng server, cần cập nhật lại cấu hình trong `NetworkClient`.
 - Hibernate đang dùng `hbm2ddl.auto=update`, nên schema có thể được tự cập nhật khi chạy ứng dụng.
 - Không commit thông tin database thật hoặc mật khẩu production vào `hibernate.cfg.xml`.
-=======
 Có thể mở thêm client ở terminal khác để kiểm tra cập nhật đấu giá thời gian thực.
 
 ## 7. Chức năng đã hoàn thành
@@ -374,5 +366,5 @@ Có thể mở thêm client ở terminal khác để kiểm tra cập nhật đ�
 
 - <a href="https://docs.google.com/document/d/1EG4beJ8RRhDhFjMWVFcCJgh69U4wio0n-QvQpW20QNY/edit?usp=sharing" target="_blank">Báo cáo PDF</a>
 - <a href="https://youtu.be/bIVS6nGiM0I?si=pPUAAu9rT_7SRYQ5" target="_blank">Video demo</a>
->>>>>>> 633fc6d0480dd215738e884d479b2de7bfd24793
+
 
