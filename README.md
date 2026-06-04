@@ -228,3 +228,7 @@ Admin level 2 có quyền tạo admin level 1 trong màn quản trị của clie
 - Nếu đổi cổng server, cần cập nhật lại cấu hình trong `NetworkClient`.
 - Hibernate đang dùng `hbm2ddl.auto=update`, nên schema có thể được tự cập nhật khi chạy ứng dụng.
 - Không commit thông tin database thật hoặc mật khẩu production vào `hibernate.cfg.xml`.
+
+  ## 12. Báo cáo
+  - <a href="https://docs.google.com/document/d/1EG4beJ8RRhDhFjMWVFcCJgh69U4wio0n-QvQpW20QNY/edit?usp=sharing" target="_blank">Báo cáo PDF</a>
+  - <a href="https://youtu.be/bIVS6nGiM0I?si=pPUAAu9rT_7SRYQ5" target="_blank">Video demo</a>
